@@ -1,11 +1,7 @@
-require('module-alias/register')
 import * as path from 'path'
-import { envConfig } from '../process.env.js'
 import AutoLoad, { AutoloadPluginOptions } from '@fastify/autoload'
 import { FastifyPluginAsync } from 'fastify'
 import { fileURLToPath } from 'url'
-
-// 先获得环境变量。
 
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = path.dirname(__filename)
@@ -21,7 +17,6 @@ const app: FastifyPluginAsync<AppOptions> = async (
   fastify,
   opts
 ): Promise<void> => {
-  // through your application
   void fastify.register(AutoLoad, {
     dir: path.join(__dirname, 'plugins'),
     options: opts,
@@ -35,8 +30,11 @@ const app: FastifyPluginAsync<AppOptions> = async (
     forceESM: true,
   })
 
-  // define your routes in one of these
-  void fastify.register(envConfig)
+  await fastify.ready((err) => {
+    if (err) throw err
+    // 现在可以调用 .swagger() 方法
+  })
+  // fastify.swagger()
 }
 
 export default app
