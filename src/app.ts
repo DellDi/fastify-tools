@@ -6,9 +6,7 @@ import { fileURLToPath } from 'url'
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = path.dirname(__filename)
 
-export type AppOptions = {
-  // Place your custom options for app below here.
-} & Partial<AutoloadPluginOptions>
+export type AppOptions = {} & Partial<AutoloadPluginOptions>
 
 // Pass --options via CLI arguments in command to enable these options.
 const options: AppOptions = {}
@@ -34,7 +32,25 @@ const app: FastifyPluginAsync<AppOptions> = async (
     if (err) throw err
     // 现在可以调用 .swagger() 方法
   })
-  // fastify.swagger()
+
+  fastify.log.info('Something important happened!')
+
+  fastify.addHook('preHandler', function (req, reply, done) {
+    if (req.body) {
+      req.log.info({ body: req.body }, 'parsed body')
+    }
+    done()
+  })
+
+  fastify.addHook('onRequest', (req, reply, done) => {
+    // reply.header('Access-Control-Allow-Origin', '*')
+    // reply.header('Access-Control-Allow-Headers', 'Content-Type, Authorization')
+    reply.header(
+      'Access-Control-Allow-Methods',
+      'GET, POST, PUT, DELETE, OPTIONS'
+    )
+    done()
+  })
 }
 
 export default app

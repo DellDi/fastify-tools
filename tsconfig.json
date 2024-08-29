@@ -1,9 +1,10 @@
 {
   "extends": "fastify-tsconfig",
   "compilerOptions": {
-    "outDir": "dist",
+    "outDir": "./dist",
     "sourceMap": true,
     "moduleResolution": "NodeNext",
+    "allowSyntheticDefaultImports": true,
     "module": "NodeNext",
     "target": "ES2022",
     "esModuleInterop": true
