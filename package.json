@@ -24,7 +24,7 @@
     "build:ts": "tsc",
     "watch:ts": "tsc -w",
     "dev": "npm run build:ts && concurrently -k -p \"[{name}]\" -n \"TypeScript,App\" -c \"yellow.bold,cyan.bold\" \"npm:watch:ts\" \"npm:dev:start\"",
-    "dev:start": "fastify start --ignore-watch=.ts$ -w -l info -P dist/app.js  --inspect"
+    "dev:start": "fastify start --debug --ignore-watch=.ts$ -w -l info -P dist/app.js"
   },
   "keywords": [
     "fastify', 'typescript"
@@ -36,6 +36,7 @@
     "@fastify/swagger": "^8.15.0",
     "@fastify/swagger-ui": "^4.1.0",
     "@scalar/fastify-api-reference": "^1.25.7",
+    "crypto-js": "^4.2.0",
     "dotenv": "^16.4.5",
     "fastify": "^4.28.1",
     "fastify-cli": "^6.3.0",
