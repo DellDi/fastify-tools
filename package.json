@@ -24,15 +24,20 @@
     "build:ts": "tsc",
     "watch:ts": "tsc -w",
     "dev": "npm run build:ts && concurrently -k -p \"[{name}]\" -n \"TypeScript,App\" -c \"yellow.bold,cyan.bold\" \"npm:watch:ts\" \"npm:dev:start\"",
-    "dev:start": "fastify start --debug --ignore-watch=.ts$ -w -l info -P dist/app.js"
+    "dev:start": "fastify start --ignore-watch=.ts$ -w -l error -P dist/app.js",
+    "debug": "fastify start --debug --ignore-watch=.ts$ -w -l info -P dist/app.js",
+    "c8:html": "node node_modules/c8/bin/c8.js -r html node dist/app.js"
   },
   "keywords": [
-    "fastify', 'typescript"
+    "fastify', 'typescript",
+    "aes"
   ],
   "dependencies": {
     "@fastify/autoload": "^5.10.0",
     "@fastify/env": "^4.4.0",
+    "@fastify/multipart": "^8.3.0",
     "@fastify/sensible": "^5.6.0",
+    "@fastify/static": "^7.0.4",
     "@fastify/swagger": "^8.15.0",
     "@fastify/swagger-ui": "^4.1.0",
     "@scalar/fastify-api-reference": "^1.25.7",

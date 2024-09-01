@@ -6,7 +6,14 @@ const schema = {
   type: 'object',
   required: ['PORT'],
   properties: {
-
+    PORT: {
+      type: 'string',
+      default: 3000,
+    },
+    NODE_ENV: {
+      type: 'string',
+      default: 'development',
+    },
   },
 }
 export default fp<FastifyEnvOptions>(async (fastify, opts) => {
