@@ -38,16 +38,20 @@ const upload: FastifyPluginAsync = async (fastify, opts): Promise<void> => {
     fs.mkdirSync(UPLOAD_DIR, { recursive: true })
   }
 
-  fastify.get('/', {
-    schema: {
+  fastify.get(
+    '/',
+    {
+      schema: {
         tags: ['upload'],
       },
-    },async function (request, reply) {
-    let params = request.headers
-    return {
-      root: params,
+    },
+    async function (request, reply) {
+      let params = request.headers
+      return {
+        root: params,
+      }
     }
-  })
+  )
 
   fastify.post(
     '/upload',
@@ -96,7 +100,7 @@ const upload: FastifyPluginAsync = async (fastify, opts): Promise<void> => {
   )
 
   fastify.post(
-    '/upload/chunk',
+    '/chunk',
     {
       schema: multipleUpload,
     },
@@ -146,7 +150,7 @@ const upload: FastifyPluginAsync = async (fastify, opts): Promise<void> => {
     }
   )
 
-  fastify.post('/upload/batch', {
+  fastify.post('/batch', {
     schema: uploadBatch,
     handler: async function (request: FastifyRequest, reply) {
       const parts = request.parts()

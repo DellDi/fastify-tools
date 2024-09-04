@@ -32,6 +32,9 @@ importers:
       '@scalar/fastify-api-reference':
         specifier: ^1.25.9
         version: 1.25.9
+      '@sinclair/typebox':
+        specifier: ^0.33.9
+        version: 0.33.9
       axios:
         specifier: ^1.7.7
         version: 1.7.7
@@ -180,6 +183,9 @@ packages:
   '@scalar/types@0.0.6':
     resolution: {integrity: sha512-MeL08EQO+lA8rJwS8Efch7KYs15G3Bm4XtNmJPRS1Ae85exWXkVS73TDlIyNBfk4eV+COs3tbBBLaUHpxUlRbQ==}
     engines: {node: '>=18'}
+
+  '@sinclair/typebox@0.33.9':
+    resolution: {integrity: sha512-agK7y8hO5Gz4Thu5kxTtLiZudNRflR1rTwmnWW5skxMd/+aqQ9XQene8HyyBsiajs5HV6ZQ/pCd3IKsqIfu4Kw==}
 
   '@tsconfig/node10@1.0.11':
     resolution: {integrity: sha512-DcRjDCujK/kCk/cUe8Xz8ZSpm8mS3mNNpta+jGCA6USEDfktlNvm1+IuZ9eTcDbNk41BHwpHHeW+N1lKCz4zOw==}
@@ -1211,6 +1217,8 @@ snapshots:
       '@scalar/openapi-types': 0.1.0
       '@scalar/themes': 0.9.28
       '@unhead/schema': 1.10.0
+
+  '@sinclair/typebox@0.33.9': {}
 
   '@tsconfig/node10@1.0.11': {}
 

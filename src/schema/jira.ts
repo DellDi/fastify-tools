@@ -1,32 +1,81 @@
+import { Static, Type } from '@sinclair/typebox'
+
+const JiraLoginBody = Type.Object({
+  jiraUser: Type.String({ default: process.env.JIRA_USER }),
+  jiraPassword: Type.String({ default: process.env.JIRA_PASSWORD }),
+})
+
+const JiraLoginResponse = Type.Object({
+  cookies: Type.String(),
+  atlToken: Type.String(),
+})
+
+export const jiraLoginSchema = {
+  description: 'Login to Jira',
+  tags: ['jira'],
+  body: JiraLoginBody,
+  response: {
+    200: JiraLoginResponse,
+  },
+}
+
+export type JiraLoginBodyType = Static<typeof JiraLoginBody>
+export type JiraLoginResponseType = Static<typeof JiraLoginResponse>
+
+const JiraCreateExportBody = Type.Object({
+  title: Type.String(),
+  description: Type.Optional(Type.String()),
+  assignee: Type.String({ default: 'JIRA_ASSIGNEE_USER' }),
+})
+
+const AvatarUrls = Type.Object({
+  '48x48': Type.String(),
+  '24x24': Type.String(),
+  '16x16': Type.String(),
+  '32x32': Type.String(),
+})
+
+const JiraCreateExportResponse = Type.Object({
+  issueKey: Type.String(),
+  issueId: Type.String(),
+  issueUrl: Type.String(),
+  avatarUrls: AvatarUrls,
+})
+
 export const jiraCreateExport = {
   description: 'Create a Jira ticket',
   tags: ['jira'],
-  body: {
-    type: 'object',
-    required: ['title', 'assignee'],
-    properties: {
-      title: { type: 'string' },
-      description: { type: 'string' },
-      assignee: { type: 'string', default: 'JIRA_ASSIGNEE_USER' },
-    },
-  },
+  body: JiraCreateExportBody,
   response: {
-    200: {
-      type: 'object',
-      properties: {
-        issueKey: { type: 'string' },
-        issueId: { type: 'string' },
-        issueUrl: { type: 'string' },
-        avatarUrls: {
-          type: 'object',
-          properties: {
-            '48x48': { type: 'string' },
-            '24x24': { type: 'string' },
-            '16x16': { type: 'string' },
-            '32x32': { type: 'string' },
-          },
-        },
-      },
-    },
+    200: JiraCreateExportResponse,
   },
 }
+
+export type JiraCreateExportBodyType = Static<typeof JiraCreateExportBody>
+export type JiraCreateExportResponseType = Static<
+  typeof JiraCreateExportResponse
+>
+
+const JiraUpdateBody = Type.Object({
+  customfield_12600: Type.Optional(Type.String()),
+  'customfield_12600:1': Type.Optional(Type.String()),
+  issueId: Type.Number(),
+  atl_token: Type.String(),
+  singleFieldEdit: Type.Boolean(),
+  fieldsToForcePresent: Type.String(),
+})
+
+const responseUpdateSchema = Type.Object({
+  message: Type.String(),
+})
+
+export const JiraUpdateTicketSchema = {
+  body: JiraUpdateBody,
+  response: {
+    200: responseUpdateSchema,
+  },
+}
+
+export type JiraUpdateTicket = Static<typeof JiraUpdateBody>
+
+export type JiraUpdateResponseSchema = Static<typeof responseUpdateSchema>
