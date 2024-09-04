@@ -38,7 +38,11 @@ const upload: FastifyPluginAsync = async (fastify, opts): Promise<void> => {
     fs.mkdirSync(UPLOAD_DIR, { recursive: true })
   }
 
-  fastify.get('/', async function (request, reply) {
+  fastify.get('/', {
+    schema: {
+        tags: ['upload'],
+      },
+    },async function (request, reply) {
     let params = request.headers
     return {
       root: params,

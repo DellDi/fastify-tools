@@ -12,6 +12,8 @@ type aesEnOrDeType = 'encrypt' | 'decrypt' | 'aesEnOrigin' | 'aesDeOrigin'
 const newsee: FastifyPluginAsync = async (fastify, opts): Promise<void> => {
   fastify.post('/handlePassword', {
     schema: {
+      tags: ['newsee'],
+      description: '处理密码：零和加密、零和解密、AES加密、AES解密',
       body: {
         content: { type: 'string', description: '需要处理的string' },
         aesEnOrDeType: {
