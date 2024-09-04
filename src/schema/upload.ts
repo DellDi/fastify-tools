@@ -1,5 +1,6 @@
 export const singleUpload = {
   description: '单文件上传的接口',
+  tags: ['upload'],
   consumes: ['multipart/form-data'],
   body: {
     type: 'object',
@@ -18,6 +19,7 @@ export const singleUpload = {
 export const multipleUpload = {
   // 大文件分片上传的schema
   description: '大文件分片上传的接口',
+  tags: ['upload'],
   consumes: ['multipart/form-data'],
   body: {
     type: 'object',
@@ -39,6 +41,7 @@ export const multipleUpload = {
 export const uploadBatch = {
   // 批量上传的schema
   description: '在单个请求中上传多个文件',
+  tags: ['upload'],
   consumes: ['multipart/form-data'],
   body: {
     type: 'object',
