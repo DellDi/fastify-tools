@@ -39,7 +39,7 @@ const upload: FastifyPluginAsync = async (fastify, opts): Promise<void> => {
   }
 
   fastify.get(
-    '/',
+    '',
     {
       schema: {
         tags: ['upload'],
@@ -48,7 +48,7 @@ const upload: FastifyPluginAsync = async (fastify, opts): Promise<void> => {
     async function (request, reply) {
       let params = request.headers
       return {
-        root: params,
+        root: {...params,msg: '上传图片接口'},
       }
     }
   )

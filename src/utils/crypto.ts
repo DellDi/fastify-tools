@@ -1,46 +1,50 @@
-import { createCipheriv, createDecipheriv, randomBytes } from 'node:crypto'
+import { createCipheriv, createDecipheriv } from 'node:crypto'
+import padZeroPadding from 'crypto-js/pad-zeropadding.js'
+import CryptoJS from 'crypto-js'
+import encUTF8 from 'crypto-js/enc-utf8.js'
+import encBase64 from 'crypto-js/enc-utf8.js'
+import AES from 'crypto-js/aes.js'
 
-export function enCryptBase64(val: string): string {
+/**
+ * Encrypt by Base64
+ * @param val - The value to encrypt
+ * @param key - The encryption key
+ * @returns The encrypted string
+ */
+export const enCryptBase64 = (val: string): string => {
   const key = '0123456789012345'
-  const iv = '0123456789012345'
+  const keyStr = encUTF8.parse(key)
+  const iv = encUTF8.parse(key)
+  const srcs = encUTF8.parse(val)
 
-  const decipher = createDecipheriv('aes-256-cbc', key, iv)
-  let decrypted = decipher.update(val, 'base64', 'utf8')
-  decrypted += decipher.final('utf8')
+  const encrypted = AES.encrypt(srcs, keyStr, {
+    iv,
+    mode: CryptoJS.mode.CBC,
+    padding: padZeroPadding,
+  })
 
-  return decrypted
+  return encBase64.stringify(encrypted.ciphertext)
 }
 
-export function deCryptoBase64(encryptedBase64: string): string {
-  // 将密钥和 IV 转换为 Buffer
-  const keyBuffer = Buffer.from('0123456789012345', 'utf-8')
-  const ivBuffer = randomBytes(16) // 随机生成 IV，实际使用时应与加密时相同
+/**
+ * Decrypt by Base64
+ * @param val - The value to decrypt
+ * @returns The decrypted string
+ */
+export const deCryptoBase64 = (val: string): string => {
+  const key = '0123456789012345'
+  const keyStr = encUTF8.parse(key)
+  const iv = encUTF8.parse(key)
+  const base64 = encBase64.parse(val)
+  const src = encBase64.stringify(base64)
 
-  // 将 Base64 编码的字符串解码为 Buffer
-  const encryptedBuffer = Buffer.from(encryptedBase64, 'base64')
+  const decrypt = AES.decrypt(src, keyStr, {
+    iv,
+    mode: CryptoJS.mode.CBC,
+    padding: padZeroPadding,
+  })
 
-  // 创建解密器
-  const decipher = createDecipheriv('aes-256-cbc', keyBuffer, ivBuffer)
-
-  // 执行解密操作
-  let decryptedBuffer = Buffer.concat([
-    decipher.update(encryptedBuffer),
-    decipher.final(),
-  ])
-
-  // 去除 ZeroPadding
-  // 从末尾开始查找第一个非 0 字节的位置
-  let paddingStartIndex = decryptedBuffer.length
-  for (let i = decryptedBuffer.length - 1; i >= 0; i--) {
-    if (decryptedBuffer[i] !== 0) {
-      paddingStartIndex = i + 1
-      break
-    }
-  }
-  // 截取去除填充后的 Buffer
-  const unpaddedBuffer = decryptedBuffer.subarray(0, paddingStartIndex)
-  // 将 Buffer 转换为字符串
-  return unpaddedBuffer.toString('utf8')
+  return decrypt.toString(encUTF8)
 }
 
 const sqlKey = Buffer.from('WJ19938888', 'utf8')
