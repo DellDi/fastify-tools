@@ -43,6 +43,7 @@
     "@scalar/fastify-api-reference": "^1.25.9",
     "@sinclair/typebox": "^0.33.9",
     "axios": "^1.7.7",
+    "close-with-grace": "^2.1.0",
     "crypto-js": "^4.2.0",
     "dotenv": "^16.4.5",
     "fastify": "^4.28.1",
@@ -51,6 +52,7 @@
     "module-alias": "^2.2.3"
   },
   "devDependencies": {
+    "@types/crypto-js": "^4.2.2",
     "@types/node": "^20.16.2",
     "c8": "^9.0.0",
     "concurrently": "^8.2.2",
