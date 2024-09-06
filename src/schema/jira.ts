@@ -23,9 +23,12 @@ export type JiraLoginBodyType = Static<typeof JiraLoginBody>
 export type JiraLoginResponseType = Static<typeof JiraLoginResponse>
 
 const JiraCreateExportBody = Type.Object({
-  title: Type.String(),
-  description: Type.Optional(Type.String()),
-  assignee: Type.String({ default: 'JIRA_ASSIGNEE_USER' }),
+  title: Type.String({ default: 'JIRA_TITLE', description: '单子标题' }),
+  description: Type.Optional(Type.String({ default: 'JIRA_DESCRIPTION', description: '单子描述' })),
+  assignee: Type.String({
+    default: 'JIRA_ASSIGNEE_USER',
+    description: '经办人',
+  }),
 })
 
 const AvatarUrls = Type.Object({
