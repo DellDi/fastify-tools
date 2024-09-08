@@ -1,6 +1,5 @@
 import { FastifyPluginAsync } from 'fastify'
-import axios from 'axios'
-import qs from 'node:querystring'
+import { request } from 'undici'
 import {
   jiraCreateExport,
   JiraCreateExportBodyType,
@@ -16,12 +15,12 @@ const jira: FastifyPluginAsync = async (fastify, opts): Promise<void> => {
     Response: JiraCreateExportResponseType
   }>('/create-ticket', {
     schema: jiraCreateExport,
-    handler: async (request, reply) => {
-      const { title, description, assignee } = request.body
+    handler: async (req, reply) => {
+      const { title, description, assignee } = req.body
 
       try {
-        const resLogin = await fastify.inject('/login')
-        const { cookies, atlToken } = resLogin.body as unknown as JiraLoginResponseType
+        const resLogin = await fastify.inject('/jira/login')
+        const { cookies, atlToken } = resLogin.json() as JiraLoginResponseType
 
         const jiraPostData = {
           pid: '11450',
@@ -39,7 +38,7 @@ const jira: FastifyPluginAsync = async (fastify, opts): Promise<void> => {
           priority: '3',
           description: description || title,
           assignee: assignee,
-          labels: ['SaaS专项工作', '管理驾驶舱'],
+          labels: 'SaaS专项工作,管理驾驶舱',
           timetracking: '',
           isCreateIssue: 'true',
           hasWorkStarted: 'false',
@@ -52,50 +51,60 @@ const jira: FastifyPluginAsync = async (fastify, opts): Promise<void> => {
             'customfield_10041',
             'priority',
             'assignee',
-          ],
+          ].join(','),
         }
 
         // Create Jira ticket
-        const createTicketResponse = await axios.post(
-          `http://newsee:newsee@bug.new-see.com:8088/secure/QuickCreateIssue.jspa`,
-          qs.stringify(jiraPostData),
+        const createTicketResponse = await request(
+          `http://newsee:newsee@bug.new-see.com:8088/secure/QuickCreateIssue.jspa?decorator=none`,
           {
-            params: {
-              decorator: 'none',
-            },
+            method: 'POST',
             headers: {
               Cookie: cookies,
               'Content-Type': 'application/x-www-form-urlencoded',
             },
+            body: new URLSearchParams(jiraPostData).toString(),
           }
         )
 
-        const responseBody = createTicketResponse.data
+        const responseBody = (await createTicketResponse.body.json()) as {
+          issueKey: string
+          createdIssueDetails: {
+            id: string
+          }
+        }
         const createdIssueDetails = responseBody.createdIssueDetails
         const { id: issueId } = createdIssueDetails
         const issueKey = responseBody.issueKey
         const issueUrl = `${jiraBaseUrl}/browse/${issueKey}`
 
-        const updateIssueResponse = await axios.post(
-          `http://newsee:newsee@bug.new-see.com:8088/secure/AjaxIssueAction.jspa`,
-          qs.stringify({
-            issueId,
-            atl_token: atlToken,
-            singleFieldEdit: true,
-            fieldsToForcePresent: 'labels',
-            labels: ['SaaS专项工作', '管理驾驶舱'],
-          }),
+        const updateIssueResponse = await request(
+          `http://newsee:newsee@bug.new-see.com:8088/secure/AjaxIssueAction.jspa?decorator=none`,
           {
-            params: {
-              decorator: 'none',
-            },
+            method: 'POST',
             headers: {
               Cookie: cookies,
               'Content-Type': 'application/x-www-form-urlencoded',
             },
+            body: new URLSearchParams({
+              issueId,
+              atl_token: atlToken,
+              singleFieldEdit: 'true',
+              fieldsToForcePresent: 'labels',
+              labels: 'SaaS专项工作,管理驾驶舱',
+            }).toString(),
           }
         )
-        const updateResponseData = updateIssueResponse.data
+
+        const updateResponseData = (await updateIssueResponse.body.json()) as {
+          issue: {
+            project: {
+              avatarUrls: {
+                '48x48': string
+              }
+            }
+          }
+        }
         const avatarUrls = updateResponseData.issue?.project?.avatarUrls
         return { issueId, issueKey, issueUrl, avatarUrls }
       } catch (error) {
