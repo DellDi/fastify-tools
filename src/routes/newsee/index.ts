@@ -1,38 +1,26 @@
 import { FastifyPluginAsync } from 'fastify'
+
 import {
   enCryptBase64,
   deCryptoBase64,
   encryptSQLOrigin,
   decryptSQLOrigin,
 } from '../../utils/crypto.js'
-
-// 类型
-type aesEnOrDeType = 'encrypt' | 'decrypt' | 'aesEnOrigin' | 'aesDeOrigin'
+import {
+  cryptoSchema,
+  HandlePasswordBody,
+  HandlePasswordResponse,
+} from '../../schema/newsee.js'
 
 const newsee: FastifyPluginAsync = async (fastify, opts): Promise<void> => {
-  fastify.post('/handlePassword', {
-    schema: {
-      tags: ['newsee'],
-      description: '处理密码：零和加密、零和解密、AES加密、AES解密',
-      body: {
-        content: { type: 'string', description: '需要处理的string' },
-        aesEnOrDeType: {
-          type: 'string',
-          description:
-            '加密处理的类型encrypt | decrypt | aesEnOrigin | aesDeOrigin',
-          enum: ['encrypt', 'decrypt', 'aesEnOrigin', 'aesDeOrigin'],
-          default: 'decrypt',
-        },
-      },
-    },
+  fastify.post<{
+    Body: HandlePasswordBody
+    Response: HandlePasswordResponse
+  }>('/handlePassword', {
+    schema: cryptoSchema,
     handler: async (request, reply) => {
       request.headers['content-type'] = 'application/json'
-
-      const { content, aesEnOrDeType = 'decrypt' } = request.body as {
-        content: string
-        aesEnOrDeType: aesEnOrDeType
-      }
-
+      const { content, aesEnOrDeType = 'decrypt' } = request.body
       let result = ''
       switch (aesEnOrDeType) {
         case 'encrypt':
