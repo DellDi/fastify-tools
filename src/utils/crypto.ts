@@ -1,29 +1,24 @@
 import { createCipheriv, createDecipheriv } from 'node:crypto'
-import padZeroPadding from 'crypto-js/pad-zeropadding.js'
 import CryptoJS from 'crypto-js'
-import encUTF8 from 'crypto-js/enc-utf8.js'
-import encBase64 from 'crypto-js/enc-utf8.js'
-import AES from 'crypto-js/aes.js'
 
 /**
  * Encrypt by Base64
  * @param val - The value to encrypt
- * @param key - The encryption key
  * @returns The encrypted string
  */
 export const enCryptBase64 = (val: string): string => {
   const key = '0123456789012345'
-  const keyStr = encUTF8.parse(key)
-  const iv = encUTF8.parse(key)
-  const srcs = encUTF8.parse(val)
+  const keyStr = CryptoJS.enc.Utf8.parse(key)
+  const iv = CryptoJS.enc.Utf8.parse(key)
+  const srcs = CryptoJS.enc.Utf8.parse(val)
 
-  const encrypted = AES.encrypt(srcs, keyStr, {
+  const encrypted = CryptoJS.AES.encrypt(srcs, keyStr, {
     iv,
     mode: CryptoJS.mode.CBC,
-    padding: padZeroPadding,
+    padding: CryptoJS.pad.ZeroPadding,
   })
-
-  return encBase64.stringify(encrypted.ciphertext)
+  const res = CryptoJS.enc.Base64.stringify(encrypted.ciphertext)
+  return res
 }
 
 /**
@@ -33,20 +28,20 @@ export const enCryptBase64 = (val: string): string => {
  */
 export const deCryptoBase64 = (val: string): string => {
   const key = '0123456789012345'
-  const keyStr = encUTF8.parse(key)
-  const iv = encUTF8.parse(key)
-  const base64 = encBase64.parse(val)
-  const src = encBase64.stringify(base64)
+  const keyStr = CryptoJS.enc.Utf8.parse(key)
+  const iv = CryptoJS.enc.Utf8.parse(key)
+  const base64 = CryptoJS.enc.Base64.parse(val)
 
-  const decrypt = AES.decrypt(src, keyStr, {
+  const src = CryptoJS.enc.Base64.stringify(base64)
+  const decrypt = CryptoJS.AES.decrypt(src, keyStr, {
     iv,
     mode: CryptoJS.mode.CBC,
-    padding: padZeroPadding,
+    padding: CryptoJS.pad.ZeroPadding,
   })
 
-  return decrypt.toString(encUTF8)
+  const decryptedStr = decrypt.toString(CryptoJS.enc.Utf8)
+  return decryptedStr.toString()
 }
-
 const sqlKey = Buffer.from('WJ19938888', 'utf8')
   .subarray(0, 16)
   .toString('utf8')

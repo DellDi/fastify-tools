@@ -1,35 +1,36 @@
 import { FastifyPluginAsync } from 'fastify'
-import axios from 'axios'
-import qs from 'node:querystring'
+import { request } from 'undici'
 import {
   JiraLoginResponseType,
   JiraUpdateResponseSchema,
   JiraUpdateTicket,
   JiraUpdateTicketSchema,
-} from '../../schema/jira.js'
+} from '../../../schema/jira.js'
 
 const jira: FastifyPluginAsync = async (fastify, opts): Promise<void> => {
   fastify.post<{
     Body: JiraUpdateTicket
     Response: JiraUpdateResponseSchema
-  }>('/create-ticket', {
+  }>('', {
     schema: JiraUpdateTicketSchema,
-    handler: async (request, reply) => {
-      const { issueId, ...data } = request.body
+    handler: async (req, reply) => {
+      const { issueId, ...data } = req.body
       try {
-        const resLogin = await fastify.inject('/login')
-        const { cookies, atlToken } =
-          resLogin.body as unknown as JiraLoginResponseType
+        const resLogin = await fastify.inject('/jira/login')
+        const { cookies, atlToken } = resLogin.json() as JiraLoginResponseType
         // Create Jira ticket
-        await axios.post(
+        await request(
           `http://newsee:newsee@bug.new-see.com:8088/secure/AjaxIssueAction.jspa`,
-          qs.stringify({
-            issueId,
-            ...data,
-            atlToken,
-          }),
           {
-            params: {
+            method: 'POST',
+            body: new URLSearchParams({
+              issueId: issueId.toString(),
+              ...data,
+              atlToken,
+              atl_token: atlToken,
+              singleFieldEdit: 'true',
+            }).toString(),
+            query: {
               decorator: 'none',
             },
             headers: {
@@ -39,14 +40,13 @@ const jira: FastifyPluginAsync = async (fastify, opts): Promise<void> => {
           }
         )
         return {
-          message: 'Jira ticket update successfully',
+          message: 'Jira ticket updated successfully',
         }
       } catch (error) {
         fastify.log.error(error)
         reply.status(500).send({ error: error })
       }
-    },
-  })
+    },  })
 }
 
 export default jira
