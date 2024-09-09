@@ -19,7 +19,14 @@ const jira: FastifyPluginAsync = async (fastify, opts): Promise<void> => {
       const { title, description, assignee } = req.body
 
       try {
-        const resLogin = await fastify.inject('/jira/login')
+        const resLogin = await fastify.inject({
+          method: 'POST',
+          url: '/jira/login',
+          body: {
+            username: process.env.JIRA_USERNAME,
+            password: process.env.JIRA_PASSWORD,
+          }
+        })
         const { cookies, atlToken } = resLogin.json() as JiraLoginResponseType
 
         const jiraPostData = {
@@ -61,6 +68,7 @@ const jira: FastifyPluginAsync = async (fastify, opts): Promise<void> => {
             method: 'POST',
             headers: {
               Cookie: cookies,
+              Authorization: 'Basic bmV3c2VlOm5ld3NlZQ==',
               'Content-Type': 'application/x-www-form-urlencoded',
             },
             body: new URLSearchParams(jiraPostData).toString(),
@@ -84,6 +92,7 @@ const jira: FastifyPluginAsync = async (fastify, opts): Promise<void> => {
             method: 'POST',
             headers: {
               Cookie: cookies,
+              Authorization: 'Basic bmV3c2VlOm5ld3NlZQ==',
               'Content-Type': 'application/x-www-form-urlencoded',
             },
             body: new URLSearchParams({
