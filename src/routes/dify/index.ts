@@ -1,41 +1,43 @@
-import { FastifyPluginAsync } from 'fastify'
-
-type InputDataType = {
-  point: string
-  params: Record<string, any>
-}
+import auth from '@fastify/auth'
+import bearerAuth from '@fastify/bearer-auth'
+import { FastifyInstance, FastifyPluginAsync } from 'fastify'
+import { JiraCreateExportResponseType } from '../../schema/jira.js'
+import {
+  DifyResponseType,
+  difySchema,
+  InputDataType,
+} from '../../schema/dify.js'
 
 const dify: FastifyPluginAsync = async (fastify, opts): Promise<void> => {
-  fastify.post<{ Body: InputDataType }>('/create-jira', {
-    schema: {
-      tags: ['dify'],
-      body: {
-        type: 'object',
-        properties: {
-          point: { type: 'string' },
-          params: {
-            type: 'object',
-            additionalProperties: true,
-          },
-        },
-        required: ['point'],
-      },
-    },
-    handler: async (request, reply) => {
-      const expectedApiKey = '123456' // TODO: Your API key for this API
-      const authHeader = request.headers.authorization
-
-      if (
-        !authHeader ||
-        !authHeader.toLowerCase().startsWith('bearer ') ||
-        authHeader.split(' ')[1] !== expectedApiKey
+  await fastify
+    .register(auth)
+    .register(bearerAuth, {
+      addHook: true,
+      keys: new Set(['zd-nb-19950428']),
+      verifyErrorLogLevel: 'debug',
+    })
+    .decorate(
+      'allowAnonymous',
+      function (
+        req: { headers: { authorization: any } },
+        reply: any,
+        done: (arg0: Error | undefined) => any
       ) {
-        reply.code(401).send({ error: 'Unauthorized' })
-        return
+        fastify.log.debug('Authorization header:', req.headers.authorization)
+        if (req.headers.authorization) {
+          return done(Error('not anonymous'))
+        }
+        return done(undefined)
       }
-
-      const { point, params } = request.body
-
+    )
+  fastify.post<{
+    Body: InputDataType
+    Response: DifyResponseType
+  }>('/create-jira', {
+    schema: difySchema,
+    preHandler: fastify.verifyBearerAuth,
+    handler: async (request, reply) => {
+      const { point, ...params } = request.body
       // for debug
       fastify.log.info(`point: ${point}`)
 
@@ -44,33 +46,56 @@ const dify: FastifyPluginAsync = async (fastify, opts): Promise<void> => {
       }
 
       if (point === 'app.external_data_tool.query') {
-        return handleAppExternalDataToolQuery(params || {})
+        const { issueId, issueKey, issueUrl, avatarUrls } =
+          await handleAppExternalDataToolQuery(fastify, params || {})
+        return {
+          issueId,
+          issueKey,
+          issueUrl,
+          avatarUrls,
+        }
       }
-
-      // TODO: other point implementations here
 
       reply.code(400).send({ error: 'Not implemented' })
     },
   })
 }
 
-function handleAppExternalDataToolQuery(params: Record<string, any>) {
+async function handleAppExternalDataToolQuery(
+  fastify: FastifyInstance,
+  params: Record<string, any>
+) {
   const { app_id, tool_variable, inputs, query } = params
-
+  const { title, description, assignee } = inputs || {}
+  console.log(
+    '🚀 ~ handleAppExternalDataToolQuery ~  title, description, assignee:',
+    title,
+    description,
+    assignee
+  )
   // for debug
   console.log(`app_id: ${app_id}`)
   console.log(`tool_variable: ${tool_variable}`)
   console.log(`inputs: ${JSON.stringify(inputs)}`)
   console.log(`query: ${query}`)
+  const { issueId, issueKey, issueUrl, avatarUrls } = (await fastify.inject({
+    url: '/jira/create-ticket',
+    method: 'POST',
+    body: {
+      title,
+      description,
+      assignee,
+    },
+    headers: {
+      'content-type': 'application/json',
+    },
+  })) as unknown as JiraCreateExportResponseType
 
-  // TODO: your external data tool query implementation here
-  if (inputs?.location === 'London') {
-    return {
-      result:
-        'City: London\nTemperature: 10°C\nRealFeel®: 8°C\nAir Quality: Poor\nWind Direction: ENE\nWind Speed: 8 km/h\nWind Gusts: 14 km/h\nPrecipitation: Light rain',
-    }
-  } else {
-    return { result: 'Unknown city' }
+  return {
+    issueId,
+    issueKey,
+    issueUrl,
+    avatarUrls,
   }
 }
 

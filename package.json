@@ -33,7 +33,9 @@
     "aes"
   ],
   "dependencies": {
+    "@fastify/auth": "^4.6.1",
     "@fastify/autoload": "^5.10.0",
+    "@fastify/bearer-auth": "^9.4.0",
     "@fastify/env": "^4.4.0",
     "@fastify/multipart": "^8.3.0",
     "@fastify/sensible": "^5.6.0",

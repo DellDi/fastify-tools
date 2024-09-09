@@ -22,19 +22,17 @@ export const jiraLoginSchema = {
 export type JiraLoginBodyType = Static<typeof JiraLoginBody>
 export type JiraLoginResponseType = Static<typeof JiraLoginResponse>
 
-const JiraCreateExportBody = Type.Object({
+export const JiraCreateExportBody = Type.Object({
   title: Type.String({
     default: '【超级工单】新增测试工单',
     description: '单子标题',
   }),
-  description: Type.Optional(
-    Type.String({
-      default: '【超级工单】新增测试工单-我是工单的描述信息',
-      description: '单子描述',
-    })
-  ),
+  description: Type.String({
+    default: '【超级工单】新增测试工单-我是工单的描述信息',
+    description: '单子描述',
+  }),
   assignee: Type.String({
-    default: 'zengdi',
+    default: process.env.JIRA_PASSWORD,
     description: '经办人',
   }),
 })
@@ -54,7 +52,7 @@ const AvatarUrls = Type.Object({
   }),
 })
 
-const JiraCreateExportResponse = Type.Object({
+export const JiraCreateExportResponse = Type.Object({
   issueKey: Type.String({
     description: '单子key',
   }),

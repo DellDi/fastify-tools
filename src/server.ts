@@ -11,7 +11,9 @@ import closeWithGrace from 'close-with-grace'
 
 // Instantiate Fastify with some config
 const app = Fastify({
-  logger: true,
+  logger: {
+    level: 'debug'
+  },
 })
 
 // Register your application as a normal plugin.
