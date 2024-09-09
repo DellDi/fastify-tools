@@ -16,7 +16,14 @@ const jira: FastifyPluginAsync = async (fastify, opts): Promise<void> => {
     handler: async (req, reply) => {
       const { issueId, ...data } = req.body
       try {
-        const resLogin = await fastify.inject('/jira/login')
+        const resLogin = await fastify.inject({
+          method: 'POST',
+          url: '/jira/login',
+          body: {
+            username: process.env.JIRA_USERNAME,
+            password: process.env.JIRA_PASSWORD,
+          },
+        })
         const { cookies, atlToken } = resLogin.json() as JiraLoginResponseType
         // Create Jira ticket
         await request(
@@ -35,6 +42,7 @@ const jira: FastifyPluginAsync = async (fastify, opts): Promise<void> => {
             },
             headers: {
               Cookie: cookies,
+              Authorization: 'Basic bmV3c2VlOm5ld3NlZQ==',
               'Content-Type': 'application/x-www-form-urlencoded',
             },
           }
@@ -46,7 +54,8 @@ const jira: FastifyPluginAsync = async (fastify, opts): Promise<void> => {
         fastify.log.error(error)
         reply.status(500).send({ error: error })
       }
-    },  })
+    },
+  })
 }
 
 export default jira
