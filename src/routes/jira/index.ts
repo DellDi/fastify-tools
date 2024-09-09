@@ -1,5 +1,6 @@
 import { FastifyPluginAsync } from 'fastify'
 import { request } from 'undici'
+import qs from 'node:querystring'
 import {
   jiraCreateExport,
   JiraCreateExportBodyType,
@@ -25,7 +26,7 @@ const jira: FastifyPluginAsync = async (fastify, opts): Promise<void> => {
           body: {
             username: process.env.JIRA_USERNAME,
             password: process.env.JIRA_PASSWORD,
-          }
+          },
         })
         const { cookies, atlToken } = resLogin.json() as JiraLoginResponseType
 
@@ -58,7 +59,7 @@ const jira: FastifyPluginAsync = async (fastify, opts): Promise<void> => {
             'customfield_10041',
             'priority',
             'assignee',
-          ].join(','),
+          ],
         }
 
         // Create Jira ticket
@@ -71,10 +72,17 @@ const jira: FastifyPluginAsync = async (fastify, opts): Promise<void> => {
               Authorization: 'Basic bmV3c2VlOm5ld3NlZQ==',
               'Content-Type': 'application/x-www-form-urlencoded',
             },
-            body: new URLSearchParams(jiraPostData).toString(),
+            body: qs.stringify(jiraPostData),
           }
         )
-
+        // fastify.inject({
+        //   method: 'POST',
+        //   url: '/jira/update',
+        //   body: {
+        //     username: process.env.JIRA_USERNAME,
+        //     password: process.env.JIRA_PASSWORD,
+        //   },
+        // })
         const responseBody = (await createTicketResponse.body.json()) as {
           issueKey: string
           createdIssueDetails: {
@@ -85,6 +93,13 @@ const jira: FastifyPluginAsync = async (fastify, opts): Promise<void> => {
         const { id: issueId } = createdIssueDetails
         const issueKey = responseBody.issueKey
         const issueUrl = `${jiraBaseUrl}/browse/${issueKey}`
+        const updateData = {
+          issueId,
+          atl_token: atlToken,
+          singleFieldEdit: 'true',
+          fieldsToForcePresent: 'labels',
+          labels: ['SaaS专项工作', '管理驾驶舱'],
+        }
 
         const updateIssueResponse = await request(
           `http://newsee:newsee@bug.new-see.com:8088/secure/AjaxIssueAction.jspa?decorator=none`,
@@ -95,13 +110,7 @@ const jira: FastifyPluginAsync = async (fastify, opts): Promise<void> => {
               Authorization: 'Basic bmV3c2VlOm5ld3NlZQ==',
               'Content-Type': 'application/x-www-form-urlencoded',
             },
-            body: new URLSearchParams({
-              issueId,
-              atl_token: atlToken,
-              singleFieldEdit: 'true',
-              fieldsToForcePresent: 'labels',
-              labels: 'SaaS专项工作,管理驾驶舱',
-            }).toString(),
+            body: qs.stringify(updateData),
           }
         )
 

@@ -32,7 +32,7 @@ export const JiraCreateExportBody = Type.Object({
     description: '单子描述',
   }),
   assignee: Type.String({
-    default: process.env.JIRA_PASSWORD,
+    default: process.env.JIRA_USER,
     description: '经办人',
   }),
 })
