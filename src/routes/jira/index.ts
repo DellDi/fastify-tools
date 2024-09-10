@@ -24,8 +24,8 @@ const jira: FastifyPluginAsync = async (fastify, opts): Promise<void> => {
           method: 'POST',
           url: '/jira/login',
           body: {
-            username: process.env.JIRA_USERNAME,
-            password: process.env.JIRA_PASSWORD,
+            jiraUser: process.env.JIRA_USERNAME,
+            jiraPassword: process.env.JIRA_PASSWORD,
           },
         })
         const { cookies, atlToken } = resLogin.json() as JiraLoginResponseType
@@ -46,7 +46,7 @@ const jira: FastifyPluginAsync = async (fastify, opts): Promise<void> => {
           priority: '3',
           description: description || title,
           assignee: assignee,
-          labels: 'SaaS专项工作,管理驾驶舱',
+          labels: ['SaaS专项工作', '数据中台'],
           timetracking: '',
           isCreateIssue: 'true',
           hasWorkStarted: 'false',
@@ -75,14 +75,7 @@ const jira: FastifyPluginAsync = async (fastify, opts): Promise<void> => {
             body: qs.stringify(jiraPostData),
           }
         )
-        // fastify.inject({
-        //   method: 'POST',
-        //   url: '/jira/update',
-        //   body: {
-        //     username: process.env.JIRA_USERNAME,
-        //     password: process.env.JIRA_PASSWORD,
-        //   },
-        // })
+
         const responseBody = (await createTicketResponse.body.json()) as {
           issueKey: string
           createdIssueDetails: {
@@ -114,17 +107,9 @@ const jira: FastifyPluginAsync = async (fastify, opts): Promise<void> => {
           }
         )
 
-        const updateResponseData = (await updateIssueResponse.body.json()) as {
-          issue: {
-            project: {
-              avatarUrls: {
-                '48x48': string
-              }
-            }
-          }
-        }
-        const avatarUrls = updateResponseData.issue?.project?.avatarUrls
-        return { issueId, issueKey, issueUrl, avatarUrls }
+        const updateResponseData = await updateIssueResponse.body.json()
+        fastify.log.info(updateResponseData)
+        return { issueId, issueKey, issueUrl }
       } catch (error) {
         fastify.log.error(error)
         reply.status(500).send({ error: error })
