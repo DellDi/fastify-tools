@@ -38,6 +38,7 @@ const dify: FastifyPluginAsync = async (fastify, opts): Promise<void> => {
     preHandler: fastify.verifyBearerAuth,
     handler: async (request, reply) => {
       const { point, ...params } = request.body
+      console.log("🚀 ~ handler: ~ params:", params)
       // for debug
       fastify.log.info(`point: ${point}`)
 
@@ -46,13 +47,14 @@ const dify: FastifyPluginAsync = async (fastify, opts): Promise<void> => {
       }
 
       if (point === 'app.external_data_tool.query') {
-        const { issueId, issueKey, issueUrl, avatarUrls } =
+        const { issueId, issueKey, issueUrl } =
           await handleAppExternalDataToolQuery(fastify, params || {})
         return {
-          issueId,
-          issueKey,
-          issueUrl,
-          avatarUrls,
+          result: {
+            issueId,
+            issueKey,
+            issueUrl,
+          }
         }
       }
 
@@ -65,20 +67,9 @@ async function handleAppExternalDataToolQuery(
   fastify: FastifyInstance,
   params: Record<string, any>
 ) {
-  const { app_id, tool_variable, inputs, query } = params
-  const { title, description, assignee } = inputs || {}
-  console.log(
-    '🚀 ~ handleAppExternalDataToolQuery ~  title, description, assignee:',
-    title,
-    description,
-    assignee
-  )
-  // for debug
-  console.log(`app_id: ${app_id}`)
-  console.log(`tool_variable: ${tool_variable}`)
-  console.log(`inputs: ${JSON.stringify(inputs)}`)
-  console.log(`query: ${query}`)
-  const { issueId, issueKey, issueUrl, avatarUrls } = (await fastify.inject({
+  const { title, description, assignee } = params || {}
+
+  const { issueId, issueKey, issueUrl } = (await fastify.inject({
     url: '/jira/create-ticket',
     method: 'POST',
     body: {
@@ -95,7 +86,6 @@ async function handleAppExternalDataToolQuery(
     issueId,
     issueKey,
     issueUrl,
-    avatarUrls,
   }
 }
 

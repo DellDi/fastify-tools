@@ -37,20 +37,20 @@ export const JiraCreateExportBody = Type.Object({
   }),
 })
 
-const AvatarUrls = Type.Object({
-  '48x48': Type.String({
-    description: '48x48 头像',
-  }),
-  '24x24': Type.String({
-    description: '24x24 头像',
-  }),
-  '16x16': Type.String({
-    description: '16x16 头像',
-  }),
-  '32x32': Type.String({
-    description: '32x32 头像',
-  }),
-})
+// const AvatarUrls = Type.Object({
+//   '48x48': Type.String({
+//     description: '48x48 头像',
+//   }),
+//   '24x24': Type.String({
+//     description: '24x24 头像',
+//   }),
+//   '16x16': Type.String({
+//     description: '16x16 头像',
+//   }),
+//   '32x32': Type.String({
+//     description: '32x32 头像',
+//   }),
+// })
 
 export const JiraCreateExportResponse = Type.Object({
   issueKey: Type.String({
@@ -61,8 +61,7 @@ export const JiraCreateExportResponse = Type.Object({
   }),
   issueUrl: Type.String({
     description: '单子url',
-  }),
-  avatarUrls: AvatarUrls,
+  })
 })
 
 export const jiraCreateExport = {
