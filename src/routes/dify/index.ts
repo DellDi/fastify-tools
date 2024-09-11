@@ -38,7 +38,7 @@ const dify: FastifyPluginAsync = async (fastify, opts): Promise<void> => {
     preHandler: fastify.verifyBearerAuth,
     handler: async (request, reply) => {
       const { point, ...params } = request.body
-      console.log("🚀 ~ handler: ~ params:", params)
+      console.log('🚀 ~ handler: ~ params:', params)
       // for debug
       fastify.log.info(`point: ${point}`)
 
@@ -49,12 +49,12 @@ const dify: FastifyPluginAsync = async (fastify, opts): Promise<void> => {
       if (point === 'app.external_data_tool.query') {
         const { issueId, issueKey, issueUrl } =
           await handleAppExternalDataToolQuery(fastify, params || {})
+
         return {
-          result: {
-            issueId,
-            issueKey,
-            issueUrl,
-          }
+          result: `${Date.now()}`,
+          issueId,
+          issueKey,
+          issueUrl,
         }
       }
 

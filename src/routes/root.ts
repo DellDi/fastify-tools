@@ -2,9 +2,10 @@ import { FastifyPluginAsync } from 'fastify'
 
 const example: FastifyPluginAsync = async (fastify, opts): Promise<void> => {
   fastify.get('/', async function (request, reply) {
-    let params = request.headers
+    let headers = request.headers
     return {
-      root: params,
+      headers: headers,
+      'process.env': process.env,
     }
   })
 }
