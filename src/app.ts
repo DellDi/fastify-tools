@@ -1,4 +1,5 @@
 import * as path from 'path'
+import process from 'node:process'
 import AutoLoad, { AutoloadPluginOptions } from '@fastify/autoload'
 import { FastifyPluginAsync } from 'fastify'
 import { fileURLToPath } from 'node:url'
@@ -34,6 +35,8 @@ const app: FastifyPluginAsync<AppOptions> = async (
   })
 
   fastify.log.info('Something important happened!')
+  fastify.log.info('process', JSON.stringify(process.env))
+
 
   fastify.addHook('preHandler', function (req, reply, done) {
     if (req.body) {

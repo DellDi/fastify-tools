@@ -1,22 +1,29 @@
-const dotenv = require('dotenv');
-const fs = require('fs');
-const path = require('path');
+import dotenv from 'dotenv'
+import fs from 'fs'
+import path from 'path'
+import { fileURLToPath } from 'url'
 
-// 确定当前环境，如果未设置则默认为 'development'
-const currentEnv = process.env.NODE_ENV || 'development';
+const __filename = fileURLToPath(import.meta.url)
+const __dirname = path.dirname(__filename)
 
-// 环境文件路径
-const basePath = path.resolve(__dirname, '.env');
-const envPath = `${basePath}.${currentEnv}`;
+const currentEnv = process.env.NODE_ENV || 'development'
 
-// 加载环境变量
+const basePath = path.resolve(__dirname, '.env')
+const envPath = `${basePath}.${currentEnv}`
+
+let envConfig = {}
+
 if (fs.existsSync(envPath)) {
-  const envConfig = dotenv.parse(fs.readFileSync(envPath));
-  console.log('Loaded environment variables:', envConfig);
-
-  // 导出环境变量对象
-  module.exports = envConfig;
+  envConfig = dotenv.parse(fs.readFileSync(envPath))
+  console.log('Loaded environment variables:', envConfig)
+  // Extend process.env with the loaded configuration
+  Object.assign(process.env, envConfig)
+  dotenv.config()
 } else {
-  console.error(`No environment configuration file found for environment: ${currentEnv}`);
-  process.exit(1);
+  console.error(
+    `No environment configuration file found for environment: ${currentEnv}`
+  )
+  process.exit(1)
 }
+
+export default envConfig

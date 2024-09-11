@@ -11,7 +11,7 @@ const InputData = Type.Intersect([
   JiraCreateExportBody,
 ])
 
-const DifyResponse = Type.Union([
+const DifyResponse = Type.Intersect([
   Type.Object({
     result: Type.String(),
   }),
