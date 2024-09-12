@@ -29,3 +29,8 @@ app.listen({ port: parseInt(process.env.PORT || '8888') }, (err) => {
     process.exit(1)
   }
 })
+
+export default async function handler(req: any, res: any) {
+  await app.ready()
+  app.server.emit('request', req, res)
+}
