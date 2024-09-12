@@ -37,7 +37,6 @@ const app: FastifyPluginAsync<AppOptions> = async (
   fastify.log.info('Something important happened!')
   fastify.log.info('process', JSON.stringify(process.env))
 
-
   fastify.addHook('preHandler', function (req, reply, done) {
     if (req.body) {
       req.log.info({ body: req.body }, 'parsed body')
