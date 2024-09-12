@@ -25,6 +25,7 @@
     "watch:ts": "tsc -w",
     "dev": "npm run build:ts && concurrently -k -p \"[{name}]\" -n \"TypeScript,App\" -c \"yellow.bold,cyan.bold\" \"npm:watch:ts\" \"npm:dev:start\"",
     "dev:start": "fastify start --ignore-watch=.ts$ -w -l info -P dist/app.js",
+    "start:eject": "npm run build:ts && node dist/server.js",
     "debug": "fastify start --debug --ignore-watch=.ts$ -w -l info -P dist/app.js",
     "pm2:start:config": "pm2 start ecosystem.config.cjs",
     "pm2:stop:config": "pm2 stop ecosystem.config.cjs",
