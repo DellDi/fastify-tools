@@ -1,8 +1,8 @@
 {
   "extends": "fastify-tsconfig",
   "compilerOptions": {
-    "outDir": "./dist",
-    "sourceMap": true,
+    "outDir": "./api",
+    "sourceMap": false,
     "moduleResolution": "NodeNext",
     "allowSyntheticDefaultImports": true,
     "module": "NodeNext",
