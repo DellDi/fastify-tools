@@ -13,13 +13,13 @@
     "test": "npm run build && tsc -p test/tsconfig.json && FASTIFY_AUTOLOAD_TYPESCRIPT=1 node --test --experimental-test-coverage --loader ts-node/esm test/**/*.ts",
     "dev": "npm run build && concurrently -k -p \"[{name}]\" -n \"TypeScript,App\" -c \"yellow.bold,cyan.bold\" \"npm:watch:ts\" \"npm:dev:start\"",
     "build": "tsc",
-    "start": "npm run build && node dist/server.js",
+    "start": "npm run build && node api/server.js",
     "watch:ts": "tsc -w",
-    "dev:start": "fastify start --ignore-watch=.ts$ -w -l info -P dist/app.js",
-    "debug": "fastify start --debug --ignore-watch=.ts$ -w -l info -P dist/app.js",
+    "dev:start": "fastify start --ignore-watch=.ts$ -w -l info -P api/app.js",
+    "debug": "fastify start --debug --ignore-watch=.ts$ -w -l info -P api/app.js",
     "pm2:start:config": "pm2 start ecosystem.config.cjs",
     "pm2:stop:config": "pm2 stop ecosystem.config.cjs",
-    "c8:html": "node node_modules/c8/bin/c8.js -r html node dist/app.js"
+    "c8:html": "node node_modules/c8/bin/c8.js -r html node api/app.js"
   },
   "keywords": [
     "fastify', 'typescript",
