@@ -19,6 +19,9 @@ by the application. You can now add as many files as you want inside that folder
 In this way you can create complex routes within a single monolith,
 and eventually extract them.
 
+
+"start": "npm run build && fastify start -l info dist/app.js",
+
 If you need to share functionality between routes, place that
 functionality into the `plugins` folder, and share it via
 [decorators](https://fastify.dev/docs/latest/Reference/Decorators/).
