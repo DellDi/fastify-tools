@@ -31,7 +31,6 @@ closeWithGrace(
 // })
 
 export default async function handler(req: any, res: any) {
-  console.log('🚀 ~ handler ~ req, res:', req, res)
   await app.ready()
   app.server.emit('request', req, res)
 }
