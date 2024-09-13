@@ -16,21 +16,22 @@ closeWithGrace(
   { delay: parseInt(process.env.FASTIFY_CLOSE_GRACE_DELAY || '500') },
   async function ({ signal, err, manual }) {
     if (err) {
-      app.log.error({signal, err, manual})
+      app.log.error({ signal, err, manual })
     }
     await app.close()
   }
 )
 
 // Start listening.
-app.listen({ port: parseInt(process.env.PORT || '8888') }, (err) => {
-  if (err) {
-    app.log.error(err)
-    process.exit(1)
-  }
-})
+// app.listen({ port: parseInt('8888') }, (err) => {
+//   if (err) {
+//     app.log.error(err)
+//     process.exit(1)
+//   }
+// })
 
 export default async function handler(req: any, res: any) {
+  console.log('🚀 ~ handler ~ req, res:', req, res)
   await app.ready()
   app.server.emit('request', req, res)
 }
