@@ -23,12 +23,12 @@ closeWithGrace(
 )
 
 // Start listening.
-// app.listen({ port: parseInt('8888') }, (err) => {
-//   if (err) {
-//     app.log.error(err)
-//     process.exit(1)
-//   }
-// })
+app.listen({ port: parseInt(process.env.PORT || '8888') }, (err) => {
+  if (err) {
+    app.log.error(err)
+    process.exit(1)
+  }
+})
 
 export default async function handler(req: any, res: any) {
   await app.ready()
