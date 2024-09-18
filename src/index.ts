@@ -2,11 +2,20 @@ import Fastify from 'fastify'
 import closeWithGrace from 'close-with-grace'
 
 // Instantiate Fastify with some config
-const app = Fastify({
-  logger: {
-    level: 'info',
-  },
-})
+const app = Fastify(
+  {
+    logger: {
+      level: 'info',
+      transport: {
+        target: 'pino-pretty',
+        options: {
+          translateTime: 'HH:MM:ss Z',
+          // ignore: 'pid,hostname',
+        },
+      },
+    },
+  }
+)
 
 // Register your application as a normal plugin.
 await app.register(import('./app.js'))
@@ -29,8 +38,3 @@ app.listen({ port: parseInt(process.env.PORT || '8888') }, (err) => {
     process.exit(1)
   }
 })
-
-export default async function handler(req: any, res: any) {
-  await app.ready()
-  app.server.emit('request', req, res)
-}
