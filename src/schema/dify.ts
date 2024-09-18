@@ -15,7 +15,7 @@ const DifyResponse = Type.Intersect([
   Type.Object({
     result: Type.String(),
   }),
-  JiraCreateExportResponse,
+  Type.Optional(JiraCreateExportResponse),
 ])
 
 const ErrorResponse = Type.Object({
