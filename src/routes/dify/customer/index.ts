@@ -1,4 +1,4 @@
-import { FastifyInstance, FastifyPluginAsync } from 'fastify'
+import { FastifyPluginAsync } from 'fastify'
 import * as cheerio from 'cheerio'
 
 import {

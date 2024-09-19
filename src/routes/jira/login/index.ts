@@ -53,7 +53,11 @@ const jira: FastifyPluginAsync = async (fastify, opts): Promise<void> => {
             atlToken = xsrfCookie.split(';')[0].split('=')[1]
           }
         }
-
+        // 勾子信息
+        fastify.addHook('preHandler', async (req, reply) => {
+          req.headers['cookie'] = cookies
+          req.headers['X-Atlassian-Token'] = atlToken
+        })
         return { cookies, atlToken }
       } catch (error) {
         fastify.log.error(error)
