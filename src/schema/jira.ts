@@ -1,19 +1,4 @@
-import { Static, Type } from '@sinclair/typebox'
-
-// {
-//           issueKey: string
-//           createdIssueDetails: {
-//             id: string
-//           }
-//           fields: [
-//             {
-//               id: string
-//               label: string
-//               required: boolean
-//               editHtml: string
-//             }
-//           ]
-//         }
+import { Type, Static } from '@sinclair/typebox'
 
 const JiraLoginBody = Type.Object({
   jiraUser: Type.String({ default: process.env.JIRA_USER }),
