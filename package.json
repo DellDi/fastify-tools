@@ -40,6 +40,7 @@
     "@fastify/swagger-ui": "^4.1.0",
     "@scalar/fastify-api-reference": "^1.25.10",
     "@sinclair/typebox": "^0.33.9",
+    "cheerio": "^1.0.0",
     "close-with-grace": "^2.1.0",
     "crypto-js": "^4.2.0",
     "dotenv": "^16.4.5",

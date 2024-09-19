@@ -2,11 +2,13 @@ import { FastifyPluginAsync } from 'fastify'
 import { request } from 'undici'
 import qs from 'node:querystring'
 import {
+  JiraAddResInfoType,
   jiraCreateExport,
   JiraCreateExportBodyType,
   JiraCreateExportResponseType,
   JiraLoginResponseType,
 } from '../../schema/jira.js'
+import { CustomerInfoResType, InputCustomerType } from '../../schema/dify.js'
 
 const jiraBaseUrl = 'http://bug.new-see.com:8088'
 
@@ -17,7 +19,7 @@ const jira: FastifyPluginAsync = async (fastify, opts): Promise<void> => {
   }>('/create-ticket', {
     schema: jiraCreateExport,
     handler: async (req, reply) => {
-      const { title, description, assignee } = req.body
+      const { title, description, assignee, customerName } = req.body
 
       try {
         const resLogin = await fastify.inject({
@@ -76,12 +78,27 @@ const jira: FastifyPluginAsync = async (fastify, opts): Promise<void> => {
           }
         )
 
-        const responseBody = (await createTicketResponse.body.json()) as {
-          issueKey: string
-          createdIssueDetails: {
-            id: string
-          }
-        }
+        const responseBody =
+          (await createTicketResponse.body.json()) as JiraAddResInfoType
+
+        // 调用查询客户信息接口
+        const resFields = responseBody.fields
+        const customer = resFields.find(
+          (a) => a.id === 'customfield_12600' && a.label === '客户信息'
+        )
+        const customerHtml = customer?.editHtml
+
+        const { customerNameId, customerInfoId } = (await fastify.inject({
+          method: 'POST',
+          url: '/dify/get-customer',
+          body: {
+            customerName: customerName,
+            htmlStr: customerHtml,
+          },
+        })) as unknown as CustomerInfoResType
+
+        console.log("🚀 ~ handler: ~ customerNameId, customerInfoId:", customerNameId, customerInfoId)
+
         const createdIssueDetails = responseBody.createdIssueDetails
         const { id: issueId } = createdIssueDetails
         const issueKey = responseBody.issueKey
@@ -90,8 +107,14 @@ const jira: FastifyPluginAsync = async (fastify, opts): Promise<void> => {
           issueId,
           atl_token: atlToken,
           singleFieldEdit: 'true',
-          fieldsToForcePresent: 'labels',
+          fieldsToForcePresent: [
+            'labels',
+            'customfield_10000',
+            'customfield_12600',
+          ],
           labels: ['SaaS专项工作', '管理驾驶舱'],
+          customfield_10000: customerNameId,
+          customfield_12600: customerInfoId,
         }
 
         const updateIssueResponse = await request(
