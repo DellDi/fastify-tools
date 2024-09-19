@@ -1,5 +1,20 @@
 import { Static, Type } from '@sinclair/typebox'
 
+// {
+//           issueKey: string
+//           createdIssueDetails: {
+//             id: string
+//           }
+//           fields: [
+//             {
+//               id: string
+//               label: string
+//               required: boolean
+//               editHtml: string
+//             }
+//           ]
+//         }
+
 const JiraLoginBody = Type.Object({
   jiraUser: Type.String({ default: process.env.JIRA_USER }),
   jiraPassword: Type.String({ default: process.env.JIRA_PASSWORD }),
@@ -35,6 +50,12 @@ export const JiraCreateExportBody = Type.Object({
     default: process.env.JIRA_USER,
     description: '经办人',
   }),
+  customerName: Type.Optional(
+    Type.String({
+      description: '客户名称信息',
+      default: '新安明珠',
+    })
+  ),
 })
 
 // const AvatarUrls = Type.Object({
@@ -61,7 +82,7 @@ export const JiraCreateExportResponse = Type.Object({
   }),
   issueUrl: Type.String({
     description: '单子url',
-  })
+  }),
 })
 
 export const jiraCreateExport = {
@@ -81,14 +102,26 @@ export type JiraCreateExportResponseType = Static<
 const JiraUpdateBody = Type.Object({
   customfield_12600: Type.Optional(
     Type.String({
-      default: 'JIRA_CUSTOM_FIELD_12600',
-      description: '自定义字段12600',
+      default: '19960',
+      description: '自定义字段12600: 客户信息',
     })
   ),
   'customfield_12600:1': Type.Optional(
     Type.String({
-      default: 'JIRA_CUSTOM_FIELD_12600',
-      description: '自定义字段12600:1',
+      default: '19961',
+      description: '自定义字段12600:1 客户信息-1',
+    })
+  ),
+  customfield_10000: Type.Optional(
+    Type.String({
+      default: '19962',
+      description: '自定义字段10000:1 : 客户名称',
+    })
+  ),
+  labels: Type.Optional(
+    Type.String({
+      default: '数据中台',
+      description: 'labels: 单子标签',
     })
   ),
   issueId: Type.Number({
@@ -125,3 +158,20 @@ export const JiraUpdateTicketSchema = {
 
 export type JiraUpdateTicket = Static<typeof JiraUpdateBody>
 export type JiraUpdateResponseSchema = Static<typeof responseUpdateSchema>
+
+const jiraAddResInfo = Type.Object({
+  issueKey: Type.String(),
+  createdIssueDetails: Type.Object({
+    id: Type.String(),
+  }),
+  fields: Type.Array(
+    Type.Object({
+      id: Type.String(),
+      label: Type.String(),
+      required: Type.Boolean(),
+      editHtml: Type.String(),
+    })
+  ),
+})
+
+export type JiraAddResInfoType = Static<typeof jiraAddResInfo>

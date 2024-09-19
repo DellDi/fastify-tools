@@ -1,0 +1,10 @@
+POST http://127.0.0.1:3000/dify/create-jira
+Authorization: Bearer zd-nb-19950428
+Content-Type: application/json
+
+{
+  "point": "ping",
+  "title": "【超级工单】新增测试工单",
+  "description": "【超级工单】新增测试工单-我是工单的描述信息",
+  "assignee": "liufengxiao"
+}
