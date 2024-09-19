@@ -8,7 +8,7 @@ import {
   JiraCreateExportResponseType,
   JiraLoginResponseType,
 } from '../../schema/jira.js'
-import { CustomerInfoResType, InputCustomerType } from '../../schema/dify.js'
+import { CustomerInfoResType } from '../../schema/dify.js'
 
 const jiraBaseUrl = 'http://bug.new-see.com:8088'
 
