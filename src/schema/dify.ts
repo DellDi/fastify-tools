@@ -15,7 +15,10 @@ const InputCustomer = Type.Object({
   htmlStr: Type.String({
     description: 'htmlStr',
   }),
-  customerName: Type.Optional(Type.String({description: '客户不精确名称'})),
+  htmlStrAll: Type.String({
+    description: 'htmlStr',
+  }),
+  customerName: Type.Optional(Type.String({ description: '客户不精确名称' })),
 })
 
 const CustomerInfo = Type.Object({
@@ -25,6 +28,12 @@ const CustomerInfo = Type.Object({
   customerInfoId: Type.String({
     description: '客户合同信息ID',
   }),
+  customerInfoIdAlias: Type.String({
+    description: '客户合同二级信息ID',
+  }),
+  isSaaS: Type.Boolean({
+    description: '是否为saas',
+  })
 })
 
 const DifyResponse = Type.Intersect([
@@ -41,6 +50,10 @@ const ErrorResponse = Type.Object({
 export const difySchema = {
   tags: ['dify'],
   body: InputData,
+  // bearer
+  header: {
+    Authorization: Type.String({ description: 'Bearer token' }),
+  },
   response: {
     200: DifyResponse,
     400: ErrorResponse,
@@ -55,7 +68,6 @@ export const difyCustomerSchema = {
     400: ErrorResponse,
   },
 }
-
 
 export type InputDataType = Static<typeof InputData>
 

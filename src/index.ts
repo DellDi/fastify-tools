@@ -2,20 +2,18 @@ import Fastify from 'fastify'
 import closeWithGrace from 'close-with-grace'
 
 // Instantiate Fastify with some config
-const app = Fastify(
-  {
-    logger: {
-      level: 'info',
-      transport: {
-        target: 'pino-pretty',
-        options: {
-          translateTime: 'HH:MM:ss Z',
-          // ignore: 'pid,hostname',
-        },
+const app = Fastify({
+  logger: {
+    level: 'error',
+    transport: {
+      target: 'pino-pretty',
+      options: {
+        translateTime: 'HH:MM:ss Z',
+        // ignore: 'pid,hostname',
       },
     },
-  }
-)
+  },
+})
 
 // Register your application as a normal plugin.
 await app.register(import('./app.js'))
