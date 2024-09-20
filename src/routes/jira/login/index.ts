@@ -54,10 +54,10 @@ const jira: FastifyPluginAsync = async (fastify, opts): Promise<void> => {
           }
         }
         // 勾子信息
-        fastify.addHook('preHandler', async (req, reply) => {
-          req.headers['cookie'] = cookies
-          req.headers['X-Atlassian-Token'] = atlToken
-        })
+        // fastify.addHook('preHandler', async (req, reply) => {
+        //   req.headers['cookie'] = cookies
+        //   req.headers['X-Atlassian-Token'] = atlToken
+        // })
         return { cookies, atlToken }
       } catch (error) {
         fastify.log.error(error)

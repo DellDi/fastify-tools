@@ -1,5 +1,6 @@
 import { FastifyPluginAsync } from 'fastify'
 import { request } from 'undici'
+import qs from 'node:querystring'
 import {
   JiraLoginResponseType,
   JiraUpdateResponseSchema,
@@ -15,6 +16,7 @@ const jira: FastifyPluginAsync = async (fastify, opts): Promise<void> => {
     schema: JiraUpdateTicketSchema,
     handler: async (req, reply) => {
       const { issueId, ...data } = req.body
+      console.log("🚀 ~ handler: ~ data:", data)
       try {
         const resLogin = await fastify.inject({
           method: 'POST',
@@ -26,17 +28,15 @@ const jira: FastifyPluginAsync = async (fastify, opts): Promise<void> => {
         })
         const { cookies, atlToken } = resLogin.json() as JiraLoginResponseType
         // Create Jira ticket
-        await request(
-          `http://newsee:newsee@bug.new-see.com:8088/secure/AjaxIssueAction.jspa`,
+        const jiraRes = await request(
+          `http://bug.new-see.com:8088/secure/AjaxIssueAction.jspa`,
           {
             method: 'POST',
-            body: new URLSearchParams({
+            body: qs.stringify({
               issueId: issueId.toString(),
               ...data,
-              atlToken,
               atl_token: atlToken,
-              singleFieldEdit: 'true',
-            }).toString(),
+            }),
             query: {
               decorator: 'none',
             },
@@ -47,6 +47,17 @@ const jira: FastifyPluginAsync = async (fastify, opts): Promise<void> => {
             },
           }
         )
+
+        if (jiraRes?.statusCode !== 200) {
+          throw new Error(
+            qs.stringify({
+              issueId: issueId.toString(),
+              ...data,
+              atl_token: atlToken,
+            })
+          )
+        }
+
         return {
           message: 'Jira ticket updated successfully',
         }

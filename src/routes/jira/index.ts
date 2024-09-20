@@ -7,6 +7,7 @@ import {
   JiraCreateExportBodyType,
   JiraCreateExportResponseType,
   JiraLoginResponseType,
+  JiraUpdateResponseSchema,
 } from '../../schema/jira.js'
 import { CustomerInfoResType } from '../../schema/dify.js'
 
@@ -61,6 +62,7 @@ const jira: FastifyPluginAsync = async (fastify, opts): Promise<void> => {
             'customfield_10041',
             'priority',
             'assignee',
+            'labels',
           ],
         }
 
@@ -83,59 +85,60 @@ const jira: FastifyPluginAsync = async (fastify, opts): Promise<void> => {
 
         // 调用查询客户信息接口
         const resFields = responseBody.fields
-        const customer = resFields.find(
-          (a) => a.id === 'customfield_12600' && a.label === '客户信息'
-        )
-        const customerHtml = customer?.editHtml
+        const customerBase = resFields.find((a) => a.id === 'customfield_10000')
+        const customerAll = resFields.find((a) => a.id === 'customfield_12600')
 
-        const { customerNameId, customerInfoId } = (await fastify.inject({
+        const resBody = await fastify.inject({
           method: 'POST',
-          url: '/dify/get-customer',
+          url: '/dify/customer',
           body: {
             customerName: customerName,
-            htmlStr: customerHtml,
+            htmlStr: customerBase?.editHtml,
+            htmlStrAll: customerAll?.editHtml,
           },
-        })) as unknown as CustomerInfoResType
+        })
 
-        console.log("🚀 ~ handler: ~ customerNameId, customerInfoId:", customerNameId, customerInfoId)
-
+        const { customerNameId, customerInfoId, isSaaS } =
+          resBody.json() as CustomerInfoResType
         const createdIssueDetails = responseBody.createdIssueDetails
         const { id: issueId } = createdIssueDetails
         const issueKey = responseBody.issueKey
         const issueUrl = `${jiraBaseUrl}/browse/${issueKey}`
+        const tagCustom = isSaaS ? 'SaaS专项工作' : '数据中台'
+
         const updateData = {
           issueId,
-          atl_token: atlToken,
-          singleFieldEdit: 'true',
+          singleFieldEdit: false,
+          labels: [tagCustom, '管理驾驶舱'],
+          customfield_10000: customerNameId,
+          customfield_12600: customerInfoId,
+          'customfield_12600:1': `${+customerInfoId + 1}`,
           fieldsToForcePresent: [
             'labels',
             'customfield_10000',
             'customfield_12600',
           ],
-          labels: ['SaaS专项工作', '管理驾驶舱'],
-          customfield_10000: customerNameId,
-          customfield_12600: customerInfoId,
         }
 
-        const updateIssueResponse = await request(
-          `http://newsee:newsee@bug.new-see.com:8088/secure/AjaxIssueAction.jspa?decorator=none`,
-          {
-            method: 'POST',
-            headers: {
-              Cookie: cookies,
-              Authorization: 'Basic bmV3c2VlOm5ld3NlZQ==',
-              'Content-Type': 'application/x-www-form-urlencoded',
-            },
-            body: qs.stringify(updateData),
-          }
-        )
+        // 调用更新单子接口
+        const updateIssueResponse = await fastify.inject({
+          method: 'POST',
+          url: '/jira/update',
+          body: updateData,
+        })
+        const updateIssueResponseBody =
+          updateIssueResponse.json() as JiraUpdateResponseSchema
+        fastify.log.info(updateIssueResponseBody)
 
-        const updateResponseData = await updateIssueResponse.body.json()
-        fastify.log.info(updateResponseData)
-        return { issueId, issueKey, issueUrl }
+        return reply.send({
+          issueId,
+          issueKey,
+          issueUrl,
+          updateMsg: updateIssueResponseBody.message,
+        })
       } catch (error) {
         fastify.log.error(error)
-        reply.status(500).send({ error: error })
+        return reply.status(500).send({ error: error })
       }
     },
   })
