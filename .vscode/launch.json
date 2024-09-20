@@ -24,7 +24,7 @@
         "--ignore-watch='test .vscode'",
         "-l",
         "debug",
-        "${workspaceFolder}/dist/app.js"
+        "${workspaceFolder}/api/app.js"
       ]
     }
   ]

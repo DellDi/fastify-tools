@@ -1,7 +1,6 @@
 import auth from '@fastify/auth'
 import bearerAuth from '@fastify/bearer-auth'
 import { FastifyInstance, FastifyPluginAsync } from 'fastify'
-import { JiraCreateExportResponseType } from '../../schema/jira.js'
 import {
   DifyResponseType,
   difySchema,
@@ -23,7 +22,6 @@ const dify: FastifyPluginAsync = async (fastify, opts): Promise<void> => {
         reply: any,
         done: (arg0: Error | undefined) => any
       ) {
-        fastify.log.debug('Authorization header:', req.headers.authorization)
         if (req.headers.authorization) {
           return done(Error('not anonymous'))
         }
@@ -38,24 +36,21 @@ const dify: FastifyPluginAsync = async (fastify, opts): Promise<void> => {
     preHandler: fastify.verifyBearerAuth,
     handler: async (request, reply) => {
       const { point, ...params } = request.body
-      console.log('🚀 ~ handler: ~ params:', params)
-      // for debug
-      fastify.log.info(`point: ${point}`)
 
       if (point === 'ping') {
         return { result: 'pong' }
       }
 
       if (point === 'app.external_data_tool.query') {
-        const { issueId, issueKey, issueUrl } =
+        const { issueId, issueKey, issueUrl, updateMsg } =
           await handleAppExternalDataToolQuery(fastify, params || {})
-
-        return {
+        reply.send({
           result: `${Date.now()}`,
           issueId,
           issueKey,
           issueUrl,
-        }
+          updateMsg,
+        })
       }
 
       reply.code(400).send({ error: 'Not implemented' })
@@ -65,27 +60,26 @@ const dify: FastifyPluginAsync = async (fastify, opts): Promise<void> => {
 
 async function handleAppExternalDataToolQuery(
   fastify: FastifyInstance,
-  params: Record<string, any>
+  params: Omit<InputDataType, 'point'>
 ) {
-  const { title, description, assignee } = params || {}
+  const { title, description, assignee, customerName } = params || {}
 
-  const { issueId, issueKey, issueUrl } = (await fastify.inject({
+  const res = await fastify.inject({
     url: '/jira/create-ticket',
     method: 'POST',
     body: {
       title,
       description,
       assignee,
+      customerName,
     },
     headers: {
       'content-type': 'application/json',
     },
-  })) as unknown as JiraCreateExportResponseType
+  })
 
   return {
-    issueId,
-    issueKey,
-    issueUrl,
+    ...res.json(),
   }
 }
 

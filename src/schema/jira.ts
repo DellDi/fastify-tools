@@ -68,6 +68,7 @@ export const JiraCreateExportResponse = Type.Object({
   issueUrl: Type.String({
     description: '单子url',
   }),
+  updateMsg: Type.Optional(Type.String({ description: '单子更新信息' })),
 })
 
 export const jiraCreateExport = {
@@ -104,27 +105,27 @@ const JiraUpdateBody = Type.Object({
     })
   ),
   labels: Type.Optional(
-    Type.String({
-      default: '数据中台',
-      description: 'labels: 单子标签',
-    })
+    Type.Array(
+      Type.String({
+        default: '数据中台',
+        description: 'labels: 单子标签',
+      })
+    )
   ),
   issueId: Type.Number({
     default: 123456,
     description: 'Jira单子ID',
   }),
-  atl_token: Type.String({
-    default: 'JIRA_ATL_TOKEN',
-    description: 'Jira Atl Token',
-  }),
   singleFieldEdit: Type.Boolean({
-    default: true,
+    default: false,
     description: '是否单字段编辑',
   }),
-  fieldsToForcePresent: Type.String({
-    default: 'labels',
-    description: '强制存在的字段单子的标签',
-  }),
+  fieldsToForcePresent: Type.Array(
+    Type.String({
+      default: 'labels',
+      description: '单子字段的标签',
+    })
+  ),
 })
 
 const responseUpdateSchema = Type.Object({
@@ -135,6 +136,9 @@ const responseUpdateSchema = Type.Object({
 
 export const JiraUpdateTicketSchema = {
   body: JiraUpdateBody,
+  header: {
+    ContentType: 'application/json',
+  },
   tags: ['jira'],
   response: {
     200: responseUpdateSchema,
