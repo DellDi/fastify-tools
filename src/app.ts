@@ -19,7 +19,6 @@ const app: FastifyPluginAsync<AppOptions> = async (
   void fastify.register(AutoLoad, {
     dir: path.join(__dirname, 'plugins'),
     options: opts,
-    forceESM: true,
   })
 
   // define your routes in one of these
@@ -27,6 +26,7 @@ const app: FastifyPluginAsync<AppOptions> = async (
     dir: path.join(__dirname, 'routes'),
     options: opts,
     forceESM: true,
+    routeParams: true,
   })
 
   await fastify.ready((err) => {

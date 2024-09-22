@@ -5,7 +5,7 @@ import {
   CustomerInfoResType,
   difyCustomerSchema,
   InputCustomerType,
-} from '../../../schema/dify.js'
+} from '../../../schema/dify/dify.js'
 
 const customer: FastifyPluginAsync = async (fastify, opts): Promise<void> => {
   fastify.post<{

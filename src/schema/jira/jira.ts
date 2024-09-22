@@ -31,10 +31,24 @@ export const JiraCreateExportBody = Type.Object({
     default: '【超级工单】新增测试工单-我是工单的描述信息',
     description: '单子描述',
   }),
-  assignee: Type.String({
-    default: process.env.JIRA_USER,
-    description: '经办人',
-  }),
+  assignee: Type.Optional(
+    Type.String({
+      default: process.env.JIRA_ASSIGNEE_USER,
+      description: 'jira-经办人',
+    })
+  ),
+  jiraUser: Type.Optional(
+    Type.String({
+      default: process.env.JIRA_USER,
+      description: 'jira用户名-创建人',
+    })
+  ),
+  jiraPassword: Type.Optional(
+    Type.String({
+      default: process.env.JIRA_PASSWORD,
+      description: 'jira密码-创建人',
+    })
+  ),
   customerName: Type.Optional(
     Type.String({
       description: '客户名称信息',
@@ -86,6 +100,18 @@ export type JiraCreateExportResponseType = Static<
 >
 
 const JiraUpdateBody = Type.Object({
+  jiraUser: Type.Optional(
+    Type.String({
+      default: process.env.JIRA_USER,
+      description: 'jira用户名-创建人',
+    })
+  ),
+  jiraPassword: Type.Optional(
+    Type.String({
+      default: process.env.JIRA_PASSWORD,
+      description: 'jira密码-创建人',
+    })
+  ),
   customfield_12600: Type.Optional(
     Type.String({
       default: '19960',
