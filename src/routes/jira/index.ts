@@ -8,8 +8,8 @@ import {
   JiraCreateExportResponseType,
   JiraLoginResponseType,
   JiraUpdateResponseSchema,
-} from '../../schema/jira.js'
-import { CustomerInfoResType } from '../../schema/dify.js'
+} from '../../schema/jira/jira.js'
+import { CustomerInfoResType } from '../../schema/dify/dify.js'
 
 const jiraBaseUrl = 'http://bug.new-see.com:8088'
 
@@ -20,15 +20,22 @@ const jira: FastifyPluginAsync = async (fastify, opts): Promise<void> => {
   }>('/create-ticket', {
     schema: jiraCreateExport,
     handler: async (req, reply) => {
-      const { title, description, assignee, customerName } = req.body
+      const {
+        title,
+        description,
+        assignee,
+        customerName,
+        jiraUser,
+        jiraPassword,
+      } = req.body
 
       try {
         const resLogin = await fastify.inject({
           method: 'POST',
           url: '/jira/login',
           body: {
-            jiraUser: process.env.JIRA_USERNAME,
-            jiraPassword: process.env.JIRA_PASSWORD,
+            jiraUser: jiraUser,
+            jiraPassword: jiraPassword,
           },
         })
         const { cookies, atlToken } = resLogin.json() as JiraLoginResponseType
@@ -68,7 +75,7 @@ const jira: FastifyPluginAsync = async (fastify, opts): Promise<void> => {
 
         // Create Jira ticket
         const createTicketResponse = await request(
-          `http://newsee:newsee@bug.new-see.com:8088/secure/QuickCreateIssue.jspa?decorator=none`,
+          `http://bug.new-see.com:8088/secure/QuickCreateIssue.jspa?decorator=none`,
           {
             method: 'POST',
             headers: {
@@ -124,7 +131,7 @@ const jira: FastifyPluginAsync = async (fastify, opts): Promise<void> => {
         const updateIssueResponse = await fastify.inject({
           method: 'POST',
           url: '/jira/update',
-          body: updateData,
+          body: { ...updateData, jiraUser, jiraPassword },
         })
         const updateIssueResponseBody =
           updateIssueResponse.json() as JiraUpdateResponseSchema

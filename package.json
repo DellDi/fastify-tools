@@ -27,7 +27,7 @@
     "upload",
     "aes"
   ],
-  "packageManager": "pnpm@9.10.0",
+  "packageManager": "pnpm@9.11.0",
   "dependencies": {
     "@fastify/auth": "^5.0.0",
     "@fastify/autoload": "^6.0.0",

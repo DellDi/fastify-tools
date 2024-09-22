@@ -6,7 +6,7 @@ import {
   JiraUpdateResponseSchema,
   JiraUpdateTicket,
   JiraUpdateTicketSchema,
-} from '../../../schema/jira.js'
+} from '../../../schema/jira/jira.js'
 
 const jira: FastifyPluginAsync = async (fastify, opts): Promise<void> => {
   fastify.post<{
@@ -16,14 +16,13 @@ const jira: FastifyPluginAsync = async (fastify, opts): Promise<void> => {
     schema: JiraUpdateTicketSchema,
     handler: async (req, reply) => {
       const { issueId, ...data } = req.body
-      console.log("🚀 ~ handler: ~ data:", data)
       try {
         const resLogin = await fastify.inject({
           method: 'POST',
           url: '/jira/login',
           body: {
-            username: process.env.JIRA_USERNAME,
-            password: process.env.JIRA_PASSWORD,
+            jiraUser: data.jiraUser,
+            jiraPassword: data.jiraPassword,
           },
         })
         const { cookies, atlToken } = resLogin.json() as JiraLoginResponseType

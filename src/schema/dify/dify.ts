@@ -1,11 +1,11 @@
 import { Static, Type } from '@sinclair/typebox'
-import { JiraCreateExportResponse, JiraCreateExportBody } from './jira.js'
+import { JiraCreateExportResponse, JiraCreateExportBody } from '../jira/jira.js'
 
 const InputData = Type.Intersect([
   Type.Object({
     point: Type.String({
       default: 'ping',
-      description: "触发标识:'ping' | 触发接口: 'app.external_data_tool.query'",
+      description: "触发标识:'ping' | 触发接口: 'app.create_jira_tool'",
     }),
   }),
   JiraCreateExportBody,
