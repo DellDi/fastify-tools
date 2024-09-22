@@ -5,7 +5,7 @@ import {
   DifyResponseType,
   difySchema,
   InputDataType,
-} from '../../schema/dify.js'
+} from '../../schema/dify/dify.js'
 
 const dify: FastifyPluginAsync = async (fastify, opts): Promise<void> => {
   await fastify
@@ -13,7 +13,6 @@ const dify: FastifyPluginAsync = async (fastify, opts): Promise<void> => {
     .register(bearerAuth, {
       addHook: true,
       keys: new Set(['zd-nb-19950428']),
-      verifyErrorLogLevel: 'debug',
     })
     .decorate(
       'allowAnonymous',
@@ -41,7 +40,7 @@ const dify: FastifyPluginAsync = async (fastify, opts): Promise<void> => {
         return { result: 'pong' }
       }
 
-      if (point === 'app.external_data_tool.query') {
+      if (point === 'app.create_jira_tool') {
         const { issueId, issueKey, issueUrl, updateMsg } =
           await handleAppExternalDataToolQuery(fastify, params || {})
         reply.send({
