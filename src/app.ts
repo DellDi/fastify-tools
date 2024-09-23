@@ -1,5 +1,4 @@
 import * as path from 'path'
-import process from 'node:process'
 import AutoLoad, { AutoloadPluginOptions } from '@fastify/autoload'
 import { FastifyPluginAsync } from 'fastify'
 import { fileURLToPath } from 'node:url'
@@ -16,6 +15,7 @@ const app: FastifyPluginAsync<AppOptions> = async (
   fastify,
   opts
 ): Promise<void> => {
+
   void fastify.register(AutoLoad, {
     dir: path.join(__dirname, 'plugins'),
     options: opts,
@@ -29,13 +29,13 @@ const app: FastifyPluginAsync<AppOptions> = async (
     routeParams: true,
   })
 
+
   await fastify.ready((err) => {
     if (err) throw err
     // 现在可以调用 .swagger() 方法
   })
 
   fastify.log.info('Something important happened!')
-  fastify.log.info('process', JSON.stringify(process.env))
 
   fastify.addHook('preHandler', function (req, reply, done) {
     if (req.body) {
