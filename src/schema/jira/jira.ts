@@ -1,4 +1,4 @@
-import { Type, Static } from '@sinclair/typebox'
+import {  Type,Static } from '@sinclair/typebox'
 
 const JiraLoginBody = Type.Object({
   jiraUser: Type.String({ default: process.env.JIRA_USER }),
@@ -91,6 +91,9 @@ export const jiraCreateExport = {
   body: JiraCreateExportBody,
   response: {
     200: JiraCreateExportResponse,
+    500: Type.Object({
+      error: Type.Any(),
+    }),
   },
 }
 

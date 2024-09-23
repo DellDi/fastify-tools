@@ -1,11 +1,10 @@
 import { FastifyPluginAsync } from 'fastify'
+import { TypeBoxTypeProvider } from '@fastify/type-provider-typebox'
 import { request } from 'undici'
 import qs from 'node:querystring'
 import {
   JiraAddResInfoType,
   jiraCreateExport,
-  JiraCreateExportBodyType,
-  JiraCreateExportResponseType,
   JiraLoginResponseType,
   JiraUpdateResponseSchema,
 } from '../../schema/jira/jira.js'
@@ -14,10 +13,7 @@ import { CustomerInfoResType } from '../../schema/dify/dify.js'
 const jiraBaseUrl = 'http://bug.new-see.com:8088'
 
 const jira: FastifyPluginAsync = async (fastify, opts): Promise<void> => {
-  fastify.post<{
-    Body: JiraCreateExportBodyType
-    Response: JiraCreateExportResponseType
-  }>('/create-ticket', {
+  fastify.withTypeProvider<TypeBoxTypeProvider>().post('/create-ticket', {
     schema: jiraCreateExport,
     handler: async (req, reply) => {
       const {

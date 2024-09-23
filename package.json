@@ -38,6 +38,7 @@
     "@fastify/static": "^8.0.0",
     "@fastify/swagger": "^9.0.0",
     "@fastify/swagger-ui": "^5.0.1",
+    "@fastify/type-provider-typebox": "^5.0.0",
     "@scalar/fastify-api-reference": "^1.25.11",
     "@sinclair/typebox": "^0.33.12",
     "cheerio": "^1.0.0",
