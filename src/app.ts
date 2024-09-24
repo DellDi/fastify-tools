@@ -2,6 +2,7 @@ import * as path from 'path'
 import AutoLoad, { AutoloadPluginOptions } from '@fastify/autoload'
 import { FastifyPluginAsync } from 'fastify'
 import { fileURLToPath } from 'node:url'
+import { TypeBoxTypeProvider } from '@fastify/type-provider-typebox'
 
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = path.dirname(__filename)
@@ -15,6 +16,7 @@ const app: FastifyPluginAsync<AppOptions> = async (
   fastify,
   opts
 ): Promise<void> => {
+  fastify.withTypeProvider<TypeBoxTypeProvider>()
 
   void fastify.register(AutoLoad, {
     dir: path.join(__dirname, 'plugins'),
@@ -28,7 +30,6 @@ const app: FastifyPluginAsync<AppOptions> = async (
     forceESM: true,
     routeParams: true,
   })
-
 
   await fastify.ready((err) => {
     if (err) throw err
