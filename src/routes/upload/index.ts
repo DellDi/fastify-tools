@@ -1,4 +1,5 @@
 import { FastifyPluginAsync, FastifyRequest } from 'fastify'
+import { TypeBoxTypeProvider } from '@fastify/type-provider-typebox'
 import fastifyMultipart from '@fastify/multipart'
 import fastifyStatic from '@fastify/static'
 import fs from 'node:fs'
@@ -9,57 +10,69 @@ import { fileURLToPath } from 'node:url'
 import {
   multipleUpload,
   singleUpload,
+  uploadBase,
   uploadBatch,
 } from '../../schema/upload.js'
 
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = path.dirname(__filename)
 
-const UPLOAD_DIR = path.join(__dirname, '..', 'public')
+const UPLOAD_DIR = path.join(__dirname, '../../', 'public')
 const ALLOWED_TYPES = [
   'image/jpeg',
   'image/png',
   'image/gif',
   'application/ppt',
   'application/pdf',
+  'application/x-msdos-program',
 ]
-const MAX_FILE_SIZE = 200 * 1024 * 1024 // 200MB
+const MAX_FILE_SIZE = 500 * 1024 * 1024 // 200MB
 
 const upload: FastifyPluginAsync = async (fastify, opts): Promise<void> => {
-  // Register multipart plugin
-  fastify.register(fastifyMultipart, {
-    limits: {
-      fieldSize: MAX_FILE_SIZE,
-    },
-  })
-
   // Ensure upload directory exists
   if (!fs.existsSync(UPLOAD_DIR)) {
     fs.mkdirSync(UPLOAD_DIR, { recursive: true })
   }
 
-  fastify.get(
-    '',
-    {
-      schema: {
-        tags: ['upload'],
-      },
+  // Register multipart plugin
+  await fastify.register(fastifyMultipart, {
+    limits: {
+      fieldSize: MAX_FILE_SIZE,
     },
-    async function (request, reply) {
-      let params = request.headers
-      return {
-        root: {...params,msg: '上传图片接口'},
+  })
+
+  await fastify.register(fastifyStatic, {
+    root: UPLOAD_DIR,
+    prefix: '/files/',
+  })
+
+  fastify.withTypeProvider<TypeBoxTypeProvider>().get('', {
+    schema: uploadBase,
+    async handler(req, reply) {
+      const { hashId } = req.query
+      if (hashId) {
+        // 遍历读取UPLOAD_DIR文件夹中的所有文件名
+        const files = fs.readdirSync(UPLOAD_DIR)
+        const fileName = files.find((s) => s.includes(hashId))
+        console.log("🚀 ~ handler ~ fileName:", fileName)
+        // return reply.sendFile(`${fileName}`)
+        return reply.download(`${fileName}`, `${fileName.split('-')[1]}`)
+
+      } else {
+        return reply.code(400).send({
+          msg: `${hashId}-支持上传接口`,
+        })
       }
-    }
-  )
+    },
+  })
 
   fastify.post(
-    '/upload',
+    '/single',
     {
       schema: singleUpload,
     },
-    async function (request: FastifyRequest, reply) {
-      const data = await request.file()
+    async function (req, reply) {
+      const data = await req.file()
 
       if (!data) {
         return reply.code(400).send({ error: 'No file uploaded' })
@@ -182,13 +195,6 @@ const upload: FastifyPluginAsync = async (fastify, opts): Promise<void> => {
   })
 
   // Serve static files
-  fastify.register(fastifyStatic, {
-    root: UPLOAD_DIR,
-    // prefix: '/',
-    constraints: {
-      host: '127.0.0.1',
-    },
-  })
 }
 
 export default upload

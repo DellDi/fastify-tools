@@ -1,7 +1,9 @@
 import { FastifyPluginAsync } from 'fastify'
 import { TypeBoxTypeProvider } from '@fastify/type-provider-typebox'
 import { request } from 'undici'
+import dayjs from 'dayjs'
 import qs from 'node:querystring'
+
 import {
   JiraAddResInfoType,
   jiraCreateExport,
@@ -47,7 +49,7 @@ const jira: FastifyPluginAsync = async (fastify, opts): Promise<void> => {
           // 客户信息
           customfield_12600: '17714',
           'customfield_12600:1': '21057',
-          customfield_10041: '2024-09-11',
+          customfield_10041: dayjs().format('YYYY-MM-DD'),
           customfield_10070: '10270',
           priority: '3',
           description: description || title,
@@ -143,8 +145,7 @@ const jira: FastifyPluginAsync = async (fastify, opts): Promise<void> => {
         fastify.log.error(error)
         return reply.status(500).send({ error: error })
       }
-    },
-  })
+    },  })
 }
 
 export default jira
