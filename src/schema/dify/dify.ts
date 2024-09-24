@@ -33,7 +33,17 @@ const CustomerInfo = Type.Object({
   }),
   isSaaS: Type.Boolean({
     description: '是否为saas',
-  })
+  }),
+})
+
+const DifyHeaders = Type.Object({
+  'Content-Type': Type.String({
+    description: 'application/json',
+    default: 'application/json',
+  }),
+  Authorization: Type.String({
+    description: 'Bearer token',
+  }),
 })
 
 const DifyResponse = Type.Intersect([
@@ -50,10 +60,7 @@ const ErrorResponse = Type.Object({
 export const difySchema = {
   tags: ['dify'],
   body: InputData,
-  // bearer
-  header: {
-    Authorization: Type.String({ description: 'Bearer token' }),
-  },
+  headers: DifyHeaders,
   response: {
     200: DifyResponse,
     400: ErrorResponse,
