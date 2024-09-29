@@ -1,18 +1,13 @@
-import {FastifyPluginAsync, FastifyRequest} from 'fastify'
-import {TypeBoxTypeProvider} from '@fastify/type-provider-typebox'
+import { FastifyPluginAsync, FastifyRequest } from 'fastify'
+import { TypeBoxTypeProvider } from '@fastify/type-provider-typebox'
 import fastifyMultipart from '@fastify/multipart'
 import fastifyStatic from '@fastify/static'
 import fs from 'node:fs'
 import path from 'node:path'
 import crypto from 'node:crypto'
-import {pipeline} from 'node:stream'
-import {
-    multipleUpload,
-    singleUpload,
-    uploadBase,
-    uploadBatch,
-} from '../../schema/upload.js'
-import {UPLOAD_DIR} from "../../utils/index.js";
+import { pipeline } from 'node:stream'
+import { multipleUpload, singleUpload, uploadBase, uploadBatch, } from '../../schema/upload.js'
+import { UPLOAD_DIR } from "../../utils/index.js";
 
 const MAX_FILE_SIZE = 500 * 1024 * 1024 // 200MB
 const ALLOWED_TYPES = [
@@ -27,26 +22,20 @@ const upload: FastifyPluginAsync = async (fastify, opts): Promise<void> => {
 
     // Ensure upload directory exists
     if (!fs.existsSync(UPLOAD_DIR)) {
-        fs.mkdirSync(UPLOAD_DIR, {recursive: true})
+        fs.mkdirSync(UPLOAD_DIR, { recursive: true })
     }
 
     // Serve static files  this /upload/static/
-    await fastify.register(fastifyStatic, {
+    fastify.register(fastifyStatic, {
         root: UPLOAD_DIR,
         prefix: '/static/'
     })
 
-    // Register multipart plugin
-    await fastify.register(fastifyMultipart, {
-        limits: {
-            fieldSize: MAX_FILE_SIZE,
-        },
-    })
 
     fastify.withTypeProvider<TypeBoxTypeProvider>().get('', {
         schema: uploadBase,
         async handler(req, reply) {
-            const {hashId} = req.query
+            const { hashId } = req.query
             if (hashId) {
                 // 遍历读取UPLOAD_DIR文件夹中的所有文件名
                 const files = fs.readdirSync(UPLOAD_DIR)
@@ -62,6 +51,15 @@ const upload: FastifyPluginAsync = async (fastify, opts): Promise<void> => {
         },
     })
 
+    // Register multipart plugin
+    fastify.register(fastifyMultipart, {
+        attachFieldsToBody: 'keyValues',
+        limits: {
+            files: 3,
+            fileSize: MAX_FILE_SIZE,
+        },
+    })
+
     fastify.post(
         '/single',
         {
@@ -69,13 +67,35 @@ const upload: FastifyPluginAsync = async (fastify, opts): Promise<void> => {
         },
         async function (req, reply) {
             const data = await req.file()
-
+            const parts = req.parts()
             if (!data) {
-                return reply.code(400).send({error: 'No file uploaded'})
+                return reply.code(400).send({ error: 'No file uploaded' })
             }
-
             if (!ALLOWED_TYPES.includes(data.mimetype)) {
-                return reply.code(400).send({error: 'File type not allowed'})
+                return reply.code(400).send({ error: 'File type not allowed' })
+            }
+            const files = []
+            const hashes = []
+            for await (const part of parts) {
+                if (part.type === 'file') {
+                    files.push(part);
+                } else if (part.fieldname === 'hash') {
+                    hashes.push(part.value);
+                }
+            }
+            if (files.length !== hashes.length) {
+                return reply.status(400).send({ error: 'Files and hashes count do not match' });
+            }
+            // 新增秒传的逻辑
+            const orgHash = hashes[0] as string;
+            const fileNameList = fs.readdirSync(UPLOAD_DIR)
+            const fileFullName = fileNameList.find(a => a.includes(orgHash))
+            if (fileFullName) {
+                return reply.code(200).send({
+                    message: 'one second File uploaded successfully',
+                    fileUrl: `/zuul/${fileFullName}`,
+                    fileHash: orgHash
+                })
             }
 
             const hash = crypto.createHash('sha256')
@@ -88,14 +108,13 @@ const upload: FastifyPluginAsync = async (fastify, opts): Promise<void> => {
                 size += chunk.length
 
                 if (size > MAX_FILE_SIZE) {
-                    return reply.code(413).send({error: 'File too large'})
+                    return reply.code(413).send({ error: 'File too large' })
                 }
             }
 
             const fileHash = hash.digest('hex')
             const fileName = `${fileHash}-${data.filename}`
             const filePath = path.join(UPLOAD_DIR, fileName)
-
             await fs.promises.writeFile(filePath, Buffer.concat(chunks))
 
             const fileUrl = `/zuul/${fileName}`
@@ -117,14 +136,14 @@ const upload: FastifyPluginAsync = async (fastify, opts): Promise<void> => {
             const data = await request.file()
 
             if (!data) {
-                return reply.code(400).send({error: 'No file chunk uploaded'})
+                return reply.code(400).send({ error: 'No file chunk uploaded' })
             }
 
-            const {chunkIndex, totalChunks, fileHash} = data.fields as any
+            const { chunkIndex, totalChunks, fileHash } = data.fields as any
 
             const chunkDir = path.join(UPLOAD_DIR, fileHash)
             if (!fs.existsSync(chunkDir)) {
-                fs.mkdirSync(chunkDir, {recursive: true})
+                fs.mkdirSync(chunkDir, { recursive: true })
             }
 
             const chunkPath = path.join(chunkDir, `chunk-${chunkIndex}`)
@@ -145,7 +164,7 @@ const upload: FastifyPluginAsync = async (fastify, opts): Promise<void> => {
                 writeStream.end()
 
                 // Clean up chunk directory
-                await fs.promises.rm(chunkDir, {recursive: true, force: true})
+                await fs.promises.rm(chunkDir, { recursive: true, force: true })
 
                 const fileUrl = `/zuul/${fileName}`
                 return {
@@ -155,7 +174,7 @@ const upload: FastifyPluginAsync = async (fastify, opts): Promise<void> => {
                 }
             }
 
-            return {message: 'Chunk uploaded successfully'}
+            return { message: 'Chunk uploaded successfully' }
         }
     )
 
