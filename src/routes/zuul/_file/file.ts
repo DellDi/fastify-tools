@@ -1,8 +1,8 @@
-import {FastifyPluginAsync} from 'fastify'
+import { FastifyPluginAsync } from 'fastify'
 import fastifyStatic from '@fastify/static'
-import {TypeBoxTypeProvider} from "@fastify/type-provider-typebox";
-import {staticSchema} from "../../../schema/file.js";
-import {UPLOAD_DIR} from "../../../utils/index.js";
+import { TypeBoxTypeProvider } from "@fastify/type-provider-typebox";
+import { staticSchema } from "../../../schema/file.js";
+import { UPLOAD_DIR } from "../../../utils/index.js";
 import fs from "node:fs";
 
 const file: FastifyPluginAsync = async (fastify): Promise<void> => {
@@ -10,7 +10,6 @@ const file: FastifyPluginAsync = async (fastify): Promise<void> => {
     fastify.register(fastifyStatic, {
         root: UPLOAD_DIR,
     })
-
     fastify.withTypeProvider<TypeBoxTypeProvider>().get('', {
         schema: staticSchema,
         handler: async (req, reply) => {
@@ -19,10 +18,13 @@ const file: FastifyPluginAsync = async (fastify): Promise<void> => {
             let fileFullName = fileList.find(a => a.includes(pathFileName))
             if (fileFullName !== pathFileName) {
                 let realFileName = pathFileName.split('-')[1]
-                return reply.send(200).download(pathFileName, realFileName)
+                return reply.code(200).download(pathFileName, realFileName)
             }
             console.log('UPLOAD_DIR', UPLOAD_DIR)
-            return reply.send(200).sendFile(pathFileName)
+            if (fileFullName) return reply.code(200).sendFile(pathFileName)
+            return reply.code(500).send({
+                error: "没有对应的文件"
+            })
         },
     })
 }
