@@ -1,4 +1,4 @@
-import {Type} from '@sinclair/typebox'
+import { Type } from '@sinclair/typebox'
 
 const fileQuery = Type.Object({
     file: Type.String({
@@ -11,7 +11,12 @@ export const staticSchema = {
     tags: ['file'],
     description: '静态文件访问',
     params: fileQuery,
-    response: Type.Object({
-        200: Type.Array(Type.Number())
-    })
+    response: {
+        200: Type.String({
+            description: 'The binary content of the file, typically transmitted as a stream or buffer'
+        }),
+        500: Type.Object({
+            error: Type.String()
+        })
+    }
 }

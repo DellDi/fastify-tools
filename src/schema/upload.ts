@@ -1,8 +1,8 @@
-import {Type} from '@sinclair/typebox'
+import { Type } from '@sinclair/typebox'
 
 const UploadedFile = Type.Object({
-    originalName: Type.String(),
-    fileUrl: Type.String(),
+    file: Type.Object({}),
+    hash: Type.Optional(Type.String()),
 })
 
 const headerType = Type.Object({
@@ -39,14 +39,13 @@ export const singleUpload = {
     description: '单文件上传的接口',
     tags: ['upload'],
     consumes: ['multipart/form-data'],
-    // body: Type.Object({
-    //   file: baseFile,
-    // }),
+    // formData
+    body: UploadedFile,
     response: {
         200: Type.Object({
-            message: Type.String({description: '上传成功'}),
-            fileUrl: Type.String({description: '上传文件的URL'}),
-            fileHash: Type.String({description: '上传文件的hash值'}),
+            message: Type.String({ description: '上传成功' }),
+            fileUrl: Type.String({ description: '上传文件的URL' }),
+            fileHash: Type.String({ description: '上传文件的hash值' }),
         })
     },
 }
@@ -70,10 +69,6 @@ export const uploadBatch = {
     //   files: Type.Array(Type.String({ format: 'binary' })),
     // }),
     response: {
-        200: Type.Object({
-            message: Type.String(),
-            uploadedFiles: Type.Array(UploadedFile),
-        }),
         400: Type.Object({
             error: Type.String(),
         }),
