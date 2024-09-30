@@ -6,7 +6,7 @@ WORKDIR /opt/fastify
 
 # Copy package.json and package-lock.json (or pnpm-lock.yaml)
 COPY package*.json ./
-COPY pnpm-lock.yaml ./
+COPY ../../pnpm-lock.yaml ./
 
 # Install pnpm
 RUN npm install -g pnpm
@@ -15,7 +15,7 @@ RUN npm install -g pnpm
 RUN pnpm install
 
 # Copy the rest of the application code
-COPY . .
+COPY ../.. .
 
 # Build the application
 RUN pnpm run build

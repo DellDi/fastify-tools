@@ -59,7 +59,7 @@ profile*
 
 # generated code
 examples/typescript-server.js
-test/types/index.js
+services/fastify/test/types/index.js
 
 # compiled app
 dist
