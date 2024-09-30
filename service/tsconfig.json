@@ -1,0 +1,15 @@
+{
+  "extends": "fastify-tsconfig",
+  "compilerOptions": {
+    "outDir": "./api",
+    "sourceMap": false,
+    "moduleResolution": "NodeNext",
+    "allowSyntheticDefaultImports": true,
+    "module": "NodeNext",
+    "target": "ES2022",
+    "esModuleInterop": true
+  },
+  "include": [
+    "service/**/*.ts"
+  ]
+}

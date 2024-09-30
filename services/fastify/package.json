@@ -1,0 +1,49 @@
+{
+  "name": "fastify-ts",
+  "author": "DellDi",
+  "license": "ISC",
+  "version": "1.0.0",
+  "description": "This project was bootstrapped with Fastify-CLI.",
+  "type": "module",
+  "main": "api/index.ts",
+  "directories": {
+    "test": "test"
+  },
+  "scripts": {
+    "test": "npm run build && tsc -p test/tsconfig.json && FASTIFY_AUTOLOAD_TYPESCRIPT=1 node --test --experimental-test-coverage --loader ts-node/esm test/**/*.ts",
+    "dev": "npm run build && concurrently -k -p \"[{name}]\" -n \"TypeScript,App\" -c \"yellow.bold,cyan.bold\" \"npm:watch:ts\" \"npm:dev:start\"",
+    "build": "tsc",
+    "watch:ts": "tsc -w",
+    "start": "npm run build && node ./api/index.js",
+    "dev:start": "fastify start --ignore-watch=.ts$ -w -l info -P ./api/app.js",
+    "debug": "fastify start --debug --ignore-watch=.ts$ -w -l info -P ./api/app.js",
+    "pm2:start:config": "pm2 start ecosystem.config.cjs",
+    "pm2:stop:config": "pm2 stop ecosystem.config.cjs",
+    "c8:html": "node node_modules/c8/bin/c8.js -r html node api/index.js"
+  },
+  "dependencies": {
+    "@fastify/auth": "^5.0.1",
+    "@fastify/autoload": "^6.0.1",
+    "@fastify/bearer-auth": "^10.0.1",
+    "@fastify/env": "^5.0.1",
+    "@fastify/multipart": "^9.0.1",
+    "@fastify/one-line-logger": "^2.0.0",
+    "@fastify/sensible": "^6.0.1",
+    "@fastify/static": "^8.0.1",
+    "@fastify/swagger": "^9.0.0",
+    "@fastify/swagger-ui": "^5.0.1",
+    "@fastify/type-provider-typebox": "^5.0.0",
+    "@scalar/fastify-api-reference": "1.25.17",
+    "@sinclair/typebox": "^0.33.12",
+    "cheerio": "^1.0.0",
+    "close-with-grace": "^2.1.0",
+    "crypto-js": "^4.2.0",
+    "dayjs": "^1.11.13",
+    "dotenv": "^16.4.5",
+    "fastify": "^5.0.0",
+    "fastify-cli": "^7.0.1",
+    "fastify-plugin": "^5.0.1",
+    "module-alias": "^2.2.3",
+    "undici": "^6.19.8"
+  }
+}

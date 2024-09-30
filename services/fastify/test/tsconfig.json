@@ -1,0 +1,9 @@
+{
+  "extends": "../service/tsconfig.json",
+  "compilerOptions": {
+    "baseUrl": ".",
+    "noEmit": false
+  },
+  "include": [
+    "../service/**/*.ts", "**/*.ts"]
+}
