@@ -39,7 +39,7 @@ const SidebarLayout = React.forwardRef<
     document.cookie = `${SIDEBAR_STATE_COOKIE}=${open}; path=/; max-age=${
       60 * 60 * 24 * 7
     }`
-  }, [])
+  }, [setOpen])
 
   const state = open ? "open" : "closed"
 
