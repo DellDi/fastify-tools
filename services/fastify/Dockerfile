@@ -24,4 +24,4 @@ RUN pnpm run build
 EXPOSE 4000
 
 # Command to run the application
-CMD ["node", "api/index.js"]
+CMD ["node", "api/sheet.js"]
