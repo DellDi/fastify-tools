@@ -16,44 +16,44 @@ const app: FastifyPluginAsync<AppOptions> = async (
     fastify,
     opts
 ): Promise<void> => {
-    fastify.withTypeProvider<TypeBoxTypeProvider>()
+  fastify.withTypeProvider<TypeBoxTypeProvider>()
 
-    void fastify.register(AutoLoad, {
-        dir: path.join(__dirname, 'plugins'),
-        options: opts,
-    })
+  void fastify.register(AutoLoad, {
+    dir: path.join(__dirname, 'plugins'),
+    options: opts,
+  })
 
-    // define your routes in one of these
-    void fastify.register(AutoLoad, {
-        dir: path.join(__dirname, 'routes'),
-        options: opts,
-        forceESM: true,
-        routeParams: true,
-    })
+  // define your routes in one of these
+  void fastify.register(AutoLoad, {
+    dir: path.join(__dirname, 'routes'),
+    options: opts,
+    forceESM: true,
+    routeParams: true,
+  })
 
-    await fastify.ready((err) => {
-        if (err) throw err
-        // 现在可以调用 .swagger() 方法
-    })
+  await fastify.ready((err) => {
+    if (err) throw err
+    // 现在可以调用 .swagger() 方法
+  })
 
-    fastify.log.info('Something important happened!')
+  fastify.log.info('Something important happened!')
 
-    fastify.addHook('preHandler', function (req, reply, done) {
-        // if (req.body) {
-        //     req.log.info({ body: req.body }, 'parsed body')
-        // }
-        done()
-    })
+  fastify.addHook('preHandler', function (req, reply, done) {
+    // if (req.body) {
+    //     req.log.info({ body: req.body }, 'parsed body')
+    // }
+    done()
+  })
 
-    fastify.addHook('onRequest', (req, reply, done) => {
-        // reply.header('Access-Control-Allow-Origin', '*')
-        // reply.header('Access-Control-Allow-Headers', 'Content-Type, Authorization')
-        reply.header(
-            'Access-Control-Allow-Methods',
-            'GET, POST, PUT, DELETE, OPTIONS'
-        )
-        done()
-    })
+  fastify.addHook('onRequest', (req, reply, done) => {
+    // reply.header('Access-Control-Allow-Origin', '*')
+    // reply.header('Access-Control-Allow-Headers', 'Content-Type, Authorization')
+    reply.header(
+        'Access-Control-Allow-Methods',
+        'GET, POST, PUT, DELETE, OPTIONS'
+    )
+    done()
+  })
 }
 
 export default app

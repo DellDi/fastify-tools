@@ -6,92 +6,74 @@ import { Type } from '@sinclair/typebox'
 // })
 
 const uploadCheck = Type.Array(Type.Object({
-    filename: Type.String(),
-    fileHash: Type.String()
+  filename: Type.String(),
+  fileHash: Type.String()
 }))
 
 const headerType = Type.Object({
-    'Content-Type': Type.String({
-        description: 'multipart/form-data',
-        default: 'multipart/form-data',
-    }),
+  'Content-Type': Type.String({
+    description: 'multipart/form-data',
+    default: 'multipart/form-data',
+  }),
 })
 
-// 定义文件类型
-// const File = Type.Object({
-//     name: Type.String(),
-//     size: Type.Number(),
-//     type: Type.String(),
-//     data: Type.Array(Type.Number()) // 使用数字数组来表示二进制数据
-// });
-
-// 定义响应类型
-// const FileResponse = Type.Object({
-//     success: Type.Boolean(),
-//     message: Type.Optional(Type.String()),
-//     file: Type.Optional(File)
-// });
-
 export const uploadBase = {
-    description: '文件接口路径验证',
-    tags: ['upload'],
-    querystring: Type.Object({
-        hashId: Type.String(),
-    }),
+  description: '文件接口路径验证',
+  tags: ['upload'],
+  querystring: Type.Object({
+    hashId: Type.String(),
+  }),
 }
 
 export const uploadCheckBase = {
-    description: '文件接口路径验证',
-    tags: ['upload'],
-    body: uploadCheck,
-    response: {
-        200: Type.Array(Type.String({ description: '已存在的文件list' }))
-    }
+  description: '文件接口路径验证',
+  tags: ['upload'],
+  body: uploadCheck,
+  response: {
+    200: Type.Array(Type.String({ description: '已存在的文件list' }))
+  }
 }
 
 
 export const singleUpload = {
-    description: '单文件上传的接口',
-    tags: ['upload'],
-    consumes: ['multipart/form-data'],
-    response: {
-        200: Type.Object({
-            message: Type.String({ description: '上传成功' }),
-            fileUrl: Type.String({ description: '上传文件的URL' }),
-            fileHash: Type.String({ description: '上传文件的hash值' }),
-        }),
-        400: Type.Object({
-            error: Type.Any(),
-        }),
-        413: Type.Object({
-            error: Type.Any(),
-        })
-    },
+  description: '单文件上传的接口',
+  tags: ['upload'],
+  consumes: ['multipart/form-data'],
+  response: {
+    200: Type.Object({
+      message: Type.String({ description: '上传成功' }),
+      fileUrl: Type.String({ description: '上传文件的URL' }),
+      fileHash: Type.String({ description: '上传文件的hash值' }),
+    }),
+    400: Type.Object({
+      error: Type.Any(),
+    }),
+    413: Type.Object({
+      error: Type.Any(),
+    })
+  },
 }
 
 export const chunkUpload = {
-    description: '大文件分片上传的接口',
-    tags: ['upload'],
-    headers: headerType,
-    consumes: ['multipart/form-data'],
-    body: Type.Object({
-        chunkIndex: Type.Number(),
-        totalChunks: Type.Number(),
-        fileHash: Type.String(),
-    }),
+  description: '大文件分片上传的接口',
+  tags: ['upload'],
+  headers: headerType,
+  consumes: ['multipart/form-data'],
+  // body: Type.Object({
+  //   chunkIndex: Type.Number(),
+  //   totalChunks: Type.Number(),
+  //   fileHash: Type.String(),
+  // }),
 }
 
 export const uploadBatch = {
-    description: '批量上传文件',
-    tags: ['upload'],
-    consumes: ['multipart/form-data'],
-    headers: headerType,
-    // body: Type.Object({
-    //   files: Type.Array(Type.String({ format: 'binary' })),
-    // }),
-    response: {
-        400: Type.Object({
-            error: Type.String(),
-        }),
-    },
+  description: '批量上传文件',
+  tags: ['upload'],
+  consumes: ['multipart/form-data'],
+  headers: headerType,
+  response: {
+    400: Type.Object({
+      error: Type.String(),
+    }),
+  },
 }

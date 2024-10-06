@@ -45,5 +45,11 @@
     "fastify-plugin": "^5.0.1",
     "module-alias": "^2.2.3",
     "undici": "^6.19.8"
+  },
+  "devDependencies": {
+    "@types/crypto-js": "^4.2.2",
+    "c8": "^10.1.2",
+    "concurrently": "^9.0.1",
+    "fastify-tsconfig": "^2.0.0"
   }
 }
