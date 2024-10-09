@@ -53,9 +53,11 @@ export default function Home() {
                     TypeScript、智能化打包、路由预取等功能无需任何配置。
                 </p>
                 <div className="mt-8 flex justify-center space-x-4">
-                    <button className="bg-blue-600 text-white px-6 py-2 rounded">
-                        <Link href="/dashboard">开始使用</Link>
-                    </button>
+                    <Link href="/dashboard">
+                        <button className="bg-blue-600 text-white px-6 py-2 rounded">
+                            开始使用
+                        </button>
+                    </Link>
                     <button
                         className="bg-gray-200 text-gray-600 dark:bg-gray-700 dark:text-blue-100 px-6 py-2 rounded">
                         <Link href="/login">中文文档</Link>
