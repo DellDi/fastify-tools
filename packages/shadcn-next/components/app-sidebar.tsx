@@ -1,8 +1,6 @@
 "use client"
 
 import {
-    Atom,
-    SnailIcon,
     Bird,
     BookOpen,
     Bot,
@@ -10,14 +8,12 @@ import {
     Eclipse,
     Frame,
     History,
-    LifeBuoy,
     Map,
     PieChart,
     Rabbit,
-    Send,
     Settings2,
+    SnailIcon,
     SquareTerminal,
-    Star,
     Turtle,
 } from "lucide-react"
 
@@ -60,33 +56,21 @@ const data = {
     },
     navMain: [
         {
-            title: "Playground",
+            title: "密码解析",
             url: "#",
             icon: SquareTerminal,
             isActive: true,
             items: [
                 {
-                    title: "History",
-                    url: "#",
+                    title: "neesee模式",
+                    url: "/password/neesee",
                     icon: History,
                     description: "View your recent prompts",
-                },
-                {
-                    title: "Starred",
-                    url: "#",
-                    icon: Star,
-                    description: "Browse your starred prompts",
-                },
-                {
-                    title: "Settings",
-                    url: "#",
-                    icon: Settings2,
-                    description: "Configure your playground",
                 },
             ],
         },
         {
-            title: "Models",
+            title: "文件系统",
             url: "#",
             icon: Bot,
             items: [
@@ -111,52 +95,32 @@ const data = {
             ],
         },
         {
-            title: "Documentation",
+            title: "jira中心",
             url: "#",
             icon: BookOpen,
             items: [
                 {
-                    title: "Introduction",
-                    url: "#",
+                    title: "个人看板",
+                    url: "/jira/personal",
                 },
                 {
-                    title: "Get Started",
-                    url: "#",
-                },
-                {
-                    title: "Tutorials",
-                    url: "#",
-                },
-                {
-                    title: "Changelog",
-                    url: "#",
-                },
+                    title: "创建工单",
+                    url: "/jira/create",
+                }
             ],
         },
         {
-            title: "API",
+            title: "AIGC",
             url: "#",
             icon: Code2,
             items: [
                 {
-                    title: "Chat",
-                    url: "#",
+                    title: "Chat工具",
+                    url: "/aigc/chat",
                 },
                 {
-                    title: "Completion",
-                    url: "#",
-                },
-                {
-                    title: "Images",
-                    url: "#",
-                },
-                {
-                    title: "Video",
-                    url: "#",
-                },
-                {
-                    title: "Speech",
-                    url: "#",
+                    title: "模型调优",
+                    url: "/aigc/model",
                 },
             ],
         },
