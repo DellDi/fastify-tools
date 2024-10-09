@@ -63,9 +63,9 @@ const data = {
             items: [
                 {
                     title: "neesee模式",
-                    url: "/password/neesee",
+                    url: "/password/newsee",
                     icon: History,
-                    description: "View your recent prompts",
+                    description: "neesee密码加解密",
                 },
             ],
         },
