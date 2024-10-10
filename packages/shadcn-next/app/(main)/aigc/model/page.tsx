@@ -30,7 +30,7 @@ import {
 export default function Model() {
     return (
         <TooltipProvider>
-            <div className="grid h-screen w-full">
+            <div className="grid h-[calc(100vh-80px)] w-full">
                 <div className="flex flex-col">
                     <main className="grid flex-1 gap-4 overflow-auto p-4 md:grid-cols-2 lg:grid-cols-3">
                         <div
@@ -61,7 +61,7 @@ export default function Model() {
                                                                     Genesis
                                                                 </span>
                                                             </p>
-                                                            <p className="text-xs" data-description>
+                                                            <p className="text-xs" data-description="">
                                                                 Our fastest model for general use cases.
                                                             </p>
                                                         </div>
@@ -76,7 +76,7 @@ export default function Model() {
                                                                     Explorer
                                                                 </span>
                                                             </p>
-                                                            <p className="text-xs" data-description>
+                                                            <p className="text-xs" data-description="">
                                                                 Performance and speed for efficiency.
                                                             </p>
                                                         </div>
@@ -91,7 +91,7 @@ export default function Model() {
                                                                     Quantum
                                                                 </span>
                                                             </p>
-                                                            <p className="text-xs" data-description>
+                                                            <p className="text-xs" data-descriptio="">
                                                                 The most powerful model for complex computations.
                                                             </p>
                                                         </div>

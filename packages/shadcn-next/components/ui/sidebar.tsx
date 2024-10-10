@@ -1,7 +1,7 @@
 "use client"
 
 import * as React from "react"
-import { PanelLeft } from "lucide-react"
+import { AlignLeft } from "lucide-react"
 
 import { useIsMobile } from "@/hooks/use-mobile"
 import { cn } from "@/lib/utils"
@@ -51,7 +51,7 @@ const SidebarLayout = React.forwardRef<
                 data-sidebar={state}
                 style={
                     {
-                        "--sidebar-width": "16rem",
+                        "--sidebar-width": "20rem",
                     } as React.CSSProperties
                 }
                 className={cn(
@@ -70,8 +70,7 @@ const SidebarTrigger = React.forwardRef<
     React.ComponentProps<"button">
 >(({ className, ...props }, ref) => {
     const { open, onOpenChange } = useSidebar()
-    const isMobile = useIsMobile()
-    if (isMobile) return null
+
     return (
         <Button
             ref={ref}
@@ -81,7 +80,7 @@ const SidebarTrigger = React.forwardRef<
             onClick={() => onOpenChange(!open)}
             {...props}
         >
-            <PanelLeft className="h-4 w-4"/>
+            <AlignLeft className="h-4 w-4"/>
             <span className="sr-only">Toggle Sidebar</span>
         </Button>
     )
