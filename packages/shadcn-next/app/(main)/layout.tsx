@@ -1,9 +1,6 @@
 import { AppSidebar } from "@/components/app-sidebar";
-import {
-    SidebarLayout,
-    SidebarTrigger,
-} from "@/components/ui/sidebar";
-import { DynamicBreadcrumb } from "@/components/custom/MenuBread";
+import { SidebarLayout, SidebarTrigger, } from "@/components/ui/sidebar";
+import { DynamicBreadcrumb } from "@/components/custom/DynamicBreadcrumb";
 import { Search } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { ToggleTheme } from "@/components/custom/ToggleTheme";
@@ -19,7 +16,7 @@ export default async ({ children }: {
         >
             <AppSidebar/>
             <main className="flex flex-1 flex-col transition-all duration-300 ease-in-out box-border">
-                <div className="h-full rounded-md border-2 border-dashed p-2  box-border">
+                <div className="h-full rounded-md border-1 p-2  box-border">
                     <header className="flex items-center justify-between p-2 border-b">
                         <div className="flex items-center justify-center">
                             <SidebarTrigger className={`mr-2`}/>

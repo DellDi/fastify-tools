@@ -23,11 +23,11 @@ export default function DashboardPage() {
             </div>
             <div
                 className="chart-wrapper mx-auto flex max-w-6xl flex-col flex-wrap items-start justify-center gap-6 sm:flex-row sm:p-1">
-                <div className="grid w-full gap-6 sm:grid-cols-2 lg:max-w-[22rem] lg:grid-cols-1 xl:max-w-[25rem]">
+                <div className="grid w-full gap-6 sm:grid-cols-2 lg:max-w-[26rem] lg:grid-cols-1 xl:max-w-[30rem]">
                     <Card1/>
                     <Card2/>
                 </div>
-                <div className="grid w-full flex-1 gap-6 lg:max-w-[20rem]">
+                <div className="grid w-full flex-1 gap-6 lg:max-w-[24rem]">
                     <ProgressCards/>
                 </div>
                 <div className="grid w-full flex-1 gap-6">
@@ -35,6 +35,5 @@ export default function DashboardPage() {
                 </div>
             </div>
         </main>
-
     )
 }
