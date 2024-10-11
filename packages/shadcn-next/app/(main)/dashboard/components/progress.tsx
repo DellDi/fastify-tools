@@ -9,7 +9,7 @@ export function ProgressCards() {
     return (
         <>
             <Card
-                className="max-w-xs" x-chunk="charts-01-chunk-2"
+                className="max-w-sm" x-chunk="charts-01-chunk-2"
             >
                 <CardHeader>
                     <CardTitle>Progress</CardTitle>
@@ -22,8 +22,8 @@ export function ProgressCards() {
                         <div className="flex items-baseline gap-1 text-2xl font-bold tabular-nums leading-none">
                             12,453
                             <span className="text-sm font-normal text-muted-foreground">
-                  steps/day
-                </span>
+                              steps/day
+                            </span>
                         </div>
                         <ChartContainer
                             config={{
@@ -123,7 +123,7 @@ export function ProgressCards() {
                 </CardContent>
             </Card>
             <Card
-                className="max-w-xs" x-chunk="charts-01-chunk-3"
+                className="max-w-sm" x-chunk="charts-01-chunk-3"
             >
                 <CardHeader className="p-4 pb-0">
                     <CardTitle>Walking Distance</CardTitle>
@@ -207,7 +207,7 @@ export function ProgressCards() {
                 </CardContent>
             </Card>
             <Card
-                className="max-w-xs" x-chunk="charts-01-chunk-4"
+                className="max-w-sm" x-chunk="charts-01-chunk-4"
             >
                 <CardContent className="flex gap-4 p-4 pb-2">
                     <ChartContainer

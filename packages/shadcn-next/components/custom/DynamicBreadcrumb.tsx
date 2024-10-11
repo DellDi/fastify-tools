@@ -6,8 +6,8 @@ import {
     BreadcrumbItem,
     BreadcrumbLink,
     BreadcrumbList,
-    BreadcrumbSeparator,
     BreadcrumbPage,
+    BreadcrumbSeparator,
 } from "@/components/ui/breadcrumb";
 import React from 'react';
 
@@ -19,8 +19,11 @@ export function DynamicBreadcrumb() {
         <Breadcrumb>
             <BreadcrumbList>
                 {pathSegments.length > 0 && (
+                    // <BreadcrumbItem>
+                    //     <BreadcrumbLink href={`/${pathSegments[0]}`}>{pathSegments[0]}</BreadcrumbLink>
+                    // </BreadcrumbItem>
                     <BreadcrumbItem>
-                        <BreadcrumbLink href={`/${pathSegments[0]}`}>{pathSegments[0]}</BreadcrumbLink>
+                        <BreadcrumbLink href={`/dashboard`}>dashboard</BreadcrumbLink>
                     </BreadcrumbItem>
                 )}
                 {pathSegments.slice(1).map((segment: string, index: number) => {
@@ -29,7 +32,7 @@ export function DynamicBreadcrumb() {
 
                     return (
                         <React.Fragment key={href}>
-                            <BreadcrumbSeparator />
+                            <BreadcrumbSeparator/>
                             <BreadcrumbItem>
                                 {isLast ? (
                                     <BreadcrumbPage>{segment}</BreadcrumbPage>
