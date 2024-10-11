@@ -227,10 +227,10 @@ export function AppSidebar() {
                     <SidebarLabel>Projects</SidebarLabel>
                     <NavProjects projects={data.projects}/>
                 </SidebarItem>
-                <SidebarItem className="mt-auto">
-                    <SidebarLabel>Help</SidebarLabel>
-                    {/*<NavSecondary items={data.navSecondary}/>*/}
-                </SidebarItem>
+                {/*<SidebarItem className="mt-auto">*/}
+                {/*<SidebarLabel>Help</SidebarLabel>*/}
+                {/*<NavSecondary items={data.navSecondary} />*/}
+                {/*</SidebarItem>*/}
                 <SidebarItem>
                     <StorageCard/>
                 </SidebarItem>

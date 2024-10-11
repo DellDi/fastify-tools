@@ -131,7 +131,7 @@ const SidebarHeader = React.forwardRef<
     return (
         <div
             ref={ref}
-            className={cn("flex items-center border-b px-2.5 py-2", className)}
+            className={cn("flex items-center border-b px-2.5 py-3.5", className)}
             {...props}
         />
     )
