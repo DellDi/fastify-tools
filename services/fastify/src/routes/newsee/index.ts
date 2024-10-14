@@ -1,22 +1,24 @@
 import { FastifyPluginAsync } from 'fastify'
+import cors from '@fastify/cors'
 
-import {
-  enCryptBase64,
-  deCryptoBase64,
-  encryptSQLOrigin,
-  decryptSQLOrigin,
-} from '../../utils/crypto.js'
-import {
-  cryptoSchema,
-  HandlePasswordBody,
-  HandlePasswordResponse,
-} from '../../schema/newsee.js'
+import { deCryptoBase64, decryptSQLOrigin, enCryptBase64, encryptSQLOrigin, } from '../../utils/crypto.js'
+import { cryptoSchema, } from '../../schema/newsee.js'
+import { TypeBoxTypeProvider } from "@fastify/type-provider-typebox";
 
 const newsee: FastifyPluginAsync = async (fastify, opts): Promise<void> => {
-  fastify.post<{
-    Body: HandlePasswordBody
-    Response: HandlePasswordResponse
-  }>('/handlePassword', {
+  await fastify.register(cors, {
+    origin: (origin, cb) => {
+      const hostname = new URL(origin || '').hostname
+      if (hostname === "localhost") {
+        //  Request from localhost will pass
+        cb(null, true)
+        return
+      }
+      // Generate an error on other origins, disabling access
+      cb(new Error("Not allowed"), false)
+    }
+  })
+  fastify.withTypeProvider<TypeBoxTypeProvider>().post('/handlePassword', {
     schema: cryptoSchema,
     handler: async (request, reply) => {
       request.headers['content-type'] = 'application/json'
@@ -37,7 +39,7 @@ const newsee: FastifyPluginAsync = async (fastify, opts): Promise<void> => {
           break
       }
 
-      reply.send({ result })
+      reply.code(200).send({ result, statusCode: 200 })
     },
   })
 }
