@@ -124,11 +124,11 @@ fastify-ts
    │  │  │  │  └─ index.ts
    │  │  │  └─ zuul
    │  │  │     └─ _file
-   │  │  │        └─ file.ts
+   │  │  │        └─ file.tsx
    │  │  ├─ schema
    │  │  │  ├─ dify
    │  │  │  │  └─ dify.ts
-   │  │  │  ├─ file.ts
+   │  │  │  ├─ file.tsx
    │  │  │  ├─ jira
    │  │  │  │  ├─ detail.ts
    │  │  │  │  └─ jira.ts
