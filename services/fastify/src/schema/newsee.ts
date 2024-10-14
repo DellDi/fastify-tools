@@ -1,4 +1,4 @@
-import { Type, Static } from '@sinclair/typebox'
+import { Type } from '@sinclair/typebox'
 
 const passwordBody = Type.Object({
   content: Type.String({
@@ -9,13 +9,15 @@ const passwordBody = Type.Object({
     enum: ['encrypt', 'decrypt', 'aesEnOrigin', 'aesDeOrigin'],
     default: 'decrypt',
     description:
-      '加密处理的类型encrypt（数据库SS） | decrypt(数据库) | aesEnOrigin | aesDeOrigin',
+        '加密处理的类型encrypt（数据库SS） | decrypt(数据库) | aesEnOrigin | aesDeOrigin',
   }),
 })
 
 const passwordResponse = Type.Object({
+  statusCode: Type.Integer({ default: 200 }),
   result: Type.String(),
 })
+
 export const cryptoSchema = {
   tags: ['newsee'],
   description: '处理密码：零和加密、零和解密、AES加密、AES解密',
@@ -26,5 +28,3 @@ export const cryptoSchema = {
   },
 }
 
-export type HandlePasswordBody = Static<typeof passwordBody>
-export type HandlePasswordResponse = Static<typeof passwordResponse>
