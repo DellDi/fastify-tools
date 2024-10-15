@@ -26,34 +26,34 @@ const jira: FastifyPluginAsync = async (fastify, opts): Promise<void> => {
           },
         })
         const { cookies, atlToken } = resLogin.json() as JiraLoginResponseType
-        // Create Jira ticket
+        // update Jira ticket
         const jiraRes = await request(
-          `http://bug.new-see.com:8088/secure/AjaxIssueAction.jspa`,
-          {
-            method: 'POST',
-            body: qs.stringify({
-              issueId: issueId.toString(),
-              ...data,
-              atl_token: atlToken,
-            }),
-            query: {
-              decorator: 'none',
-            },
-            headers: {
-              Cookie: cookies,
-              Authorization: 'Basic bmV3c2VlOm5ld3NlZQ==',
-              'Content-Type': 'application/x-www-form-urlencoded',
-            },
-          }
+            `http://bug.new-see.com:8088/secure/AjaxIssueAction.jspa`,
+            {
+              method: 'POST',
+              body: qs.stringify({
+                issueId: issueId.toString(),
+                ...data,
+                atl_token: atlToken,
+              }),
+              query: {
+                decorator: 'none',
+              },
+              headers: {
+                Cookie: cookies,
+                Authorization: 'Basic bmV3c2VlOm5ld3NlZQ==',
+                'Content-Type': 'application/x-www-form-urlencoded',
+              },
+            }
         )
 
         if (jiraRes?.statusCode !== 200) {
           throw new Error(
-            qs.stringify({
-              issueId: issueId.toString(),
-              ...data,
-              atl_token: atlToken,
-            })
+              qs.stringify({
+                issueId: issueId.toString(),
+                ...data,
+                atl_token: atlToken,
+              })
           )
         }
 

@@ -64,5 +64,3 @@ services/fastify/test/types/index.js
 
 # compiled app
 dist
-api
-.vercel
