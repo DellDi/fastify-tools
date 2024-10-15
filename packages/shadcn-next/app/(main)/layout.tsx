@@ -15,7 +15,7 @@ export default async ({ children }: {
           defaultOpen={cookies().get("sidebar:state")?.value === "true"}
       >
         <AppSidebar/>
-        <main className="flex flex-1 flex-col transition-all duration-300 ease-in-out box-border">
+        <main className="h-screen w-full flex flex-col transition-all duration-300 ease-in-out box-border">
           <header className="flex items-center justify-between p-2 border-b sticky top-0 bg-white dark:bg-black">
             <div className="flex items-center justify-center">
               <SidebarTrigger className={`mr-2`}/>
@@ -35,7 +35,7 @@ export default async ({ children }: {
               <ToggleTheme className="ml-2"/>
             </div>
           </header>
-          <div className="h-full rounded-md border-1 p-2  box-border">
+          <div className="grow rounded-md border-1 p-2 box-border overflow-hidden">
             {children}
           </div>
         </main>
