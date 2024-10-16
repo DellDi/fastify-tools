@@ -1,32 +1,13 @@
 'use client'
 
-import { useState, useEffect } from 'react'
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '@/components/ui/table'
+import { useEffect, useState } from 'react'
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow, } from '@/components/ui/table'
 import { Button } from '@/components/ui/button'
 import { Input } from "@/components/ui/input";
 
-import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-  CardFooter,
-} from '@/components/ui/card'
+import { Card, CardContent, CardFooter, CardHeader, CardTitle, } from '@/components/ui/card'
 import { Skeleton } from '@/components/ui/skeleton'
-import {
-  AlertCircle,
-  CheckCircle2,
-  Clock,
-  ChevronLeft,
-  ChevronRight,
-} from 'lucide-react'
+import { AlertCircle, CheckCircle2, ChevronLeft, ChevronRight, Clock, } from 'lucide-react'
 
 interface JiraIssue {
   key: string
@@ -85,7 +66,7 @@ export default function JiraIssuesTable() {
             body: JSON.stringify({
               startAt,
               maxResults: pageSize,
-              jql: '',
+              jql: jiraSql,
               jiraCookies: cookies,
             }),
           }
@@ -129,7 +110,7 @@ export default function JiraIssuesTable() {
   }
   return (
       <div className="h-full flex flex-col flex-grow mx-auto">
-        <Card className="max-w-screen-lg flex flex-col space-x-2 mx-auto grow overflow-hidden">
+        <Card className="w-full sm:w-full md:w-9/10 lg:w-3/5 flex flex-col space-x-2 mx-auto grow overflow-hidden">
           <CardHeader>
             <CardTitle className="text-2xl font-bold text-primary">
               Jira Issues
@@ -150,26 +131,26 @@ export default function JiraIssuesTable() {
           </CardHeader>
           <CardContent className="flex-grow overflow-auto">
             {loading ? (
-                <div className="space-y-4">
+                <div className="space-y-4 w-full">
                   {[...Array(pageSize)].map((_, i) => (
-                      <div key={i} className="flex items-center space-x-4">
-                        <Skeleton className="h-12 w-12 rounded-full"/>
-                        <div className="space-y-2">
-                          <Skeleton className="h-4 w-[250px]"/>
-                          <Skeleton className="h-4 w-[200px]"/>
+                      <div key={i} className="flex items-center space-x-4 w-full">
+                        <Skeleton className="h-20 w-20 rounded-full"/>
+                        <div className="space-y-2 flex-1">
+                          <Skeleton className="h-6 w-full"/>
+                          <Skeleton className="h-6 w-3/4"/>
                         </div>
                       </div>
                   ))}
                 </div>
             ) : (
-                <Table>
+                <Table className="w-full">
                   <TableHeader>
                     <TableRow>
-                      <TableHead className="w-[120px]">Key</TableHead>
+                      <TableHead>Key</TableHead>
                       <TableHead>Summary</TableHead>
                       <TableHead className="w-[120px]">Status</TableHead>
                       <TableHead>Assignee</TableHead>
-                      <TableHead className="w-[120px]">Created</TableHead>
+                      <TableHead>Created</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
