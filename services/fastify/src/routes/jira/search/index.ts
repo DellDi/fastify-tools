@@ -1,9 +1,6 @@
 import { FastifyPluginAsync } from 'fastify'
 import { request } from 'undici'
-import {
-  JiraSearchResponseType,
-  JiraSearchSchema,
-} from '../../../schema/jira/jira.js'
+import { JiraSearchResponseType, JiraSearchSchema, } from '../../../schema/jira/jira.js'
 import { TypeBoxTypeProvider } from "@fastify/type-provider-typebox";
 import cors from "@fastify/cors";
 
@@ -25,8 +22,7 @@ const jira: FastifyPluginAsync = async (fastify, opts): Promise<void> => {
             {
               method: 'GET',
               query: {
-                jql,
-                fieldsByKeys: true,
+                jql
               },
               headers: {
                 Cookie: jiraCookies,
