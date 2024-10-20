@@ -13,8 +13,8 @@ export type AppOptions = {} & Partial<AutoloadPluginOptions>
 const options: AppOptions = {}
 
 const app: FastifyPluginAsync<AppOptions> = async (
-    fastify,
-    opts
+  fastify,
+  opts,
 ): Promise<void> => {
   fastify.withTypeProvider<TypeBoxTypeProvider>()
 
@@ -33,7 +33,6 @@ const app: FastifyPluginAsync<AppOptions> = async (
 
   await fastify.ready((err) => {
     if (err) throw err
-    // 现在可以调用 .swagger() 方法
   })
 
   fastify.log.info('Something important happened!')
@@ -49,8 +48,8 @@ const app: FastifyPluginAsync<AppOptions> = async (
     // reply.header('Access-Control-Allow-Origin', '*')
     // reply.header('Access-Control-Allow-Headers', 'Content-Type, Authorization')
     reply.header(
-        'Access-Control-Allow-Methods',
-        'GET, POST, PUT, DELETE, OPTIONS'
+      'Access-Control-Allow-Methods',
+      'GET, POST, PUT, DELETE, OPTIONS',
     )
     done()
   })

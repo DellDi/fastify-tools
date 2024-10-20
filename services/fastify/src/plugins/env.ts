@@ -16,6 +16,7 @@ const schema = {
     },
   },
 }
+
 export default fp<FastifyEnvOptions>(async (fastify, opts) => {
   // 根据环境变量加载不同的 .env 文件
   const nodeEnv = process.env.NODE_ENV || 'development'
@@ -23,11 +24,11 @@ export default fp<FastifyEnvOptions>(async (fastify, opts) => {
   config({ path: envFilePath })
   // Register other plugins with options
   fastify
-    .register(fastifyEnv, {
-      schema: schema,
-      dotenv: true, // 如果你使用 .env 文件
-    })
-    .ready((err) => {
-      if (err) console.error(err)
-    })
+  .register(fastifyEnv, {
+    schema: schema,
+    dotenv: true, // 如果你使用 .env 文件
+  })
+  .ready((err) => {
+    if (err) console.error(err)
+  })
 })
