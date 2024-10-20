@@ -9,6 +9,7 @@
   "directories": {
     "test": "test"
   },
+  "packageManager": "pnpm@9.12.2",
   "scripts": {
     "test": "npm run build && tsc -p test/tsconfig.json && FASTIFY_AUTOLOAD_TYPESCRIPT=1 node --test --experimental-test-coverage --loader ts-node/esm test/**/*.ts",
     "dev": "npm run build && concurrently -k -p \"[{name}]\" -n \"TypeScript,App\" -c \"yellow.bold,cyan.bold\" \"npm:watch:ts\" \"npm:dev:start\"",
@@ -48,6 +49,8 @@
     "undici": "^6.19.8"
   },
   "devDependencies": {
+    "@types/node": "^20.16.10",
+    "typescript": "^5",
     "@types/crypto-js": "^4.2.2",
     "c8": "^10.1.2",
     "concurrently": "^9.0.1",

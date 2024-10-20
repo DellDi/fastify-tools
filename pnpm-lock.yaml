@@ -80,6 +80,9 @@ importers:
       formidable:
         specifier: ^3.5.1
         version: 3.5.1
+      lru-cache:
+        specifier: ^11.0.1
+        version: 11.0.1
       lucide-react:
         specifier: ^0.446.0
         version: 0.446.0(react@18.3.1)

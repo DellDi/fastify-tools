@@ -1,6 +1,6 @@
 {
-  "name": "@fastify-tools/shadcn-next",
-  "version": "0.1.0",
+  "name": "shadcn-next",
+  "version": "1.0.0",
   "private": true,
   "scripts": {
     "dev": "next dev -p 3001",
@@ -8,6 +8,7 @@
     "start": "next start -p 3001",
     "lint": "next lint"
   },
+  "packageManager": "pnpm@9.12.2",
   "dependencies": {
     "@hookform/resolvers": "^3.9.0",
     "@radix-ui/react-avatar": "^1.1.0",
@@ -28,6 +29,7 @@
     "clsx": "^2.1.1",
     "date-fns": "^4.1.0",
     "formidable": "^3.5.1",
+    "lru-cache": "^11.0.1",
     "lucide-react": "^0.446.0",
     "next": "14.2.13",
     "next-themes": "^0.3.0",
