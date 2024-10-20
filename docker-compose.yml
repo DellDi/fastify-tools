@@ -1,0 +1,22 @@
+services:
+  fastify:
+    build:
+      context: ./services/fastify
+      dockerfile: Dockerfile
+    ports:
+      - "4000:3000"
+    environment:
+      - NODE_ENV=production
+
+  shadcn-next:
+    build:
+      context: ./packages/shadcn-next
+      dockerfile: Dockerfile
+    ports:
+      - "4001:3001"
+    environment:
+      - NODE_ENV=production
+      - NEXT_PUBLIC_API_URL=http://fastify:3000
+    depends_on:
+      - fastify
+
