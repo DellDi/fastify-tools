@@ -11,6 +11,8 @@ services:
   shadcn-next:
     build:
       context: ./packages/shadcn-next
+      args:
+        NEXT_PUBLIC_BASE_PATH: /next
       dockerfile: Dockerfile
     ports:
       - "4001:3001"
@@ -19,4 +21,3 @@ services:
       - NEXT_PUBLIC_API_URL=http://fastify:3000
     depends_on:
       - fastify
-

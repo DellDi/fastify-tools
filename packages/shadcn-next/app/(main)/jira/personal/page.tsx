@@ -9,8 +9,7 @@ import { Skeleton } from '@/components/ui/skeleton'
 import { AlertCircle, CheckCircle2, ChevronLeft, ChevronRight, Clock } from 'lucide-react'
 import { JiraIssue, JiraResponse } from '@/pages/api/jira/jira-filtered'
 import { SAAS_JQL_3M } from '@/lib/jira/jql'
-import { Label } from '@/components/ui/label'
-
+import { useBasePath } from '@/hooks/use-path'
 
 export default function JiraIssuesTable() {
   const [jiraSql, setJiraSql] = useState<string>(SAAS_JQL_3M)
@@ -20,6 +19,7 @@ export default function JiraIssuesTable() {
   const [page, setPage] = useState(1)
   const [totalIssues, setTotalIssues] = useState(0)
   const pageSize = 50
+  const { basePath } = useBasePath()
 
   useEffect(() => {
     fetchIssues()
@@ -28,14 +28,14 @@ export default function JiraIssuesTable() {
   async function fetchIssues() {
     setLoading(true)
     try {
-      // First, login to Jira
-      const loginResponse = await fetch('/api/jira/jira-login', { method: 'POST' })
+      // 环境变量  部署基础路径 NEXT_PUBLIC_BASE_PATH
+      const loginResponse = await fetch(`${basePath}/api/jira/jira-login`, { method: 'POST' })
       if (!loginResponse.ok) {
         return new Error('Failed to login to Jira')
       }
       const { cookies, data: loginData } = await loginResponse.json()
 
-      const response = await fetch('/api/jira/jira-filtered', {
+      const response = await fetch(`${basePath}/api/jira/jira-filtered`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
