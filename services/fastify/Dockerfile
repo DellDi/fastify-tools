@@ -7,8 +7,8 @@ WORKDIR /app
 # 启用 Corepack
 RUN corepack enable
 
-# 启用 pnpm
-RUN corepack install pnpm -g
+# 设置 corepack的环境变量
+ENV COREPACK_NPM_REGISTRY=https://registry.npmmirror.com
 
 # Set the npm registry to the mirror
 RUN pnpm config set registry https://registry.npmmirror.com
