@@ -1,53 +1,49 @@
-import { FilePlus } from 'lucide-react'
+import { Upload } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import React, { useCallback, useRef, useState } from 'react'
-import { FileSuccessResponse, useHandleFileChange, useHandlePaste, useUploadProgress } from '@/hooks/use-file'
+import { FileBatchSuccessResponse, useHandleDrop, useHandleFileChange, useUploadProgress } from '@/hooks/use-file'
 import { FileUploadStatus } from '@/components/upload/file-list'
 import { toast } from '@/hooks/use-toast'
 
 /**
- * 单文件上传函数
+ * 批量文件上传函数
  * @param {File[]} files - 要上传的文件数组
  * @returns {Promise<void>}
  */
-const singleUploadFunction = async (files: File[]): Promise<void> => {
+const batchUploadFunction = async (files: File[]): Promise<void> => {
   const formData = new FormData()
   files.forEach((file) => {
     formData.append('file', file)
   })
 
-  fetch(`${process.env.NEXT_PUBLIC_API_URL}/upload/single`, {
+  await fetch(`${process.env.NEXT_PUBLIC_API_URL}/upload/batch`, {
     method: 'POST',
     body: formData,
   }).then(async (res) => {
     if (res.ok) {
-      const fileInfo: FileSuccessResponse = await res.json()
+      const fileInfo: FileBatchSuccessResponse = await res.json()
+      console.log(fileInfo)
       toast({
         title: '上传成功',
-        description: `${fileInfo.fileUrl}`,
+        description: `${fileInfo.message}`,
       })
     }
-  }).catch(() => {
-    toast({
-      title: '上传失败',
-      description: '请稍后再试',
-    })
   })
 }
 
 /**
- * 单文件上传组件
+ * 批量文件上传组件
  * @component
  */
-export function SingleUpload() {
+export function BatchUpload() {
   // 文件状态
   const [files, setFiles] = useState<File[]>([])
   // 文件输入引用
   const fileInputRef = useRef<HTMLInputElement>(null)
   // 上传进度和状态
-  const { progress, uploading, simulateUpload } = useUploadProgress(singleUploadFunction)
-  // 处理粘贴事件
-  const handlePaste = useHandlePaste(setFiles)
+  const { progress, uploading, simulateUpload } = useUploadProgress(batchUploadFunction)
+  // 处理拖拽事件
+  const handleDrop = useHandleDrop(setFiles)
   // 处理文件改变事件
   const handleFileChange = useHandleFileChange(setFiles)
 
@@ -68,12 +64,14 @@ export function SingleUpload() {
   return (
     <div
       className="h-full flex items-center flex-col justify-center border-2 border-dashed rounded-lg p-4 text-center cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
-      onPaste={(e) => handlePaste(e)}
+      onDrop={(e) => handleDrop(e)}
+      onDragOver={(e) => e.preventDefault()}
     >
-      <FilePlus className="mx-auto h-20 w-20 text-gray-400"/>
-      <p className="mt-2">点击这里上传单个文件或粘贴文件</p>
+      <Upload className="mx-auto h-12 w-12 text-gray-400"/>
+      <p className="mt-1">拖拽文件到这里或者点击上传</p>
       <input
         type="file"
+        multiple
         onChange={(e) => handleFileChange(e)}
         className="hidden"
         ref={fileInputRef}
