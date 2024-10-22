@@ -7,7 +7,7 @@ import { Type } from '@sinclair/typebox'
 
 const uploadCheck = Type.Array(Type.Object({
   filename: Type.String(),
-  fileHash: Type.String()
+  fileHash: Type.String(),
 }))
 
 const headerType = Type.Object({
@@ -30,8 +30,8 @@ export const uploadCheckBase = {
   tags: ['upload'],
   body: uploadCheck,
   response: {
-    200: Type.Array(Type.String({ description: '已存在的文件list' }))
-  }
+    200: Type.Array(Type.String({ description: '已存在的文件list' })),
+  },
 }
 
 
@@ -50,7 +50,7 @@ export const singleUpload = {
     }),
     413: Type.Object({
       error: Type.Any(),
-    })
+    }),
   },
 }
 
@@ -72,6 +72,13 @@ export const uploadBatch = {
   consumes: ['multipart/form-data'],
   headers: headerType,
   response: {
+    200: Type.Object({
+      message: Type.String({ description: '批量上传成功' }),
+      uploadedFiles: Type.Array(Type.Object({
+        originalName: Type.String(),
+        fileUrl: Type.String(),
+      })),
+    }),
     400: Type.Object({
       error: Type.String(),
     }),

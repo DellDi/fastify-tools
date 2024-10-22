@@ -8,25 +8,25 @@ import {
 } from '../../schema/dify/dify.js'
 
 const dify: FastifyPluginAsync = async (fastify, opts): Promise<void> => {
-  await fastify
-    .register(auth)
-    .register(bearerAuth, {
-      addHook: true,
-      keys: new Set(['zd-nb-19950428']),
-    })
-    .decorate(
-      'allowAnonymous',
-      function (
-        req: { headers: { authorization: any } },
-        reply: any,
-        done: (arg0: Error | undefined) => any
-      ) {
-        if (req.headers.authorization) {
-          return done(Error('not anonymous'))
-        }
-        return done(undefined)
+  fastify
+  .register(auth)
+  .register(bearerAuth, {
+    addHook: true,
+    keys: new Set(['zd-nb-19950428']),
+  })
+  .decorate(
+    'allowAnonymous',
+    function (
+      req: { headers: { authorization: any } },
+      reply: any,
+      done: (arg0: Error | undefined) => any,
+    ) {
+      if (req.headers.authorization) {
+        return done(Error('not anonymous'))
       }
-    )
+      return done(undefined)
+    },
+  )
   fastify.post<{
     Body: InputDataType
     Response: DifyResponseType
@@ -58,12 +58,13 @@ const dify: FastifyPluginAsync = async (fastify, opts): Promise<void> => {
       }
 
       reply.code(400).send({ error: 'Not implemented' })
-    },  })
+    },
+  })
 }
 
 async function handleAppExternalDataToolQuery(
   fastify: FastifyInstance,
-  params: Omit<InputDataType, 'point'>
+  params: Omit<InputDataType, 'point'>,
 ) {
   const { title, description, assignee, customerName } = params || {}
 

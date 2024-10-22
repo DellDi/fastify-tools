@@ -31,28 +31,28 @@ const app: FastifyPluginAsync<AppOptions> = async (
     routeParams: true,
   })
 
-  await fastify.ready((err) => {
+  fastify.ready((err) => {
     if (err) throw err
+    console.log(fastify.printRoutes())
   })
 
   fastify.log.info('Something important happened!')
 
   fastify.addHook('preHandler', function (req, reply, done) {
-    // if (req.body) {
-    //     req.log.info({ body: req.body }, 'parsed body')
-    // }
+    if (req.body) {
+      req.log.info({ body: req.body }, 'parsed body')
+    }
     done()
   })
 
   fastify.addHook('onRequest', (req, reply, done) => {
-    // reply.header('Access-Control-Allow-Origin', '*')
-    // reply.header('Access-Control-Allow-Headers', 'Content-Type, Authorization')
     reply.header(
       'Access-Control-Allow-Methods',
       'GET, POST, PUT, DELETE, OPTIONS',
     )
     done()
   })
+
 }
 
 export default app
