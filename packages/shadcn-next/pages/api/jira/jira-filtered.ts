@@ -63,6 +63,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
           jiraCookies,
         }),
       })
+      console.log('🚀 ~ file:jira-filtered.ts, line:66-----', response)
 
       if (!response.ok) {
         return new Error('Failed to fetch Jira issues')
@@ -95,6 +96,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       issues: paginatedIssues,
     })
   } catch (error) {
-    res.status(500).json({ message: 'Error fetching Jira issues' })
+    console.log('🚀 ~ file:jira-filtered.ts, line:99-----', error)
+    res.status(500).json({ message: JSON.stringify(error) })
   }
 }

@@ -42,7 +42,6 @@ export default function DashboardPage() {
           </div>
           <div className="grid w-full flex-1 gap-4">
             <ShowCloud/>
-            <ShowCloud/>
           </div>
 
         </div>
