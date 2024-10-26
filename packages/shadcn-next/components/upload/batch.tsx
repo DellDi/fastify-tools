@@ -67,8 +67,8 @@ export function BatchUpload() {
       onDrop={(e) => handleDrop(e)}
       onDragOver={(e) => e.preventDefault()}
     >
-      <Upload className="mx-auto h-12 w-12 text-gray-400"/>
-      <p className="mt-1">拖拽文件到这里或者点击上传</p>
+      <Upload className="mx-auto h-20 w-20 text-gray-400"/>
+      <p className="mt-2">拖拽文件到这里或者点击上传</p>
       <input
         type="file"
         multiple

@@ -53,7 +53,7 @@ export function PasswordComponent() {
   }
 
   return (
-      <div className="grid gap-8 md:grid-cols-2 sm:grid-cols-1">
+      <div className="grid gap-6 xl:grid-cols-4 md:grid-cols-2 sm:grid-cols-1 mt-4">
         <Card className="w-full max-w-md mx-auto text-left">
           <CardHeader>
             <CardTitle>数据库模式</CardTitle>

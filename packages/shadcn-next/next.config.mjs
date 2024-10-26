@@ -10,7 +10,7 @@ const nextConfig = {
   typescript: {
     ignoreBuildErrors: true,
   },
-  webpack: (config, { dev, isServer }) => {
+  webpack: (config) => {
     config.plugins.push(codeInspectorPlugin({ bundler: 'webpack' }))
     return config
   },

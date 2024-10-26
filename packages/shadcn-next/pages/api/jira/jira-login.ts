@@ -33,7 +33,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     if (!response.ok) {
       return new Error('Login failed')
     }
-
     // 获取fetch接口成功后的headers
     const setCookieHeader = response.headers.get('set-cookie') ?? []
     const cookies = Array.isArray(setCookieHeader)
@@ -45,6 +44,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     cache.set('loginResponse', { cookies, data })
     res.status(200).json({ data, cookies })
   } catch (error) {
-    res.status(500).json({ message: 'Error logging in to Jira' })
+    res.status(500).json({ message: error })
   }
 }
