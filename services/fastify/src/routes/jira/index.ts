@@ -14,13 +14,14 @@ import { CustomerInfoResType } from '../../schema/dify/dify.js'
 
 const jiraBaseUrl = 'http://bug.new-see.com:8088'
 
-const jira: FastifyPluginAsync = async (fastify, opts): Promise<void> => {
+const jira: FastifyPluginAsync = async (fastify): Promise<void> => {
   fastify.withTypeProvider<TypeBoxTypeProvider>().post('/create-ticket', {
     schema: jiraCreateExport,
     handler: async (req, reply) => {
       const {
         title,
         description,
+        labels,
         assignee,
         customerName,
         jiraUser,
@@ -54,7 +55,7 @@ const jira: FastifyPluginAsync = async (fastify, opts): Promise<void> => {
           priority: '3',
           description: description || title,
           assignee: assignee,
-          labels: ['SaaS专项工作', '数据中台'],
+          labels: labels,
           timetracking: '',
           isCreateIssue: 'true',
           hasWorkStarted: 'false',
@@ -82,7 +83,7 @@ const jira: FastifyPluginAsync = async (fastify, opts): Promise<void> => {
               'Content-Type': 'application/x-www-form-urlencoded',
             },
             body: qs.stringify(jiraPostData),
-          }
+          },
         )
 
         const responseBody =
@@ -145,7 +146,8 @@ const jira: FastifyPluginAsync = async (fastify, opts): Promise<void> => {
         fastify.log.error(error)
         return reply.status(500).send({ error: error })
       }
-    },  })
+    },
+  })
 }
 
 export default jira
