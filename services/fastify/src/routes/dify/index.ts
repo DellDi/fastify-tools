@@ -7,7 +7,7 @@ import {
   InputDataType,
 } from '../../schema/dify/dify.js'
 
-const dify: FastifyPluginAsync = async (fastify, opts): Promise<void> => {
+const dify: FastifyPluginAsync = async (fastify): Promise<void> => {
   fastify
   .register(auth)
   .register(bearerAuth, {
@@ -66,7 +66,7 @@ async function handleAppExternalDataToolQuery(
   fastify: FastifyInstance,
   params: Omit<InputDataType, 'point'>,
 ) {
-  const { title, description, assignee, customerName } = params || {}
+  const { title, description, assignee, customerName, jiraUser, jiraPassword, labels } = params || {}
 
   const res = await fastify.inject({
     url: '/jira/create-ticket',
@@ -74,7 +74,10 @@ async function handleAppExternalDataToolQuery(
     body: {
       title,
       description,
+      jiraUser,
+      jiraPassword,
       assignee,
+      labels,
       customerName,
     },
     headers: {
