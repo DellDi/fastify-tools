@@ -55,7 +55,7 @@ const jira: FastifyPluginAsync = async (fastify): Promise<void> => {
           priority: '3',
           description: description || title,
           assignee: assignee,
-          labels: labels,
+          labels: labels ? labels.split(',') : ['SaaS内部已评审'],
           timetracking: '',
           isCreateIssue: 'true',
           hasWorkStarted: 'false',
@@ -110,12 +110,12 @@ const jira: FastifyPluginAsync = async (fastify): Promise<void> => {
         const { id: issueId } = createdIssueDetails
         const issueKey = responseBody.issueKey
         const issueUrl = `${jiraBaseUrl}/browse/${issueKey}`
-        const tagCustom = isSaaS ? 'SaaS专项工作' : '数据中台'
-
+        const tagCustom = isSaaS ? 'SaaS专项工作' : '快捷工单'
+        let oldLabels = labels ? labels.split(',') : []
         const updateData = {
           issueId,
           singleFieldEdit: false,
-          labels: [tagCustom, '管理驾驶舱'],
+          labels: [tagCustom].concat(oldLabels),
           customfield_10000: customerNameId,
           customfield_12600: customerInfoId,
           'customfield_12600:1': `${+customerInfoId + 1}`,

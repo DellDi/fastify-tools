@@ -31,16 +31,13 @@ export const JiraCreateExportBody = Type.Object({
     default: '【超级工单】新增测试工单-我是工单的描述信息',
     description: '单子描述',
   }),
-  labels: Type.Optional(Type.Array(
+
+  labels: Type.Optional(
     Type.String({
-      default: 'SaaS专项工作',
+      default: 'SaaS内部已评审',
       description: '单子标签',
     }),
-    Type.String({
-      default: '规划评审',
-      description: '单子标签',
-    }),
-  )),
+  ),
   assignee: Type.Optional(
     Type.String({
       default: process.env.JIRA_ASSIGNEE_USER,
