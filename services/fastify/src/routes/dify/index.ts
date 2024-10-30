@@ -40,24 +40,26 @@ const dify: FastifyPluginAsync = async (fastify): Promise<void> => {
         return { result: 'pong' }
       }
 
-      if (point === 'app.create_jira_tool') {
-        if (!params.title || !params.description) {
-          reply.code(400).send({ error: 'Missing required fields: title and description' })
+      try {
+        if (point === 'app.create_jira_tool') {
+          if (!params.title || !params.description) {
+            reply.code(400).send({ error: 'Missing required fields: title and description' })
+            return
+          }
+          const { issueId, issueKey, issueUrl, updateMsg } =
+            await handleAppExternalDataToolQuery(fastify, params)
+          reply.send({
+            result: `${Date.now()}`,
+            issueId,
+            issueKey,
+            issueUrl,
+            updateMsg,
+          })
           return
         }
-        const { issueId, issueKey, issueUrl, updateMsg } =
-          await handleAppExternalDataToolQuery(fastify, params)
-        reply.send({
-          result: `${Date.now()}`,
-          issueId,
-          issueKey,
-          issueUrl,
-          updateMsg,
-        })
-        return
+      } catch (e) {
+        reply.code(400).send({ error: `Not implemented: ${e}` })
       }
-
-      reply.code(400).send({ error: 'Not implemented' })
     },
   })
 }
