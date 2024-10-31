@@ -1,0 +1,169 @@
+<html lang="zh">
+<head>
+    <meta charset="utf-8"/>
+    <meta
+            name="viewport"
+            content="width=device-width, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0, viewport-fit=cover,user-scalable=0"
+    />
+    <meta content="black" name="apple-mobile-web-app-status-bar-style"/>
+    <script src="../js/tailwind.js">
+    </script>
+    <link href="../css/all.min.css" rel="stylesheet"/>
+    <title>美化dom插件</title>
+</head>
+<body class="bg-gray-900 text-white p-4 h-screen flex items-center justify-center">
+<div class="max-w-sm w-full">
+    <div class="flex items-center justify-between mb-4">
+        <div class="flex items-center space-x-2">
+            <img alt="User avatar" class="rounded-full" height="30"
+                 src="https://storage.googleapis.com/a1aa/image/BRrJ9vgfQtwjO64QKfbWm01KXV2bOQtqeuacbfOvv8emd4ndC.jpg"
+                 width="30"/>
+            <span>
+      已登录
+     </span>
+        </div>
+        <div class="flex items-center space-x-2">
+            <button class="bg-yellow-500 text-black px-2 py-1 rounded flex items-center space-x-1">
+                <i class="fas fa-arrow-up">
+                </i>
+                <span>
+       升级
+      </span>
+            </button>
+            <button class="bg-gray-700 px-2 py-1 rounded flex items-center space-x-1">
+                <i class="fas fa-camera">
+                </i>
+                <span>
+       生成网页快照
+      </span>
+            </button>
+        </div>
+    </div>
+    <div class="bg-gray-800 p-4 rounded-lg space-y-4">
+        <div class="flex justify-between items-center">
+            <div class="flex flex-col">
+                <label class="text-sm" for="source-language">
+                    原文语言
+                </label>
+                <select class="bg-gray-700 text-white p-2 rounded mt-1" id="source-language">
+                    <option>
+                        自动检测
+                    </option>
+                    <option>
+                        英语
+                    </option>
+                    <option>
+                        法语
+                    </option>
+                    <option>
+                        德语
+                    </option>
+                </select>
+            </div>
+            <div class="flex items-center">
+                <i class="fas fa-arrow-right text-gray-400 mx-2">
+                </i>
+            </div>
+            <div class="flex flex-col">
+                <label class="text-sm" for="target-language">
+                    目标语言
+                </label>
+                <select class="bg-gray-700 text-white p-2 rounded mt-1" id="target-language">
+                    <option>
+                        简体中文
+                    </option>
+                    <option>
+                        繁体中文
+                    </option>
+                    <option>
+                        日语
+                    </option>
+                    <option>
+                        韩语
+                    </option>
+                </select>
+            </div>
+        </div>
+        <div class="flex flex-col">
+            <label class="text-sm" for="translation-service">
+                翻译服务
+            </label>
+            <select class="bg-gray-700 text-white p-2 rounded mt-1" id="translation-service">
+                <option>
+                    谷歌翻译
+                </option>
+                <option>
+                    百度翻译
+                </option>
+                <option>
+                    有道翻译
+                </option>
+            </select>
+            <button class="bg-yellow-500 text-black text-sm mt-2 p-1 rounded">
+                试用OpenAI, DeepL智能翻译 Pro
+            </button>
+        </div>
+        <div class="flex items-center justify-between">
+            <button class="bg-pink-600 text-white text-lg py-2 px-4 rounded">
+                翻译 (⌥A)
+            </button>
+            <div class="flex items-center space-x-2">
+                <i class="fas fa-exclamation-triangle text-yellow-500">
+                </i>
+                <span class="text-xs text-yellow-500">
+       首次大规模翻译半前页面 (可能的原因是：新标签页或浏览器扩展页面等)
+      </span>
+            </div>
+        </div>
+        <div class="flex items-center justify-between">
+            <label class="flex items-center space-x-2">
+                <input class="form-checkbox bg-gray-700 text-pink-600" type="checkbox"/>
+                <span class="text-sm">
+       总是翻译该网站
+      </span>
+            </label>
+            <label class="flex items-center space-x-2">
+                <input class="form-checkbox bg-gray-700 text-pink-600" type="checkbox"/>
+                <span class="text-sm">
+       鼠标停+Ctrl 翻译/还原该段
+      </span>
+            </label>
+        </div>
+        <div class="flex justify-between">
+            <button class="bg-gray-700 text-white text-sm py-2 px-4 rounded flex items-center space-x-1">
+                <i class="fas fa-file-pdf">
+                </i>
+                <span>
+       PDF/ePub
+      </span>
+            </button>
+            <button class="bg-gray-700 text-white text-sm py-2 px-4 rounded flex items-center space-x-1">
+                <i class="fas fa-file-alt">
+                </i>
+                <span>
+       文本翻译
+      </span>
+            </button>
+            <button class="bg-gray-700 text-white text-sm py-2 px-4 rounded flex items-center space-x-1">
+                <i class="fas fa-file-pdf">
+                </i>
+                <span>
+       PDF Pro
+      </span>
+            </button>
+        </div>
+    </div>
+    <div class="text-center text-gray-500 text-xs mt-4">
+    <span>
+     V1.10.6
+    </span>
+        <span class="mx-2">
+     |
+    </span>
+        <span>
+     更多
+    </span>
+    </div>
+</div>
+</body>
+</html>

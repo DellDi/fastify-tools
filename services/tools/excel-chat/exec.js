@@ -1,9 +1,10 @@
 import OpenAI from 'openai'
 import ExcelJS from 'exceljs'
 
+// 使用AI模型的能力找出列表中的城市，省份。重新填充到excel中
 const Workbook = ExcelJS.Workbook
 
-async function main() {
+async function mainStart() {
   // Read the Excel file
   const workbook = new Workbook()
   await workbook.xlsx.readFile('./excel-chat/sheet-jinmao/金茂财务数据（原始数据）.xlsx')
@@ -21,16 +22,13 @@ async function main() {
       })
     }
   })
-  console.log('🚀 ~ file:exec.js, line:24-----', cityMap)
-
   try {
-    // 分成4段执行，避免token长度过长
+    // 分成3段执行，避免token长度过长
     const keys = Array.from(cityMap.keys())
-    const quarter = Math.ceil(keys.length / 4)
+    const quarter = Math.ceil(keys.length / 3)
     await useAiDeepArea(new Map(keys.slice(0, quarter).map(key => [key, cityMap.get(key)])), cityMap)
     await useAiDeepArea(new Map(keys.slice(quarter, quarter * 2).map(key => [key, cityMap.get(key)])), cityMap)
-    await useAiDeepArea(new Map(keys.slice(quarter * 2, quarter * 3).map(key => [key, cityMap.get(key)])), cityMap)
-    await useAiDeepArea(new Map(keys.slice(quarter * 3).map(key => [key, cityMap.get(key)])), cityMap)
+    await useAiDeepArea(new Map(keys.slice(quarter * 2).map(key => [key, cityMap.get(key)])), cityMap)
   } catch (e) {
     throw e
   }
@@ -40,7 +38,6 @@ async function main() {
       const cellProv = row.getCell(7)
       const cellCity = row.getCell(8)
       const cityLike = row.getCell(4)
-      console.log('🚀 ~ file:exec.js, line:xxxxx-----', cityMap.get(cityLike.value || '').prov)
       cityLike.value && (cellProv.value = cityMap.get(cityLike.value).prov)
       cityLike.value && (cellCity.value = cityMap.get(cityLike.value).city)
     }
@@ -60,7 +57,7 @@ async function useAiDeepArea(cityMap, orgMap) {
   const completion = await openai.chat.completions.create({
     messages: [
       {
-        role: 'system', content: `你是一个文本数据分析师，可以根据名称，识别出标准行政区域名称。
+        role: 'system', content: `你是一个文本数据分析师，可以根据名称，识别出标准行政区域名称,如果文本片段中包含'嘉善'、'嘉业',标记为'浙江省'、'嘉兴市'。
         Please parse the "question" and "answer" and output them in JSON format
         ps：长沙金茂悦物业服务中心,武汉阳逻金茂悦物业服务中心,株洲金茂悦物业服务中心
         EXAMPLE JSON OUTPUT:： {
@@ -98,4 +95,4 @@ async function useAiDeepArea(cityMap, orgMap) {
   }
 }
 
-main()
+mainStart().then(() => console.log('done')).catch(e => console.error(e))
