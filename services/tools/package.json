@@ -5,7 +5,8 @@
   "main": "index.js",
   "type": "module",
   "scripts": {
-    "test": "pnpm run test"
+    "test": "pnpm run test",
+    "exec": "node excel-chat/exec.js"
   },
   "keywords": [
     "tools"
@@ -13,6 +14,8 @@
   "author": "delldi",
   "license": "MIT",
   "dependencies": {
-    "exceljs": "^4.4.0"
+    "exceljs": "^4.4.0",
+    "openai": "^4.69.0",
+    "undici": "^6.19.8"
   }
 }
