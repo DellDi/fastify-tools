@@ -15,8 +15,9 @@ if (!window.hasRun) {
     (document.head || document.documentElement).appendChild(script)
   }
 
+  const arr = ['kk1234001.youdata.163.com', 'poc.new-see.com', 'localhost', 'saastest.new-see.com', 'qw.yswg360.com']
 // 限制域名进行执行
-  if (window.location.hostname === 'kk1234001.youdata.163.com') {
+  if (arr.includes(window.location.hostname)) {
     // 确保在适当的时机调用
     if (document.readyState === 'loading') {
 
