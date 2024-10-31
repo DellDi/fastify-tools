@@ -24,6 +24,7 @@ function updateChatHeads() {
     head.style.background = '#3b95f9'
   })
 }
+
 // #3b95f9
 // 4. 修改特定chat-item的内容
 function updateChatItems() {

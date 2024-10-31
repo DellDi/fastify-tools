@@ -4,13 +4,13 @@ if (!window.hasRun) {
 
   function initChatBi() {
     const script = document.createElement('script')
-    script.src = chrome.runtime.getURL('newsee-ChatBI-init.js')
+    script.src = chrome.runtime.getURL('change-dom.js')
     script.type = 'text/javascript'
     script.onload = function() {
-      console.log('newsee-ChatBI-init.js loaded successfully')
+      console.log('change-dom.js loaded successfully')
     }
     script.onerror = function() {
-      console.error('Failed to load newsee-ChatBI-init.js')
+      console.error('Failed to load change-dom.js')
     };
     (document.head || document.documentElement).appendChild(script)
   }

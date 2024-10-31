@@ -1,27 +1,26 @@
 {
-  "manifest_version": 2,
-  "name": "DOM Modifier",
+  "manifest_version": 3,
+  "name": "美化DOM插件",
   "version": "1.0",
   "description": "A Chrome extension to modify DOM elements",
   "permissions": [
     "activeTab",
+    "scripting",
     "tabs",
-    "<all_urls>"
+    "declarativeNetRequest"
   ],
   "icons": {
-    "48": "ai-logo.png"
+    "48": "static/ai-logo.png"
   },
-  "browser_action": {
-    "default_popup": "popup.html",
+  "action": {
+    "default_popup": "popup/popup.html",
     "default_icon": {
-      "48": "ai-logo.png"
-    }
+      "48": "static/ai-logo.png"
+    },
+    "default_title": "美化DOM元素"
   },
   "background": {
-    "scripts": [
-      "background.js"
-    ],
-    "persistent": false
+    "service_worker": "js/background.js"
   },
   "content_scripts": [
     {
@@ -29,14 +28,24 @@
         "<all_urls>"
       ],
       "js": [
-        "content.js"
+        "js/content.js"
       ],
       "run_at": "document_end",
       "all_frames": true
     }
   ],
   "web_accessible_resources": [
-    "newsee-ChatBI-init.js",
-    "content.js"
-  ]
+    {
+      "resources": [
+        "js/content.js",
+        "js/change-dom.js"
+      ],
+      "matches": [
+        "<all_urls>"
+      ]
+    }
+  ],
+  "content_security_policy": {
+    "extension_pages": "script-src 'self'; object-src 'self';"
+  }
 }

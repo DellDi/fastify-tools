@@ -1,12 +1,12 @@
-"use client"
+'use client'
 
 import { useState } from 'react'
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { toast } from "@/hooks/use-toast";
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { toast } from '@/hooks/use-toast'
 
 export function PasswordComponent() {
   // 原始模式
@@ -42,95 +42,95 @@ export function PasswordComponent() {
       title: statusFail ? '解析异常' : '解析成功',
       variant: statusFail ? 'destructive' : 'default',
       description: statusFail ? `${data.code}:${data.message}` : (
-          <pre className="mt-2 w-[340px] rounded-md bg-slate-950 p-4 overflow-auto">
+        <pre className="mt-2 w-[340px] rounded-md bg-slate-950 p-4 overflow-auto">
           <code className="text-white whitespace-pre-wrap break-words">
             处理结果: {data.result} ({aesOrDeTypeVal})
           </code>
         </pre>)
       ,
-      duration: 1500
+      duration: 1500,
     })
   }
 
   return (
-      <div className="grid gap-6 xl:grid-cols-4 md:grid-cols-2 sm:grid-cols-1 mt-4">
-        <Card className="w-full max-w-md mx-auto text-left">
-          <CardHeader>
-            <CardTitle>数据库模式</CardTitle>
-            <CardDescription>原生数据库加密的解密方式：支持加密和解密</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <form onSubmit={handleSubmit} className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="content">需要处理的字符串</Label>
-                <Input
-                    id="content"
-                    value={content}
-                    onChange={(e) => setContent(e.target.value)}
-                    placeholder="输入需要处理的字符串"
-                    required
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="aesEnOrDeType">处理类型</Label>
-                <Select value={aesEnOrDeType} onValueChange={setAesEnOrDeType}>
-                  <SelectTrigger id="aesEnOrDeType">
-                    <SelectValue placeholder="选择处理类型"/>
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="decrypt">解密（数据库）</SelectItem>
-                    <SelectItem value="encrypt">加密（数据库）</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              <Button type="submit" className="w-full">处理</Button>
-            </form>
-            {result && (
-                <div className="mt-4 p-2 bg-gray-100 rounded">
-                  <p className="text-sm font-medium">{result}</p>
-                </div>
-            )}
-          </CardContent>
-        </Card>
-        <Card className="w-full max-w-md mx-auto text-left">
-          <CardHeader>
-            <CardTitle>业务模式</CardTitle>
-            <CardDescription>接口和页面默认支持的密码加密模式、解密模式</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <form onSubmit={(e) => handleSubmit(e, 'sql')} className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="content">需要处理的字符串</Label>
-                <Input
-                    id="content"
-                    value={contentAes}
-                    onChange={(e) => setContentAes(e.target.value)}
-                    placeholder="输入需要处理的字符串"
-                    required
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="sqlAesValue">处理类型</Label>
-                <Select value={sqlAesValue} onValueChange={setSqlAesValue}>
-                  <SelectTrigger id="sqlAesValue">
-                    <SelectValue placeholder="选择处理类型"/>
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="aesEnOrigin">AES加密</SelectItem>
-                    <SelectItem value="aesDeOrigin">AES解密</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              <Button type="submit" className="w-full">处理</Button>
-            </form>
-            {resultSQL && (
-                <div className="mt-4 p-2 bg-gray-100 rounded">
-                  <Label htmlFor="content">结果</Label>
-                  <p className="text-sm font-medium">{resultSQL}</p>
-                </div>
-            )}
-          </CardContent>
-        </Card>
-      </div>
+    <div className="grid gap-6 xl:grid-cols-4 md:grid-cols-2 sm:grid-cols-1 mt-4">
+      <Card className="w-full max-w-md mx-auto text-left">
+        <CardHeader>
+          <CardTitle>数据库模式</CardTitle>
+          <CardDescription>原生数据库加密的解密方式：支持加密和解密</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <form onSubmit={handleSubmit} className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="content">需要处理的字符串</Label>
+              <Input
+                id="content"
+                value={content}
+                onChange={(e) => setContent((e.target as HTMLInputElement).value)}
+                placeholder="输入需要处理的字符串"
+                required
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="aesEnOrDeType">处理类型</Label>
+              <Select value={aesEnOrDeType} onValueChange={setAesEnOrDeType}>
+                <SelectTrigger id="aesEnOrDeType">
+                  <SelectValue placeholder="选择处理类型"/>
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="decrypt">解密（数据库）</SelectItem>
+                  <SelectItem value="encrypt">加密（数据库）</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <Button type="submit" className="w-full">处理</Button>
+          </form>
+          {result && (
+            <div className="mt-4 p-2 bg-gray-100 rounded">
+              <p className="text-sm font-medium">{result}</p>
+            </div>
+          )}
+        </CardContent>
+      </Card>
+      <Card className="w-full max-w-md mx-auto text-left">
+        <CardHeader>
+          <CardTitle>业务模式</CardTitle>
+          <CardDescription>接口和页面默认支持的密码加密模式、解密模式</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <form onSubmit={(e) => handleSubmit(e, 'sql')} className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="content">需要处理的字符串</Label>
+              <Input
+                id="content"
+                value={contentAes}
+                onChange={(e) => setContentAes((e.target as HTMLInputElement).value)}
+                placeholder="输入需要处理的字符串"
+                required
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="sqlAesValue">处理类型</Label>
+              <Select value={sqlAesValue} onValueChange={setSqlAesValue}>
+                <SelectTrigger id="sqlAesValue">
+                  <SelectValue placeholder="选择处理类型"/>
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="aesEnOrigin">AES加密</SelectItem>
+                  <SelectItem value="aesDeOrigin">AES解密</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <Button type="submit" className="w-full">处理</Button>
+          </form>
+          {resultSQL && (
+            <div className="mt-4 p-2 bg-gray-100 rounded">
+              <Label htmlFor="content">结果</Label>
+              <p className="text-sm font-medium">{resultSQL}</p>
+            </div>
+          )}
+        </CardContent>
+      </Card>
+    </div>
   )
 }
