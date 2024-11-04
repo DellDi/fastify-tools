@@ -50,7 +50,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     const maxResults = 1000 // Adjust based on your primary API's max results per page
 
     while (true) {
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/jira/search`, {
+      const response = await fetch(`${process.env.BASE_API_URL}/jira/search`, {
         headers: {
           Authorization: `Bearer bmV3c2VlOm5ld3NlZQ==`,
           'Content-Type': 'application/json',
