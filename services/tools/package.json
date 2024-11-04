@@ -6,7 +6,8 @@
   "type": "module",
   "scripts": {
     "test": "pnpm run test",
-    "exec": "node excel-chat/exec.js"
+    "exec": "node excel-chat/exec.js",
+    "excel:split": "node excels/split.js"
   },
   "keywords": [
     "tools"
