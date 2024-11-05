@@ -37,7 +37,7 @@ const slugs = [
 export function ShowCloud() {
   return (
       <Card
-          className="min-w-80 max-w-sm" x-chunk="charts-05-chunk-1"
+          className="min-w-80 " x-chunk="charts-05-chunk-1"
       >
         <IconCloud iconSlugs={slugs}/>
       </Card>
