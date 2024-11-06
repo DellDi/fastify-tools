@@ -5,7 +5,6 @@ import { Search } from 'lucide-react'
 import { Input } from '@/components/ui/input'
 import { ToggleTheme } from '@/components/custom/ToggleTheme'
 
-
 export default async ({ children }: {
   children: React.ReactNode
 }) => {
@@ -16,7 +15,7 @@ export default async ({ children }: {
     >
       <AppSidebar/>
       <main className="h-screen w-full flex flex-col transition-all duration-300 ease-in-out box-border">
-        <header className="flex items-center justify-between p-2 border-b  bg-white dark:bg-black">
+        <header className="flex items-center justify-between p-2 border-b bg-white dark:bg-black">
           <div className="flex items-center justify-center">
             <SidebarTrigger className={`mr-2`}/>
             <DynamicBreadcrumb/>

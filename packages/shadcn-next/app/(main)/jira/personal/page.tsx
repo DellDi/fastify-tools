@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
+import { Textarea } from '@/components/ui/textarea'
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card'
 import { Skeleton } from '@/components/ui/skeleton'
 import { AlertCircle, CheckCircle2, ChevronLeft, ChevronRight, Clock } from 'lucide-react'
@@ -33,7 +33,7 @@ export default function JiraIssuesTable() {
       if (!loginResponse.ok) {
         return new Error('Failed to login to Jira')
       }
-      const { cookies, data: loginData } = await loginResponse.json()
+      const { cookies } = await loginResponse.json()
 
       const response = await fetch(`${basePath}/api/jira/jira-filtered`, {
         method: 'POST',
@@ -56,7 +56,7 @@ export default function JiraIssuesTable() {
       setIssues(data.issues)
       setTotalIssues(data.total)
     } catch (err) {
-      setError('Error fetching Jira issues')
+      setError(`Error fetching Jira issues, ${err}`)
     } finally {
       setLoading(false)
     }
@@ -93,10 +93,9 @@ export default function JiraIssuesTable() {
           <CardTitle className="text-2xl font-bold text-primary">
             SAAS专用工单系统
             <div className="flex h-20 py-2 items-center justify-start">
-              <Input
+              <Textarea
                 onChange={(e) => setJiraSql(e.target.value)}
                 className="mr-2 border-2 shadow-sm flex-1"
-                as="textarea"
                 value={jiraSql}
                 placeholder="Search Jira Issues"
               />
