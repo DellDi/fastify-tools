@@ -9,9 +9,11 @@ export default async ({ children }: {
   children: React.ReactNode
 }) => {
   const { cookies } = await import('next/headers')
+  const sidebarState = await cookies()
+  const sidebar =  sidebarState.get('sidebar:state');
   return (
     <SidebarLayout
-      defaultOpen={cookies().get('sidebar:state')?.value === 'true'}
+      defaultOpen={sidebar?.value === 'true'} // Now you can safely use sidebarState
     >
       <AppSidebar/>
       <main className="h-screen w-full flex flex-col transition-all duration-300 ease-in-out box-border">

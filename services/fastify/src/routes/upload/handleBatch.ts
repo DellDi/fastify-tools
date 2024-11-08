@@ -9,6 +9,7 @@ export async function handleBatch(req: FastifyRequest, reply: FastifyReply) {
   const parts = req.parts()
 
   const uploadedFiles = []
+
   for await (const part of parts) {
     if (part.type === 'file') {
       if (!ALLOWED_TYPES.includes(part.mimetype)) {

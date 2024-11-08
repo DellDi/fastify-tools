@@ -24,7 +24,7 @@ export const FileUploadStatus: React.FC<FileUploadStatusProps> = ({
       {files.length > 0 && (
         <div className="mt-4">
           <h3 className="text-lg font-semibold mb-2">已选择的文件：</h3>
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 p-4 border-2 rounded-md">
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 p-4 border-2 rounded-md dark:border-gray-700">
             {files.map((file, index) => (
               <div key={index} className="relative border rounded-lg p-2 flex flex-col items-center">
                 {getFileIcon(file)}
