@@ -16,23 +16,56 @@ const singleUploadFunction = async (files: File[]): Promise<void> => {
     formData.append('file', file)
   })
 
-  fetch(`${process.env.NEXT_PUBLIC_API_URL}/upload/single`, {
+  // 上传新增秒传逻辑，增加hash校验
+  const hash = await crypto.subtle.digest('SHA-256', await files[0].arrayBuffer())
+  const hashArray = Array.from(new Uint8Array(hash))
+  const hashHex = hashArray.map(b => b.toString(16).padStart(2, '0')).join('')
+  const orgHash = hashHex.slice(0, 8)
+
+  const resHashCheck = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/upload/check`, {
     method: 'POST',
-    body: formData,
-  }).then(async (res) => {
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      filename: files[0].name,
+      fileHash: orgHash,
+    }),
+  })
+
+  const resHashCheckJson = await resHashCheck.json()
+  if (resHashCheckJson.isExist) {
+    toast({
+      title: '秒传成功',
+      description: `文件已存在，文件名为${resHashCheckJson.extantFilename}`,
+    })
+    return
+  }
+
+  try {
+    const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/upload/single`, {
+      method: 'POST',
+      body: formData,
+    })
     if (res.ok) {
       const fileInfo: FileSuccessResponse = await res.json()
       toast({
         title: '上传成功',
         description: `${fileInfo.fileUrl}`,
       })
+    } else {
+      const err = await res.json()
+      toast({
+        title: '上传失败',
+        description: `${err.error}`,
+      })
     }
-  }).catch(() => {
+  } catch (e) {
     toast({
       title: '上传失败',
-      description: '请稍后再试',
+      description: `请稍后再试${e}`,
     })
-  })
+  }
 }
 
 /**
@@ -67,7 +100,7 @@ export function SingleUpload() {
 
   return (
     <div
-      className="h-full flex items-center flex-col justify-center border-2 border-dashed rounded-lg p-4 text-center cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
+      className="h-full flex items-center flex-col justify-center border-2 border-dashed rounded-lg p-4 text-center cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-900 transition-colors"
       onPaste={(e) => handlePaste(e)}
     >
       <FilePlus className="mx-auto h-20 w-20 text-gray-400"/>

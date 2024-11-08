@@ -20,8 +20,7 @@ const upload: FastifyPluginAsync = async (fastify, opts): Promise<void> => {
 
   fastify.register(cors, {
       origin: ['http://localhost:3001', 'http://localhost:3000'], // Allow requests from this origin
-      // methods: ['GET', 'POST'], // Allow these methods
-      credentials: true, // Enable cookies
+      methods: ['POST'], // Allow these methods
     },
   )
 
@@ -52,8 +51,6 @@ const upload: FastifyPluginAsync = async (fastify, opts): Promise<void> => {
 
   // Register multipart plugin
   fastify.register(fastifyMultipart, {
-    // attachFieldsToBody: true,
-    // sharedSchemaId: '#mySharedSchema',
     limits: {
       files: 3,
       fileSize: MAX_FILE_SIZE,
@@ -67,6 +64,7 @@ const upload: FastifyPluginAsync = async (fastify, opts): Promise<void> => {
     },
     async function (req, reply) {
       const data = await req.file()
+
       if (!data) {
         return reply.code(400).send({ error: 'No file uploaded' })
       }
@@ -74,17 +72,17 @@ const upload: FastifyPluginAsync = async (fastify, opts): Promise<void> => {
         return reply.code(400).send({ error: 'File type not allowed' })
       }
       // 新增秒传的逻辑
-      // const orgHash = hashes[0] as string;
-      // const fileNameList = fs.readdirSync(UPLOAD_DIR)
-      // console.log("🚀 ~ file:index.ts, line:93-----", fileNameList)
-      // const fileFullName = fileNameList.find(a => a.includes(orgHash))
-      // if (fileFullName) {
-      //     return reply.code(200).send({
-      //         message: 'one second File uploaded successfully',
-      //         fileUrl: `/zuul/${fileFullName}`,
-      //         fileHash: orgHash
-      //     })
-      // }
+      const hashes = data.filename.split('-')
+      const orgHash = hashes[0] as string
+      const fileNameList = fs.readdirSync(UPLOAD_DIR)
+      const fileFullName = fileNameList.find(a => a.includes(orgHash))
+      if (fileFullName) {
+        return reply.code(200).send({
+          message: 'one second File uploaded successfully',
+          fileUrl: `/zuul/${fileFullName}`,
+          fileHash: orgHash,
+        })
+      }
 
       const hash = crypto.createHash('sha256')
       const chunks: Buffer[] = []

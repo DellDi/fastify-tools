@@ -1,20 +1,20 @@
 import { Type } from '@sinclair/typebox'
 
-// const UploadedFile = Type.Object({
-//     file: Type.Object({}),
-//     hash: Type.Optional(Type.String()),
-// })
-
-const uploadCheck = Type.Array(Type.Object({
+const uploadCheck = Type.Object({
   filename: Type.String(),
   fileHash: Type.String(),
-}))
+})
 
 const headerType = Type.Object({
   'Content-Type': Type.String({
     description: 'multipart/form-data',
     default: 'multipart/form-data',
   }),
+})
+
+const resFileType = Type.Object({
+  fileUrl: Type.String({ description: '上传文件的URL' }),
+  fileHash: Type.String({ description: '上传文件的hash值' }),
 })
 
 export const uploadBase = {
@@ -30,20 +30,23 @@ export const uploadCheckBase = {
   tags: ['upload'],
   body: uploadCheck,
   response: {
-    200: Type.Array(Type.String({ description: '已存在的文件list' })),
+    200: Type.Object({
+      isExist: Type.Boolean(),
+      extantFilename: Type.Optional(Type.String()),
+      fileInfo: Type.Optional(resFileType),
+    }),
   },
 }
-
 
 export const singleUpload = {
   description: '单文件上传的接口',
   tags: ['upload'],
   consumes: ['multipart/form-data'],
   response: {
+    // 200 返回合并 resFileType 类型 和 message 字段
     200: Type.Object({
-      message: Type.String({ description: '上传成功' }),
-      fileUrl: Type.String({ description: '上传文件的URL' }),
-      fileHash: Type.String({ description: '上传文件的hash值' }),
+      message: Type.String({ description: '文件上传成功' }),
+      ...resFileType.props,
     }),
     400: Type.Object({
       error: Type.Any(),

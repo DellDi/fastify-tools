@@ -66,7 +66,7 @@ export function PasswordComponent() {
               <Input
                 id="content"
                 value={content}
-                onChange={(e) => setContent((e.target as HTMLInputElement).value)}
+                onChange={(e) => setContent(e.target.value)}
                 placeholder="输入需要处理的字符串"
                 required
               />
@@ -104,7 +104,7 @@ export function PasswordComponent() {
               <Input
                 id="content"
                 value={contentAes}
-                onChange={(e) => setContentAes((e.target as HTMLInputElement).value)}
+                onChange={(e) => setContentAes(e.target.value)}
                 placeholder="输入需要处理的字符串"
                 required
               />
@@ -124,7 +124,7 @@ export function PasswordComponent() {
             <Button type="submit" className="w-full">处理</Button>
           </form>
           {resultSQL && (
-            <div className="mt-4 p-2 bg-gray-100 rounded">
+            <div className="mt-4 p-2 bg-gray-100 rounded dark:bg-gray-900">
               <Label htmlFor="content">结果</Label>
               <p className="text-sm font-medium">{resultSQL}</p>
             </div>

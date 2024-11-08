@@ -11,7 +11,9 @@ export const ALLOWED_TYPES = [
   'audio/mp3',
   // dmg
   'application/x-apple-diskimage',
+  // ppt pdf
   'application/ppt',
+  'application/vnd.openxmlformats-officedocument.presentationml.presentation',
   'application/pdf',
   'application/x-msdos-program',
 ]
