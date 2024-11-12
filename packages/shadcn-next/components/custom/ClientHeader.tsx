@@ -12,13 +12,14 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
+import { ToggleTheme } from '@/components/custom/ToggleTheme'
 
 const navLinks = [
   { href: '/dashboard', label: '首页' },
-  { href: '/password/newsee', label: '解密' },
-  { href: '#', label: '网站实例' },
+  { href: '#', label: '模型实例' },
   { href: '#', label: '博客' },
-  { href: '#', label: '登录页面' },
+  { href: '#', label: '登录' },
+  { href: '/password/newsee', label: '解密' },
   { href: 'https://github.com/DellDi', label: 'GitHub', icon: <Github className="h-5 w-5"/> },
 ]
 
@@ -67,27 +68,7 @@ export default function ClientHeader() {
           </nav>
 
           <div className="flex items-center space-x-2">
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="ghost" size="icon">
-                  <Sun className="h-5 w-5 rotate-0 scale-100 transition-all dark:-rotate-90 dark:scale-0"/>
-                  <Moon className="absolute h-5 w-5 rotate-90 scale-0 transition-all dark:rotate-0 dark:scale-100"/>
-                  <span className="sr-only">Toggle theme</span>
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end">
-                <DropdownMenuItem onClick={() => setTheme('light')}>
-                  Light
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => setTheme('dark')}>
-                  Dark
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => setTheme('system')}>
-                  System
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
-
+            <ToggleTheme/>
             <Button
               variant="ghost"
               size="icon"
