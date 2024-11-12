@@ -3,7 +3,6 @@
 import Link from 'next/link'
 import { motion } from 'framer-motion'
 import ClientHeader from '@/components/custom/ClientHeader'
-import TextReveal from '@/components/ui/text-reveal'
 import { GithubIcon } from 'lucide-react'
 
 const sections = [
@@ -54,7 +53,7 @@ const sections = [
 export default function Home() {
   return (
     <div className="max-w-screen-2xl mx-auto bg-gradient-to-br from-gray-100 to-gray-200 dark:from-gray-900 dark:to-black min-h-screen">
-      <ClientHeader />
+      <ClientHeader/>
       <main className="text-center mt-16 px-4">
         <motion.h1
           className="text-5xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-blue-600 to-purple-600"
@@ -73,9 +72,6 @@ export default function Home() {
           Next.js 为您提供生产环境所需的所有功能以及最佳的开发体验：包括静态及服务器端渲染合流架、支持
           TypeScript、智能化打包、路由预取等功能无需任何配置。
         </motion.p>
-        {/*<div className="z-10 mt-8 flex min-h-20 items-center justify-center rounded-lg bg-white/10 backdrop-blur-md dark:bg-black/30 p-4">*/}
-        {/*  <TextReveal text="TypeScript、智能化打包、路由预取等功能无需任何配置。" />*/}
-        {/*</div>*/}
         <motion.div
           className="mt-8 flex justify-center space-x-4"
           initial={{ opacity: 0, y: 20 }}
@@ -83,12 +79,14 @@ export default function Home() {
           transition={{ duration: 0.8, delay: 0.4 }}
         >
           <Link href="/dashboard">
-            <button className="bg-gradient-to-r from-blue-600 to-purple-600 text-white px-6 py-2 rounded-full hover:shadow-lg transition duration-300 transform hover:scale-105">
+            <button
+              className="bg-gradient-to-r from-blue-600 to-purple-600 text-white px-6 py-2 rounded-full hover:shadow-lg transition duration-300 transform hover:scale-105">
               开始使用
             </button>
           </Link>
           <Link href="/login">
-            <button className="bg-gray-200 text-gray-600 dark:bg-gray-700 dark:text-blue-100 px-6 py-2 rounded-full hover:shadow-lg transition duration-300 transform hover:scale-105">
+            <button
+              className="bg-gray-200 text-gray-600 dark:bg-gray-700 dark:text-blue-100 px-6 py-2 rounded-full hover:shadow-lg transition duration-300 transform hover:scale-105">
               中文文档
             </button>
           </Link>
@@ -100,8 +98,9 @@ export default function Home() {
           transition={{ duration: 0.8, delay: 0.6 }}
         >
           开源协议：MIT
-          <a href="#" className="text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300 ml-2 inline-flex items-center">
-            <GithubIcon className="w-4 h-4 mr-1" />
+          <a href="#"
+             className="text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300 ml-2 inline-flex items-center">
+            <GithubIcon className="w-4 h-4 mr-1"/>
             GitHub
           </a>
         </motion.div>
