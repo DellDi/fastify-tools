@@ -1,4 +1,4 @@
-import type { NextApiRequest, NextApiResponse } from 'next'
+import { NextResponse } from 'next/server'
 import { LRUCache } from 'lru-cache'
 
 const cache = new LRUCache({
@@ -6,10 +6,7 @@ const cache = new LRUCache({
   ttl: 60 * 60 * 1000, // 1 hour
 })
 
-export default async function handler(req: NextApiRequest, res: NextApiResponse) {
-  if (req.method !== 'POST') {
-    return res.status(405).json({ message: 'Method Not Allowed' })
-  }
+export async function POST() {
 
   const loginUrl = 'http://bug.new-see.com:8088/rest/gadget/1.0/login'
   const username = 'liufengxiao'
@@ -19,7 +16,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     // 缓存响应的结果，如果存在则直接返回，不再重复请求 设置过期时间为1小时
     const cachedResponse = cache.get('loginResponse')
     if (cachedResponse) {
-      return res.status(200).json(cachedResponse)
+      return NextResponse.json(cachedResponse)
     }
 
     const response = await fetch(loginUrl, {
@@ -42,8 +39,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       : setCookieHeader.split(';')[0]
     const data = await response.json()
     cache.set('loginResponse', { cookies, data })
-    res.status(200).json({ data, cookies })
+    NextResponse.json({ data, cookies }, { status: 200 })
   } catch (error) {
-    res.status(500).json({ message: error })
+    NextResponse.json({ message: error }, { status: 500 })
   }
 }

@@ -1,9 +1,7 @@
-'use client'
-
-import Link from 'next/link'
-import { motion } from 'framer-motion'
 import ClientHeader from '@/components/custom/ClientHeader'
-import { GithubIcon } from 'lucide-react'
+import { GithubIcon } from '@/components/custom/base/custom-icon'
+import { MotionHeading, MotionParagraph, MotionButtonGroup, MotionSection } from '@/components/custom/base/motion-list'
+import { createClient } from '@/utils/supabase/server'
 
 const sections = [
   {
@@ -50,93 +48,46 @@ const sections = [
   },
 ]
 
-export default function Home() {
+// 静态渲染
+async function getData() {
+  const supabase = await createClient()
+  const res = await supabase.from('dl_ai_sections').select('*')
+  console.log('🚀 ~ file:page.tsx, line:55-----', res)
+  return res
+}
+
+export default async function Home() {
+  const { data, error } = await getData()
   return (
     <div className="max-w-screen-2xl mx-auto bg-gradient-to-br from-gray-100 to-gray-200 dark:from-gray-900 dark:to-black min-h-screen">
       <ClientHeader/>
       <main className="text-center mt-16 px-4">
-        <motion.h1
-          className="text-5xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-blue-600 to-purple-600"
-          initial={{ opacity: 0, y: -20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.8 }}
-        >
-          这是一个用于生产环境的 <span className="text-black dark:text-white">React 框架</span>
-        </motion.h1>
-        <motion.p
-          className="mt-4 text-gray-600 dark:text-blue-100"
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.8, delay: 0.2 }}
-        >
-          Next.js 为您提供生产环境所需的所有功能以及最佳的开发体验：包括静态及服务器端渲染合流架、支持
-          TypeScript、智能化打包、路由预取等功能无需任何配置。
-        </motion.p>
-        <motion.div
-          className="mt-8 flex justify-center space-x-4"
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.8, delay: 0.4 }}
-        >
-          <Link href="/dashboard">
-            <button
-              className="bg-gradient-to-r from-blue-600 to-purple-600 text-white px-6 py-2 rounded-full hover:shadow-lg transition duration-300 transform hover:scale-105">
-              开始使用
-            </button>
-          </Link>
-          <Link href="/login">
-            <button
-              className="bg-gray-200 text-gray-600 dark:bg-gray-700 dark:text-blue-100 px-6 py-2 rounded-full hover:shadow-lg transition duration-300 transform hover:scale-105">
-              中文文档
-            </button>
-          </Link>
-        </motion.div>
-        <motion.div
-          className="mt-4 text-gray-600 dark:text-blue-100"
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ duration: 0.8, delay: 0.6 }}
-        >
+        <MotionHeading text="这是一个用于生产环境的 React 框架"/>
+        <MotionParagraph
+          text="Next.js 为您提供生产环境所需的所有功能以及最佳的开发体验：包括静态及服务器端渲染合流架、支持 TypeScript、智能化打包、路由预取等功能无需任何配置。"/>
+        <MotionButtonGroup/>
+        <div className="mt-4 text-gray-600 dark:text-blue-100">
           开源协议：MIT
           <a href="#"
              className="text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300 ml-2 inline-flex items-center">
             <GithubIcon className="w-4 h-4 mr-1"/>
             GitHub
           </a>
-        </motion.div>
+        </div>
       </main>
       <section className="mt-16 px-6 pb-16">
-        <motion.h2
-          className="text-3xl font-bold text-center bg-clip-text text-transparent bg-gradient-to-r from-green-400 to-blue-500"
-          initial={{ opacity: 0, y: -20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.8 }}
-        >
-          为什么选择 Next.js
-        </motion.h2>
-        <motion.p
-          className="text-center text-gray-600 dark:text-blue-100 mt-2"
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.8, delay: 0.2 }}
-        >
-          全球领先的公司都在使用并喜爱 Next.js
-        </motion.p>
+        <MotionHeading text="为什么选择 Next.js" className="text-center"/>
+        <MotionParagraph text="全球领先的公司都在使用并喜爱 Next.js" className="text-center"/>
         <div className="mt-8 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {sections.map((section, index) => (
-            <motion.div
+            <MotionSection
               key={index}
-              className={`bg-gradient-to-br ${section.gradient} text-white shadow-lg p-6 rounded-lg hover:shadow-xl transition duration-300 transform hover:scale-105`}
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.5, delay: index * 0.1 }}
-            >
-              <h3 className="text-xl font-bold">{section.title}</h3>
-              <p className="mt-2 text-gray-100">{section.description}</p>
-              <Link href={section.linkHref} className="text-white mt-4 block hover:underline">
-                {section.linkText} →
-              </Link>
-            </motion.div>
+              title={section.title}
+              description={section.description}
+              linkText={section.linkText}
+              linkHref={section.linkHref}
+              gradient={section.gradient}
+            />
           ))}
         </div>
       </section>

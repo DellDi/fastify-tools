@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button'
 import { Progress } from '@/components/ui/progress'
 import { Card, CardContent } from '@/components/ui/card'
 import { CircleX, File, Upload } from 'lucide-react'
-import { getFileIcon } from '@/lib/file'
+import { getFileIcon } from '@/libs/file'
 import { SingleUpload } from '@/components/upload/single'
 import { BatchUpload } from '@/components/upload/batch'
 
