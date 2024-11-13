@@ -1,5 +1,5 @@
 // `pages/api/jira-filtered.ts` 主要目的内置了过滤saas的客户名称
-import type { NextApiRequest, NextApiResponse } from 'next'
+import { NextRequest, NextResponse } from 'next/server'
 
 export interface JiraIssue {
   key: string
@@ -36,12 +36,9 @@ export interface JiraResponse {
   startAt: number
 }
 
-export default async function handler(req: NextApiRequest, res: NextApiResponse) {
-  if (req.method !== 'POST') {
-    return res.status(405).json({ message: 'Method Not Allowed' })
-  }
+export async function POST(req: NextRequest) {
 
-  const { jql, jiraCookies, secondaryPage, secondaryPageSize } = req.body
+  const { jql, jiraCookies, secondaryPage, secondaryPageSize } = await req.json()
 
   try {
     // Fetch all pages of data from the primary API
@@ -63,7 +60,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
           jiraCookies,
         }),
       })
-      console.log('🚀 ~ file:jira-filtered.ts, line:66-----', response)
 
       if (!response.ok) {
         return new Error('Failed to fetch Jira issues')
@@ -91,12 +87,16 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     const end = start + secondaryPageSize
     const paginatedIssues = filteredIssues.slice(start, end)
 
-    res.status(200).json({
+    NextResponse.json({
       total: totalFilteredIssues,
       issues: paginatedIssues,
+    }, {
+      status: 200,
     })
   } catch (error) {
     console.log('🚀 ~ file:jira-filtered.ts, line:99-----', error)
-    res.status(500).json({ message: JSON.stringify(error) })
+    NextResponse.json({ message: JSON.stringify(error) }, {
+      status: 500,
+    })
   }
 }

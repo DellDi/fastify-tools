@@ -2,17 +2,12 @@
 
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
+import Image from 'next/image'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Moon, Sun, Menu, X, Github } from 'lucide-react'
-import { useTheme } from 'next-themes'
+import { Menu, X } from 'lucide-react'
 import { Button } from '@/components/ui/button'
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu'
 import { ToggleTheme } from '@/components/custom/ToggleTheme'
+import { GithubIcon } from '@/components/custom/base/custom-icon'
 
 const navLinks = [
   { href: '/dashboard', label: '首页' },
@@ -20,12 +15,11 @@ const navLinks = [
   { href: '#', label: '博客' },
   { href: '#', label: '登录' },
   { href: '/password/newsee', label: '解密' },
-  { href: 'https://github.com/DellDi', label: 'GitHub', icon: <Github className="h-5 w-5"/> },
+  { href: 'https://github.com/DellDi', label: 'GitHub', icon: <GithubIcon className="h-5 w-5"/> },
 ]
 
 export default function ClientHeader() {
   const [menuOpen, setMenuOpen] = useState(false)
-  const { theme, setTheme } = useTheme()
   const [mounted, setMounted] = useState(false)
 
   useEffect(() => {
@@ -42,7 +36,8 @@ export default function ClientHeader() {
       <div className="container mx-auto px-4">
         <div className="flex justify-between items-center py-4">
           <Link href="/" className="flex items-center space-x-2">
-            <img src="https://avatars.githubusercontent.com/u/40460351?v=4" alt="Next Node logo" className="h-8 w-8 rounded-full"/>
+            <Image src="https://avatars.githubusercontent.com/u/40460351?v=4" width={32}
+                   height={32} alt="Next Node logo" className="h-8 w-8 rounded-full"/>
             <span className="text-xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-blue-500 to-purple-600">
               Next Node
             </span>
