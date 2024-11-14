@@ -26,12 +26,18 @@ async function getData(): Promise<{ data: Section[]; error: any }> {
     return { data: [], error: res.error }
   }
 
-  const data: Section[] = (res.data || []).map((item) => ({
-    title: snakeToCamel(item.title) as string,
-    description: snakeToCamel(item.description) as string,
-    linkText: snakeToCamel(item.link_text) as string,
-    linkHref: snakeToCamel(item.link_href) as string,
-    gradient: snakeToCamel(item.gradient) as string,
+  const data: Section[] = (res.data || []).map((item: {
+    title: string;
+    description: string;
+    link_text: string;
+    link_href: string;
+    gradient: string
+  }) => ({
+    title: snakeToCamel(item.title),
+    description: snakeToCamel(item.description),
+    linkText: snakeToCamel(item.link_text),
+    linkHref: snakeToCamel(item.link_href),
+    gradient: snakeToCamel(item.gradient),
   }))
 
   return { data, error: null }
@@ -54,12 +60,12 @@ export default async function Home() {
 
   return (
     <div className="bg-gradient-to-br from-gray-100 to-gray-200 dark:from-gray-900 dark:to-black min-h-screen">
-      <ClientHeader />
+      <ClientHeader/>
       <div className="max-w-screen-xl mx-auto">
         <main className="text-center mt-16 px-4">
-          <MotionHeading text="这是一个用于展示工具集合和AIGC的作品集合" />
-          <MotionParagraph text="后端使用next和fastify组合使用、对接丰富的AIGC资源和文件系统资源、知识库等" />
-          <MotionButtonGroup />
+          <MotionHeading text="这是一个用于展示工具集合和AIGC的作品集合"/>
+          <MotionParagraph text="后端使用next和fastify组合使用、对接丰富的AIGC资源和文件系统资源、知识库等"/>
+          <MotionButtonGroup/>
         </main>
         <section className="mt-16 px-6 pb-16">
           <div className="mt-8 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -84,7 +90,7 @@ export default async function Home() {
             className="text-center"
           />
         </section>
-        <MarqueeDemoVertical />
+        <MarqueeDemoVertical/>
       </div>
     </div>
   )
