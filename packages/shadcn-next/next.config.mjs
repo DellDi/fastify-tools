@@ -5,7 +5,16 @@ const nextConfig = {
   basePath: process.env.NEXT_PUBLIC_BASE_PATH || '',
   assetPrefix: process.env.NEXT_PUBLIC_BASE_PATH || '',
   images: {
-    domains: ['avatars.githubusercontent.com', 'qw.yswg360.com'],
+    remotePatterns: [
+      {
+        protocol: 'https',
+        hostname: 'avatars.githubusercontent.com',
+      },
+      {
+        protocol: 'https',
+        hostname: 'qw.yswg360.com',
+      },
+    ],
   },
   eslint: {
     ignoreDuringBuilds: true,

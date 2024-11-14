@@ -1,7 +1,13 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from '@/components/ui/card'
 import { Progress } from '@/components/ui/progress'
 import { Badge } from '@/components/ui/badge'
 import { AlertCircle, ExternalLink } from 'lucide-react'
@@ -53,18 +59,24 @@ const models = [
 
 const ModelCard = ({ model }) => {
   const creditPercentage = (model.availableCredit / model.totalCredit) * 100
-  const gradientClass = creditPercentage > 50
-    ? 'from-green-500 to-blue-500'
-    : creditPercentage > 20
+  const gradientClass =
+    creditPercentage > 50
+      ? 'from-green-500 to-blue-500'
+      : creditPercentage > 20
       ? 'from-yellow-500 to-orange-500'
       : 'from-red-500 to-pink-500'
 
   return (
     <Card className="overflow-hidden transition-all duration-300 hover:shadow-lg dark:hover:shadow-primary/25 group relative">
       <div
-        className={`absolute inset-0 bg-gradient-to-br ${gradientClass} opacity-20 group-hover:opacity-30 transition-all duration-300 ease-in-out`}/>
+        className={`absolute inset-0 bg-gradient-to-br ${gradientClass} opacity-20 group-hover:opacity-30 transition-all duration-300 ease-in-out`}
+      />
       <CardHeader className="flex flex-row items-center gap-4">
-        <img src={model.logo} alt={`${model.title} logo`} className="w-12 h-12 rounded-full"/>
+        <img
+          src={model.logo}
+          alt={`${model.title} logo`}
+          className="w-12 h-12 rounded-full"
+        />
         <div>
           <CardTitle>{model.title}</CardTitle>
           <CardDescription>{model.description}</CardDescription>
@@ -74,20 +86,22 @@ const ModelCard = ({ model }) => {
         <div>
           <div className="flex justify-between mb-1">
             <span className="text-sm font-medium">可用额度</span>
-            <span className="text-sm font-medium">{model.availableCredit} / {model.totalCredit} 积分</span>
+            <span className="text-sm font-medium">
+              {model.availableCredit} / {model.totalCredit} 积分
+            </span>
           </div>
-          <Progress value={creditPercentage} className="h-2"/>
+          <Progress value={creditPercentage} className="h-2" />
         </div>
         {model.debtInfo && (
           <Badge variant="destructive" className="flex items-center gap-1">
-            <AlertCircle className="w-4 h-4"/>
+            <AlertCircle className="w-4 h-4" />
             {model.debtInfo}
           </Badge>
         )}
         <Button variant="outline" className="w-full group" asChild>
           <a href={model.docUrl} target="_blank" rel="noopener noreferrer">
             查看文档
-            <ExternalLink className="w-4 h-4 ml-2 transition-transform group-hover:translate-x-1"/>
+            <ExternalLink className="w-4 h-4 ml-2 transition-transform group-hover:translate-x-1" />
           </a>
         </Button>
       </CardContent>
@@ -118,8 +132,8 @@ export default function ModelShowcase() {
             gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))',
           }}
         >
-          {models.map(model => (
-            <ModelCard key={model.id} model={model}/>
+          {models.map((model) => (
+            <ModelCard key={model.id} model={model} />
           ))}
         </div>
       </div>
