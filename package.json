@@ -6,7 +6,8 @@
   "description": "This project was bootstrapped with Fastify-CLI.",
   "type": "module",
   "scripts": {
-    "dev:all": "pnpm recursive run dev"
+    "dev:all": "pnpm recursive run dev",
+    "dev:concurrently": "concurrently \"pnpm -F shadcn-next dev\"  \"pnpm -F fastify-service dev\""
   },
   "keywords": [
     "next",
@@ -19,6 +20,7 @@
   ],
   "packageManager": "pnpm@9.12.2",
   "devDependencies": {
+    "concurrently": "^9.0.1",
     "@types/node": "^20.16.10",
     "pm2": "^5.4.2",
     "ts-node": "^10.9.2",
