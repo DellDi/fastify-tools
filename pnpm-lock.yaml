@@ -11,6 +11,9 @@ importers:
       '@types/node':
         specifier: ^20.16.10
         version: 20.17.6
+      concurrently:
+        specifier: ^9.0.1
+        version: 9.1.0
       pm2:
         specifier: ^5.4.2
         version: 5.4.2
@@ -244,9 +247,6 @@ importers:
       c8:
         specifier: ^10.1.2
         version: 10.1.2
-      concurrently:
-        specifier: ^9.0.1
-        version: 9.1.0
       fastify-tsconfig:
         specifier: ^2.0.0
         version: 2.0.0
