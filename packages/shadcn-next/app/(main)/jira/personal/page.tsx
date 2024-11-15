@@ -1,15 +1,16 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { Button } from '@/components/ui/button'
 import { Textarea } from '@/components/ui/textarea'
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card'
 import { Skeleton } from '@/components/ui/skeleton'
 import { AlertCircle, CheckCircle2, ChevronLeft, ChevronRight, Clock } from 'lucide-react'
-import { JiraIssue, JiraResponse } from '@/pages/api/jira/jira-filtered'
+
 import { SAAS_JQL_3M } from '@/libs/jira/jql'
 import { useBasePath } from '@/hooks/use-path'
+import { JiraResponse, JiraIssue } from '@/app/api/jira/jira-filtered/route'
 
 export default function JiraIssuesTable() {
   const [jiraSql, setJiraSql] = useState<string>(SAAS_JQL_3M)
@@ -21,11 +22,7 @@ export default function JiraIssuesTable() {
   const pageSize = 50
   const { basePath } = useBasePath()
 
-  useEffect(() => {
-    fetchIssues()
-  }, [page])
-
-  async function fetchIssues() {
+  const fetchIssues = useCallback(async () => {
     setLoading(true)
     try {
       // 环境变量  部署基础路径 NEXT_PUBLIC_BASE_PATH
@@ -60,7 +57,11 @@ export default function JiraIssuesTable() {
     } finally {
       setLoading(false)
     }
-  }
+  }, [page, jiraSql, basePath])
+
+  useEffect(() => {
+    fetchIssues().then(r => r)
+  }, [fetchIssues, page])
 
   const getStatusIcon = (status: string) => {
     switch (status.toLowerCase()) {
