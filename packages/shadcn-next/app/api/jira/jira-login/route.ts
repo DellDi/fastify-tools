@@ -7,7 +7,6 @@ const cache = new LRUCache({
 })
 
 export async function POST() {
-
   const loginUrl = 'http://bug.new-see.com:8088/rest/gadget/1.0/login'
   const username = 'liufengxiao'
   const password = 'lfx123456'
@@ -39,8 +38,8 @@ export async function POST() {
       : setCookieHeader.split(';')[0]
     const data = await response.json()
     cache.set('loginResponse', { cookies, data })
-    NextResponse.json({ data, cookies }, { status: 200 })
+    return NextResponse.json({ data, cookies }, { status: 200 })
   } catch (error) {
-    NextResponse.json({ message: error }, { status: 500 })
+    return NextResponse.json({ message: error }, { status: 500 })
   }
 }

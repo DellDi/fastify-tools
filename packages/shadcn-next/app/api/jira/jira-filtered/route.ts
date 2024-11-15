@@ -37,9 +37,7 @@ export interface JiraResponse {
 }
 
 export async function POST(req: NextRequest) {
-
   const { jql, jiraCookies, secondaryPage, secondaryPageSize } = await req.json()
-
   try {
     // Fetch all pages of data from the primary API
     let allIssues: JiraResponse['issues'] = []
@@ -62,7 +60,9 @@ export async function POST(req: NextRequest) {
       })
 
       if (!response.ok) {
-        return new Error('Failed to fetch Jira issues')
+        return NextResponse.json({ message: 'Failed to fetch Jira issues' }, {
+          status: 500,
+        })
       }
 
       const data = await response.json()
@@ -87,15 +87,14 @@ export async function POST(req: NextRequest) {
     const end = start + secondaryPageSize
     const paginatedIssues = filteredIssues.slice(start, end)
 
-    NextResponse.json({
+    return NextResponse.json({
       total: totalFilteredIssues,
       issues: paginatedIssues,
     }, {
       status: 200,
     })
   } catch (error) {
-    console.log('🚀 ~ file:jira-filtered.ts, line:99-----', error)
-    NextResponse.json({ message: JSON.stringify(error) }, {
+    return NextResponse.json({ message: JSON.stringify(error) }, {
       status: 500,
     })
   }

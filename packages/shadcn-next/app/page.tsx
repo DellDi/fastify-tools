@@ -6,7 +6,7 @@ import {
   MotionButtonGroup,
   MotionSection,
 } from '@/components/custom/base/motion-list'
-import { snakeToCamel } from '@/utils/func'
+import { mapKeys, snakeToCamel } from '@/utils/func'
 import { createClient } from '@/utils/supabase/server'
 
 interface Section {
@@ -18,7 +18,7 @@ interface Section {
 }
 
 // 静态渲染
-async function getData(): Promise<{ data: Section[]; error: any }> {
+async function getData(): Promise<{ data: Section[]; error: { message: string } | null }> {
   const supabase = await createClient()
   const res = await supabase.from('dl_ai_sections').select('*')
 
@@ -32,13 +32,7 @@ async function getData(): Promise<{ data: Section[]; error: any }> {
     link_text: string;
     link_href: string;
     gradient: string
-  }) => ({
-    title: snakeToCamel(item.title),
-    description: snakeToCamel(item.description),
-    linkText: snakeToCamel(item.link_text),
-    linkHref: snakeToCamel(item.link_href),
-    gradient: snakeToCamel(item.gradient),
-  }))
+  }) => (mapKeys(item, snakeToCamel) as unknown) as Section)
 
   return { data, error: null }
 }
