@@ -46,7 +46,7 @@ export const routesConfig = {
       isActive: true,
       items: [
         {
-          title: 'neesee模式',
+          title: 'neeseeERP',
           url: '/password/newsee',
           icon: History,
           description: 'neesee密码加解密',
