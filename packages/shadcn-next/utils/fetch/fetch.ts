@@ -7,7 +7,6 @@ export const fetchBase = async (url: string, options: RequestInit) => {
 
   // 拼接基础路径和目标URL，形成最终的请求URL
   const finalUrl = `${__NEXT_PRIVATE_ORIGIN}${basePath}${url}`
-  console.log('🚀 ~ file:fetch.ts, line:8-----', finalUrl, options.method)
   // 发起请求，并传入请求选项
   const response = await fetch(finalUrl, options)
 

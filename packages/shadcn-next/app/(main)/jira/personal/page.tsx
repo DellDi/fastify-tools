@@ -30,7 +30,7 @@ export default async function JiraPage({ searchParams }: { searchParams?: Promis
             </Suspense>
           </CardContent>
           <CardFooter className="flex justify-between items-center">
-            <JiraPaginator/>
+            <JiraPaginator key={query + page} />
           </CardFooter>
         </Card>
       </div>

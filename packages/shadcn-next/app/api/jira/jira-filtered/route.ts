@@ -37,7 +37,7 @@ export interface JiraResponse {
 
 // 异步函数，直到回调函数被调用时才会resolve
 let cachePromiseResolve: () => void
-const cachePromise = new Promise<void>((resolve) => {
+let cachePromise = new Promise<void>((resolve) => {
   cachePromiseResolve = resolve
 })
 
@@ -111,5 +111,10 @@ export async function POST(req: NextRequest) {
 export async function GET() {
   await cachePromise // Wait for the cache to be set
   const total = serviceCache.get('pageJiraTotal')
-  return NextResponse.json({ total: total ? total : 666 }, { status: 200 })
+  // 重置一个全新的resolve
+  cachePromise = new Promise<void>((resolve) => {
+    cachePromiseResolve = resolve
+  })
+  serviceCache.set('pageJiraTotal', 0)
+  return NextResponse.json({ total: total ? total : 0 }, { status: 200 })
 }

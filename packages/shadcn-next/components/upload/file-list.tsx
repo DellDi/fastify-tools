@@ -2,7 +2,7 @@ import React from 'react'
 import { Button } from '@/components/ui/button'
 import { Progress } from '@/components/ui/progress'
 import { CircleX } from 'lucide-react'
-import { getFileIcon } from '@/libs/file'
+import { getFileIcon } from '@/components/upload/file'
 
 interface FileUploadStatusProps {
   files: File[];
