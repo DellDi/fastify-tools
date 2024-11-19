@@ -25,7 +25,6 @@ export default function JiraIssuesTable() {
   const fetchIssues = useCallback(async () => {
     setLoading(true)
     try {
-      // 环境变量  部署基础路径 NEXT_PUBLIC_BASE_PATH
       const loginResponse = await fetch(`${basePath}/api/jira/jira-login`, { method: 'POST' })
       if (!loginResponse.ok) {
         return new Error('Failed to login to Jira')

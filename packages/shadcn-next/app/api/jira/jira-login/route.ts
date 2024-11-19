@@ -1,10 +1,6 @@
 import { NextResponse } from 'next/server'
-import { LRUCache } from 'lru-cache'
-
-const cache = new LRUCache({
-  max: 100, // Maximum number of items in cache
-  ttl: 60 * 60 * 1000, // 1 hour
-})
+import { serviceCache } from '@/utils/store/service'
+const cache = serviceCache
 
 export async function POST() {
   const loginUrl = 'http://bug.new-see.com:8088/rest/gadget/1.0/login'

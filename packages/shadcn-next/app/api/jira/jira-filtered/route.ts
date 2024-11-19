@@ -1,5 +1,6 @@
 // `pages/api/jira-filtered.ts` 主要目的内置了过滤saas的客户名称
 import { NextRequest, NextResponse } from 'next/server'
+import { serviceCache } from '@/utils/store/service'
 
 export interface JiraIssue {
   key: string
@@ -32,9 +33,13 @@ export interface JiraIssue {
 export interface JiraResponse {
   issues: JiraIssue[]
   total: number
-  maxResults: number
-  startAt: number
 }
+
+// 异步函数，直到回调函数被调用时才会resolve
+let cachePromiseResolve: () => void
+const cachePromise = new Promise<void>((resolve) => {
+  cachePromiseResolve = resolve
+})
 
 export async function POST(req: NextRequest) {
   const { jql, jiraCookies, secondaryPage, secondaryPageSize } = await req.json()
@@ -87,6 +92,9 @@ export async function POST(req: NextRequest) {
     const end = start + secondaryPageSize
     const paginatedIssues = filteredIssues.slice(start, end)
 
+    serviceCache.set('pageJiraTotal', totalFilteredIssues)
+    cachePromiseResolve() // Resolve the promise to indicate that the cache is set
+
     return NextResponse.json({
       total: totalFilteredIssues,
       issues: paginatedIssues,
@@ -98,4 +106,10 @@ export async function POST(req: NextRequest) {
       status: 500,
     })
   }
+}
+
+export async function GET() {
+  await cachePromise // Wait for the cache to be set
+  const total = serviceCache.get('pageJiraTotal')
+  return NextResponse.json({ total: total ? total : 666 }, { status: 200 })
 }
