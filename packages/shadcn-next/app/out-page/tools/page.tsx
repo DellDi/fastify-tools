@@ -1,27 +1,23 @@
 'use client'
-import dynamic from 'next/dynamic'
-import { useState } from 'react'
+
+import { useEffect, useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
+import MonacoEditor from '@monaco-editor/react'
 import AnimatedCircularProgressBar from '@/components/ui/animated-circular-progress-bar'
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { AlertCircle, CheckCircle } from 'lucide-react'
 
-const MonacoEditor = dynamic(() => import('@monaco-editor/react').catch(err => console.error('Failed to load Monaco Editor:', err)), { ssr: false })
+const BASE_SEND_URL = 'https://culture.hnbxwhy.com/report/send'
+const BASE_RESOURCE_URL = 'https://culture.hnbxwhy.com/resource/mobile/getResourcesById'
 
 export default function APITestingPlatform() {
   const [value, setValue] = useState(0)
   const [loading, setLoading] = useState(false)
+
   const [initialData, setInitialData] = useState({
-    url: 'https://culture.hnbxwhy.com/report/send',
+    url: 'https://culture.hnbxwhy.com/yh/#/pages/resource/soundDetails_1?id=193559',
     callCount: 1,
     method: 'POST',
     jsonParams: {
@@ -44,6 +40,30 @@ export default function APITestingPlatform() {
     },
   })
 
+  useEffect(() => {
+    // 获取initialData.url的查询参数对象
+    const url = new URL(initialData.url)
+    const hash = url.hash
+    const urlStr = hash.split('?')[1]
+    const searchParams = new URLSearchParams(urlStr)
+    const relId = searchParams.get('id')
+
+    fetch(`${BASE_RESOURCE_URL}?resourceId=${relId}`, { method: 'GET' }).then((response) => {
+      response.json().then((data) => {
+        const { data: { venueId } } = data
+        setInitialData({
+          ...initialData,
+          jsonParams: {
+            ...initialData.jsonParams,
+            relId: Number(relId),
+            venueId,
+          },
+        })
+      })
+    })
+
+  }, [initialData.url])
+
   const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault()
     setValue(0)
@@ -59,7 +79,7 @@ export default function APITestingPlatform() {
     )
     setLoading(true)
     const form = initialData
-    const url = form.url
+    const url = BASE_SEND_URL
     const callCount = form.callCount
     const method = form.method
     const jsonParams = form.jsonParams
@@ -107,7 +127,7 @@ export default function APITestingPlatform() {
 
   return (
     <div className="container mx-auto p-4">
-      <h1 className="text-2xl font-bold mb-6">河南百姓云-访问平台</h1>
+      <h1 className="text-2xl font-bold mb-6">河南百姓云-PV调用平台</h1>
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <Card>
           <CardHeader>
@@ -135,18 +155,6 @@ export default function APITestingPlatform() {
                   onChange={(e) => setInitialData({ ...initialData, callCount: Number(e.target.value) })}
                   min={1}
                 />
-              </div>
-              <div>
-                <Label htmlFor="method">调用方法</Label>
-                <Select name="method" defaultValue={initialData.method}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="选择调用方法"/>
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="GET">GET</SelectItem>
-                    <SelectItem value="POST">POST</SelectItem>
-                  </SelectContent>
-                </Select>
               </div>
               <div>
                 <Label htmlFor="jsonParams">JSON参数</Label>

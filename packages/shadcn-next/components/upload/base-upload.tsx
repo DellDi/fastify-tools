@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button'
 import { Progress } from '@/components/ui/progress'
 import { Card, CardContent } from '@/components/ui/card'
 import { CircleX, File, Upload } from 'lucide-react'
-import { getFileIcon } from '@/libs/file'
+import { getFileIcon } from '@/components/upload/file'
 import { SingleUpload } from '@/components/upload/single'
 import { BatchUpload } from '@/components/upload/batch'
 
@@ -82,7 +82,7 @@ export default function FileUploader() {
                 {files.map((file, index) => (
                   <div key={index} className="relative border rounded-lg p-2 flex flex-col items-center">
                     {getFileIcon(file)}
-                    <div className="absolute -right-2 -top-2" onClick={(e) => setFiles([])}><CircleX/></div>
+                    <div className="absolute -right-2 -top-2" onClick={() => setFiles([])}><CircleX/></div>
                     <p className="mt-2 text-sm truncate w-full text-center">{file.name}</p>
                   </div>
                 ))}

@@ -1,7 +1,7 @@
 import React from 'react'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { Button } from '@/components/ui/button'
-import {  JiraResponse } from '@/app/api/jira/jira-filtered/route'
+import { JiraResponse } from '@/app/api/jira/jira-filtered/route'
 import { AlertCircle, CheckCircle2, Clock } from 'lucide-react'
 import { jiraLogin, jiraSaaSFetch } from '@/utils/fetch/jira/jira-api'
 
@@ -75,7 +75,7 @@ export const JiraSaaSTable: React.FC<{ page: number, pageSize: number, query: st
               </div>
             </TableCell>
             <TableCell>
-              <div className="flex flex-col  items-start ">
+              <div className="flex flex-col items-start">
                 {issue.fields.labels.map((label) => (
                   <span
                     className="bg-blue-600 rounded-md p-1 not-last:mb-1 text-blue-100 text-nowrap text-center"

@@ -10,6 +10,7 @@ export function JiraPaginator() {
   const pathname = usePathname()
   const { replace } = useRouter()
   const searchParams = useSearchParams()
+  const [query] = useState(searchParams.get('query') || '')
   const [page, setPage] = useState(+(searchParams.get('page') || '') || 1)
   const [pageSize] = useState(+(searchParams.get('pageSize') || '') || 50)
   const [totalIssues, setTotalIssues] = useState(0)
@@ -18,7 +19,7 @@ export function JiraPaginator() {
     jiraPageTotal().then(r => {
       setTotalIssues(r.total)
     })
-  }, [])
+  }, [query])
 
   const totalPages = Math.ceil(totalIssues / pageSize)
 
@@ -27,8 +28,6 @@ export function JiraPaginator() {
     if (pageNum) {
       setPage(pageNum)
       params.set('page', `${pageNum}`)
-    } else {
-      params.delete('page')
     }
     replace(`${pathname}?${params.toString()}`)
   }
