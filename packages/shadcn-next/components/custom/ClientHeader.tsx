@@ -37,7 +37,7 @@ export default function ClientHeader() {
         <div className="flex justify-between items-center py-4">
           <Link href="/" className="flex items-center space-x-2">
             <Image src="https://avatars.githubusercontent.com/u/40460351?v=4" width={32}
-                   height={32} alt="Next Node logo" className="h-8 w-8 rounded-full"/>
+                   height={32} alt="Next Full Stack" className="h-8 w-8 rounded-full"/>
             <span className="text-xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-blue-500 to-purple-600">
               Next Full Stack
             </span>
