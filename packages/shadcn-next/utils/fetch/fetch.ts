@@ -2,9 +2,9 @@
 
 export const fetchBase = async (url: string, options: RequestInit) => {
   const basePath = process.env.NEXT_PUBLIC_BASE_PATH || ''
-  const __NEXT_PRIVATE_ORIGIN = process.env.__NEXT_PRIVATE_ORIGIN || ''
+  const __NEXT_PRIVATE_ORIGIN = process.env.BASE_NEXT_API_URL || ''
 
-  // Ensure the URL is correctly formed
+  // Ensure the URL is correctly formed, 私有环境变量，不建议在正式环境使用，可能会被移除
   if (!__NEXT_PRIVATE_ORIGIN) {
     console.warn('Environment variable __NEXT_PRIVATE_ORIGIN is not set')
     return null
