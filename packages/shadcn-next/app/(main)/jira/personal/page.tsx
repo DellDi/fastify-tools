@@ -36,7 +36,6 @@ export default async function JiraPage({ searchParams }: { searchParams?: Promis
       </div>
     )
   } catch (error) {
-    console.log('🚀 ~ file:page.tsx, line:51-----', error)
     return (
       <Card className="w-full max-w-4xl mx-auto mt-8">
         <CardHeader>
