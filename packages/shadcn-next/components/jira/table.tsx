@@ -21,79 +21,84 @@ export const JiraSaaSTable: React.FC<{ page: number, pageSize: number, query: st
   pageSize = 50,
   query,
 }) => {
-  // production环境跳过
-  if (process.env.NEXT_PHASE  === 'phase-production-build') {
-    return null
-  }
-  const { cookies } = await jiraLogin()
-  const data: JiraResponse = await jiraSaaSFetch({
-    jql: query,
-    jiraCookies: cookies,
-    secondaryPage: page,
-    secondaryPageSize: pageSize,
-  })
-
-  return (
-    <Table className="w-full">
-      <TableHeader>
-        <TableRow>
-          <TableHead>单号</TableHead>
-          <TableHead className="w-[100px]">客户名称</TableHead>
-          <TableHead>描述</TableHead>
-          <TableHead className="w-[120px]">状态</TableHead>
-          <TableHead>标签</TableHead>
-          <TableHead className="w-[100px]">经办人</TableHead>
-          <TableHead className="w-[100px]">创建人</TableHead>
-          <TableHead className="w-[100px]">创建时间</TableHead>
-        </TableRow>
-      </TableHeader>
-      <TableBody>
-        {data.issues.map((issue) => (
-          <TableRow
-            key={issue.key}
-            className=" hover:bg-muted/50 transition-colors"
-          >
-            <TableCell>
-              <Button variant="link" asChild className="p-0">
-                <a
-                  href={`http://bug.new-see.com:8088/browse/${issue.key}`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-primary hover:text-primary/80"
-                >
-                  {issue.key}
-                </a>
-              </Button>
-            </TableCell>
-            <TableCell className="font-medium text-nowrap">
-              {issue.fields?.customfield_10000?.value}
-            </TableCell>
-            <TableCell className="font-medium">
-              {issue.fields.summary}
-            </TableCell>
-            <TableCell>
-              <div className="flex items-center space-x-2">
-                {getStatusIcon(issue.fields.status.name)}
-                <span className="text-center text-nowrap">{issue.fields.status.name}</span>
-              </div>
-            </TableCell>
-            <TableCell>
-              <div className="flex flex-col items-start">
-                {issue.fields.labels.map((label) => (
-                  <span
-                    className="bg-blue-600 rounded-md p-1 not-last:mb-1 text-blue-100 text-nowrap text-center"
-                    key={label}>{label}</span>
-                ))}
-              </div>
-            </TableCell>
-            <TableCell className="text-center text-nowrap">{issue.fields.assignee.displayName}</TableCell>
-            <TableCell className="text-center text-nowrap">{issue.fields.creator.displayName}</TableCell>
-            <TableCell>
-              {new Date(issue.fields.created).toLocaleDateString()}
-            </TableCell>
+  try {
+    const { cookies } = await jiraLogin()
+    const data: JiraResponse = await jiraSaaSFetch({
+      jql: query,
+      jiraCookies: cookies,
+      secondaryPage: page,
+      secondaryPageSize: pageSize,
+    })
+    return (
+      <Table className="w-full">
+        <TableHeader>
+          <TableRow>
+            <TableHead>单号</TableHead>
+            <TableHead className="w-[100px]">客户名称</TableHead>
+            <TableHead>描述</TableHead>
+            <TableHead className="w-[120px]">状态</TableHead>
+            <TableHead>标签</TableHead>
+            <TableHead className="w-[100px]">经办人</TableHead>
+            <TableHead className="w-[100px]">创建人</TableHead>
+            <TableHead className="w-[100px]">创建时间</TableHead>
           </TableRow>
-        ))}
-      </TableBody>
-    </Table>
-  )
+        </TableHeader>
+        <TableBody>
+          {data.issues.map((issue) => (
+            <TableRow
+              key={issue.key}
+              className=" hover:bg-muted/50 transition-colors"
+            >
+              <TableCell>
+                <Button variant="link" asChild className="p-0">
+                  <a
+                    href={`http://bug.new-see.com:8088/browse/${issue.key}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-primary hover:text-primary/80"
+                  >
+                    {issue.key}
+                  </a>
+                </Button>
+              </TableCell>
+              <TableCell className="font-medium text-nowrap">
+                {issue.fields?.customfield_10000?.value}
+              </TableCell>
+              <TableCell className="font-medium">
+                {issue.fields.summary}
+              </TableCell>
+              <TableCell>
+                <div className="flex items-center space-x-2">
+                  {getStatusIcon(issue.fields.status.name)}
+                  <span className="text-center text-nowrap">{issue.fields.status.name}</span>
+                </div>
+              </TableCell>
+              <TableCell>
+                <div className="flex flex-col items-start">
+                  {issue.fields.labels.map((label) => (
+                    <span
+                      className="bg-blue-600 rounded-md p-1 not-last:mb-1 text-blue-100 text-nowrap text-center"
+                      key={label}>{label}</span>
+                  ))}
+                </div>
+              </TableCell>
+              <TableCell className="text-center text-nowrap">{issue.fields.assignee.displayName}</TableCell>
+              <TableCell className="text-center text-nowrap">{issue.fields.creator.displayName}</TableCell>
+              <TableCell>
+                {new Date(issue.fields.created).toLocaleDateString()}
+              </TableCell>
+            </TableRow>
+          ))}
+        </TableBody>
+      </Table>
+    )
+  } catch (error) {
+    return (
+      <div className="flex items-center justify-center w-full h-64">
+        <p className="text-red-500">请求异常</p>
+      </div>
+    )
+  }
+
+
 }

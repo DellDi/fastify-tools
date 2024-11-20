@@ -1,5 +1,7 @@
 import JiraIssuesTablePage from '@/app/(main)/jira/personal/page'
 import type { Metadata } from 'next'
+import { Suspense } from 'react'
+import { InvoicesTableSkeleton } from '@/components/jira/tableSkeleton'
 
 export const metadata: Metadata = {
   title: 'SaaS专用工单',
@@ -9,6 +11,8 @@ export const metadata: Metadata = {
 
 export default async function jiraPage() {
   return (
-    <JiraIssuesTablePage/>
+    <Suspense fallback={<InvoicesTableSkeleton pageSize={40}/>}>
+      <JiraIssuesTablePage/>
+    </Suspense>
   )
 }
