@@ -2,7 +2,7 @@
 
 export const fetchBase = async (url: string, options: RequestInit) => {
   const basePath = process.env.NEXT_PUBLIC_BASE_PATH || ''
-  const __NEXT_PRIVATE_ORIGIN = process.env.BASE_NEXT_API_URL || ''
+  const __NEXT_PRIVATE_ORIGIN = process.env.__NEXT_PRIVATE_ORIGIN || ''
 
   // Ensure the URL is correctly formed
   if (!__NEXT_PRIVATE_ORIGIN) {
