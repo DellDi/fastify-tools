@@ -21,7 +21,10 @@ export const JiraSaaSTable: React.FC<{ page: number, pageSize: number, query: st
   pageSize = 50,
   query,
 }) => {
-
+  // production环境跳过
+  if (process.env.NEXT_PHASE  === 'phase-production-build') {
+    return null
+  }
   const { cookies } = await jiraLogin()
   const data: JiraResponse = await jiraSaaSFetch({
     jql: query,
