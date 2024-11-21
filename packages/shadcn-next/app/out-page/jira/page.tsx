@@ -9,10 +9,10 @@ export const metadata: Metadata = {
   icons: 'https://qw.yswg360.com/api/fastdfs/fastdfs/pictureUrl?fileId=aTNanGuCnThUvxMQT3Xv5Q%3D%3D',
 }
 
-export default async function jiraPage() {
+export default async function jiraPage({ searchParams }: { searchParams?: Promise<{ query?: string; pageSize?: string; page?: string }> }) {
   return (
     <Suspense fallback={<InvoicesTableSkeleton pageSize={40}/>}>
-      <JiraIssuesTablePage/>
+      <JiraIssuesTablePage searchParams={searchParams}/>
     </Suspense>
   )
 }

@@ -12,7 +12,7 @@ import { handleBatch } from './handleBatch.js'
 import { ALLOWED_TYPES, MAX_FILE_SIZE } from '../../utils/upload.js'
 import { handleTrunk } from './handleTrunk.js'
 
-const upload: FastifyPluginAsync = async (fastify, opts): Promise<void> => {
+const upload: FastifyPluginAsync = async (fastify): Promise<void> => {
   // Ensure upload directory exists
   if (!fs.existsSync(UPLOAD_DIR)) {
     fs.mkdirSync(UPLOAD_DIR, { recursive: true })
@@ -126,7 +126,6 @@ const upload: FastifyPluginAsync = async (fastify, opts): Promise<void> => {
     },
     handleTrunk,
   )
-
 
 }
 

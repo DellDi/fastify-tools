@@ -8,14 +8,7 @@ export interface jiraSaaSFetchBody {
 }
 
 export function jiraLogin() {
-  try {
-    return fetchBase(`/api/jira/jira-login`, { method: 'POST' })
-  } catch (error) {
-    console.error('Fetch error:', error)
-    return Promise.resolve({
-      cookies: '',
-    })
-  }
+  return fetchBase(`/api/jira/jira-login`, { method: 'POST' })
 }
 
 export function jiraPageTotal() {
@@ -23,17 +16,9 @@ export function jiraPageTotal() {
 }
 
 export function jiraSaaSFetch(body: jiraSaaSFetchBody) {
-  try {
-    return fetchBase(`/api/jira/jira-filtered`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(body),
-    })
-  } catch (error) {
-    console.error('Fetch error:', error)
-    return Promise.resolve({
-      issues: [],
-      total: 0,
-    })
-  }
+  return fetchBase(`/api/jira/jira-filtered`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(body),
+  })
 }

@@ -95,7 +95,7 @@ export const JiraSaaSTable: React.FC<{ page: number, pageSize: number, query: st
   } catch (error) {
     return (
       <div className="flex items-center justify-center w-full h-64">
-        <p className="text-red-500">请求异常</p>
+        <p className="text-red-500">{JSON.stringify(error)}请求异常</p>
       </div>
     )
   }

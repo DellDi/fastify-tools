@@ -1,7 +1,6 @@
 # Logs
 logs
 .git
-api
 *.log
 npm-debug.log*
 
@@ -67,3 +66,4 @@ services/fastify/test/types/index.js
 dist
 api
 .vercel
+.env.development
