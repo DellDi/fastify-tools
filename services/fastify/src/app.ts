@@ -33,10 +33,13 @@ const app: FastifyPluginAsync<AppOptions> = async (
 
   fastify.ready((err) => {
     if (err) throw err
-    console.log(fastify.printRoutes())
+
+    if (!fastify.mysqlRegistered) {
+      fastify.log.warn('MySQL plugin not registered, skipping database operations')
+    }
+    fastify.log.info(fastify.printRoutes())
   })
 
-  fastify.log.info('Something important happened!')
 
   fastify.addHook('preHandler', function (req, reply, done) {
     if (req.body) {
