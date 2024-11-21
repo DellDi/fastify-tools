@@ -9,7 +9,7 @@ const passwordBody = Type.Object({
     enum: ['encrypt', 'decrypt', 'aesEnOrigin', 'aesDeOrigin'],
     default: 'decrypt',
     description:
-        '加密处理的类型encrypt（数据库SS） | decrypt(数据库) | aesEnOrigin | aesDeOrigin',
+      '加密处理的类型encrypt（数据库SS） | decrypt(数据库) | aesEnOrigin | aesDeOrigin',
   }),
 })
 
@@ -28,3 +28,33 @@ export const cryptoSchema = {
   },
 }
 
+// 输入一段动态安全的sql、输出查询的sql的执行结果
+const sqlBody = Type.Object({
+  sql: Type.String({
+    default: 'select * from user',
+    description: '需要执行的sql',
+  }),
+})
+
+const sqlResponse = Type.Object({
+  statusCode: Type.Integer({ default: 200 }),
+  result: Type.Array(Type.Any()),
+})
+
+export const sqlSchema = {
+  tags: ['newsee'],
+  description: '执行sql',
+  consumes: ['application/json'],
+  body: sqlBody,
+  response: {
+    200: sqlResponse,
+    400: Type.Object({
+      statusCode: Type.Integer({ default: 400 }),
+      message: Type.String(),
+    }),
+    500: Type.Object({
+      statusCode: Type.Integer({ default: 500 }),
+      message: Type.String(),
+    }),
+  },
+}

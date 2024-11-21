@@ -7,7 +7,8 @@
   "scripts": {
     "test": "pnpm run test",
     "exec": "node excel-chat/exec.js",
-    "excel:split": "node excels/split.js"
+    "excel:split": "node excels/split.js",
+    "excel:toKnow": "node excel-to-sql/excel-to-field.js"
   },
   "keywords": [
     "tools"
