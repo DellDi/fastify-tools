@@ -1,7 +1,7 @@
 import React from 'react'
 import github from '@/public/svg/github.svg'
 import Image from 'next/image'
-import { cn } from '@/libs/utils'
+import { cn } from '@/lib/utils'
 
 // Create a React component for the GitHub icon
 export function GithubIcon({ className }: { className?: string }) {

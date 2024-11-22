@@ -3,8 +3,10 @@ import { SearchJiraComponent } from '@/components/jira/search'
 import { JiraSaaSTable } from '@/components/jira/table'
 import { InvoicesTableSkeleton } from '@/components/jira/tableSkeleton'
 import { Suspense } from 'react'
-import { SAAS_JQL_3M } from '@/libs/jira/jql'
+import { SAAS_JQL_3M } from '@/lib/jira/jql'
 import { JiraPaginator } from '@/components/jira/paginator'
+
+export const experimental_ppr = true
 
 export default async function JiraPage({ searchParams }: { searchParams?: Promise<{ query?: string; pageSize?: string; page?: string }> }) {
   const params = await searchParams

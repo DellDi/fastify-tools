@@ -1,10 +1,12 @@
-/** @type {import('next').NextConfig} */
+import type { NextConfig } from 'next'
 import { codeInspectorPlugin } from 'code-inspector-plugin'
 
-const nextConfig = {
+const nextConfig: NextConfig = {
   basePath: process.env.NEXT_PUBLIC_BASE_PATH || '',
   assetPrefix: process.env.NEXT_PUBLIC_BASE_PATH || '',
-
+  experimental: {
+    ppr: 'incremental',
+  },
   images: {
     remotePatterns: [
       {
@@ -23,7 +25,7 @@ const nextConfig = {
   typescript: {
     ignoreBuildErrors: true,
   },
-  webpack: (config) => {
+  webpack: (config: { plugins: any[] }) => {
     config.plugins.push(codeInspectorPlugin({ bundler: 'webpack' }))
     return config
   },
