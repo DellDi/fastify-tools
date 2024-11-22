@@ -4,7 +4,7 @@ import Link from "next/link"
 import { ChevronRight, type LucideIcon, Search } from "lucide-react"
 
 import { useIsMobile } from "@/hooks/use-mobile"
-import { cn } from "@/libs/utils"
+import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 import { Collapsible, CollapsibleContent, CollapsibleTrigger, } from "@/components/ui/collapsible"
 import { Drawer, DrawerContent, DrawerTrigger, } from "@/components/ui/drawer"

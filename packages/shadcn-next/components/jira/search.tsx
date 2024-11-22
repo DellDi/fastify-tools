@@ -1,5 +1,5 @@
 'use client'
-import { SAAS_JQL_3M } from '@/libs/jira/jql'
+import { SAAS_JQL_3M } from '@/lib/jira/jql'
 import { Textarea } from '@/components/ui/textarea'
 import { Button } from '@/components/ui/button'
 import { usePathname, useRouter, useSearchParams } from 'next/navigation'

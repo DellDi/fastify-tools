@@ -3,6 +3,8 @@ import type { Metadata } from 'next'
 import { Suspense } from 'react'
 import { InvoicesTableSkeleton } from '@/components/jira/tableSkeleton'
 
+export const experimental_ppr = true
+
 export const metadata: Metadata = {
   title: 'SaaS专用工单',
   description: 'SaaS专用工单筛选器',

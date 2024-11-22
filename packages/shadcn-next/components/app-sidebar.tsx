@@ -14,7 +14,7 @@ import {
   SidebarLabel,
 } from '@/components/ui/sidebar'
 import { usePathname } from 'next/navigation'
-import { routesConfig } from '@/libs/slide/route'
+import { routesConfig } from '@/lib/slide/route'
 
 export function AppSidebar() {
   const pathname = usePathname()

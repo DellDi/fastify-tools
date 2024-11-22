@@ -1,7 +1,7 @@
 import Link from "next/link"
 import { MoreHorizontal, PlusSquare, type LucideIcon } from "lucide-react"
 
-import { cn } from "@/libs/utils"
+import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 import {
   DropdownMenu,
