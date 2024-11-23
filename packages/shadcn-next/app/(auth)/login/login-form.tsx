@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form"
 import { Checkbox } from "@/components/ui/checkbox"
+import { useRouter } from 'next/navigation'
 
 const loginSchema = z.object({
   email: z.string().email({ message: "请输入有效的邮箱地址" }),
@@ -24,6 +25,7 @@ interface LoginFormProps {
 
 export function LoginForm({ onSuccess, onError }: LoginFormProps) {
   const [isLoading, setIsLoading] = useState(false)
+  const router = useRouter()
 
   const form = useForm<LoginFormValues>({
     resolver: zodResolver(loginSchema),
@@ -51,8 +53,10 @@ export function LoginForm({ onSuccess, onError }: LoginFormProps) {
         } else {
           localStorage.removeItem('rememberedEmail')
         }
+        // 登录成功后重定向到仪表板
+        router.push('/dashboard')
       } else {
-        throw new Error(result.message || "登录失败")
+        throw new Error(result.error || "登录失败")
       }
     } catch (error) {
       onError(error instanceof Error ? error.message : "登录失败，请检查您的邮箱和密码。")

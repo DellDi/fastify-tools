@@ -7,7 +7,7 @@ import {
   MotionSection,
 } from '@/components/custom/base/motion-list'
 import { mapKeys, snakeToCamel } from '@/utils/func'
-import { createClient } from '@/utils/supabase/server'
+import { createClient } from '@/supabase/server'
 
 interface Section {
   title: string

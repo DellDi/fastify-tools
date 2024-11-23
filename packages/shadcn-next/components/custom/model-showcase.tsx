@@ -1,6 +1,3 @@
-'use client'
-
-import { useState, useEffect } from 'react'
 import {
   Card,
   CardContent,
@@ -57,14 +54,16 @@ const models = [
   },
 ]
 
-const ModelCard = ({ model }) => {
+type Model = typeof models[0]
+
+const ModelCard = ({ model }: { model: Model }) => {
   const creditPercentage = (model.availableCredit / model.totalCredit) * 100
   const gradientClass =
     creditPercentage > 50
       ? 'from-green-500 to-blue-500'
       : creditPercentage > 20
-      ? 'from-yellow-500 to-orange-500'
-      : 'from-red-500 to-pink-500'
+        ? 'from-yellow-500 to-orange-500'
+        : 'from-red-500 to-pink-500'
 
   return (
     <Card className="overflow-hidden transition-all duration-300 hover:shadow-lg dark:hover:shadow-primary/25 group relative">
@@ -90,18 +89,18 @@ const ModelCard = ({ model }) => {
               {model.availableCredit} / {model.totalCredit} 积分
             </span>
           </div>
-          <Progress value={creditPercentage} className="h-2" />
+          <Progress value={creditPercentage} className="h-2"/>
         </div>
         {model.debtInfo && (
           <Badge variant="destructive" className="flex items-center gap-1">
-            <AlertCircle className="w-4 h-4" />
+            <AlertCircle className="w-4 h-4"/>
             {model.debtInfo}
           </Badge>
         )}
         <Button variant="outline" className="w-full group" asChild>
           <a href={model.docUrl} target="_blank" rel="noopener noreferrer">
             查看文档
-            <ExternalLink className="w-4 h-4 ml-2 transition-transform group-hover:translate-x-1" />
+            <ExternalLink className="w-4 h-4 ml-2 transition-transform group-hover:translate-x-1"/>
           </a>
         </Button>
       </CardContent>
@@ -110,20 +109,8 @@ const ModelCard = ({ model }) => {
 }
 
 export default function ModelShowcase() {
-  const [isDarkMode, setIsDarkMode] = useState(false)
-
-  useEffect(() => {
-    const darkModeMediaQuery = window.matchMedia('(prefers-color-scheme: dark)')
-    setIsDarkMode(darkModeMediaQuery.matches)
-
-    const handleChange = (e) => setIsDarkMode(e.matches)
-    darkModeMediaQuery.addEventListener('change', handleChange)
-
-    return () => darkModeMediaQuery.removeEventListener('change', handleChange)
-  }, [])
-
   return (
-    <div className={`min-h-screen ${isDarkMode ? 'dark' : ''}`}>
+    <div className={`min-h-screen`}>
       <div className="container mx-auto p-4 md:p-8 bg-background text-foreground transition-colors duration-300">
         <h1 className="text-3xl font-bold mb-8 text-center">AI 模型展示</h1>
         <div
@@ -133,7 +120,7 @@ export default function ModelShowcase() {
           }}
         >
           {models.map((model) => (
-            <ModelCard key={model.id} model={model} />
+            <ModelCard key={model.id} model={model}/>
           ))}
         </div>
       </div>

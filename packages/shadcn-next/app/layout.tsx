@@ -1,6 +1,7 @@
 import type { Metadata } from 'next'
 import { ThemeProvider } from '@/components/theme-provider'
 import { Toaster } from '@/components/ui/toaster'
+import { ErrorBoundary } from '@/components/error-boundary'
 import localFont from 'next/font/local'
 import './globals.css'
 
@@ -27,20 +28,22 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased h-screen dark:bg-dark-bg dark:text-dark-text`}
-        style={{ margin: 0, padding: 0 }}
-      >
-        <ThemeProvider
-          attribute="class"
-          defaultTheme="system"
-          enableSystem
-          disableTransitionOnChange
-        >
-          {children}
-          <Toaster />
-        </ThemeProvider>
-      </body>
+    <body
+      className={`${geistSans.variable} ${geistMono.variable} antialiased h-screen dark:bg-dark-bg dark:text-dark-text`}
+      style={{ margin: 0, padding: 0 }}
+    >
+    <ThemeProvider
+      attribute="class"
+      defaultTheme="system"
+      enableSystem
+      disableTransitionOnChange
+    >
+      <ErrorBoundary>
+        {children}
+      </ErrorBoundary>
+      <Toaster/>
+    </ThemeProvider>
+    </body>
     </html>
   )
 }
