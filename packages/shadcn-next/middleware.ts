@@ -6,7 +6,7 @@ export function middleware(request: NextRequest) {
   const token = request.cookies.get('auth_token')?.value
 
   // 需要认证的路由
-  const authRoutes = ['/dashboard', '/profile', '/settings']
+  const authRoutes = ['/dashboard', '/profile', '/settings', '/main/dashboard']
 
   // 检查当前路由是否需要认证
   const isAuthRoute = authRoutes.some(route => request.nextUrl.pathname.startsWith(route))
@@ -14,7 +14,7 @@ export function middleware(request: NextRequest) {
   if (isAuthRoute) {
     if (!token) {
       // 如果没有 token，重定向到登录页面
-      return NextResponse.redirect(new URL('/auth', request.url))
+      return NextResponse.redirect(new URL('/login', request.url))
     }
 
     try {
@@ -23,7 +23,7 @@ export function middleware(request: NextRequest) {
       return NextResponse.next()
     } catch (error) {
       // 如果 token 无效，重定向到登录页面
-      return NextResponse.redirect(new URL('/auth', request.url))
+      return NextResponse.redirect(new URL('/login', request.url))
     }
   }
 

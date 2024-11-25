@@ -17,10 +17,13 @@ export async function POST(request: Request) {
     const decoded = verify(token, process.env.JWT_SECRET!) as { userId: string }
     const { username, email, phone_number } = await request.json()
 
-    const { data, error } = await supabase
-    .from('users')
-    .update({ username, email, phone_number })
-    .eq('id', decoded.userId)
+    const { data, error } = await supabase.auth.admin.updateUserById(
+      decoded.userId,
+      {
+        email,
+        user_metadata: { username, phone_number }
+      }
+    )
 
     if (error) {
       console.error('Error updating user:', error)
