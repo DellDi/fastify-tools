@@ -12,10 +12,10 @@ const signUpSchema = z.object({
   username: z.string().min(3, { message: "用户名至少需要3个字符" }),
   email: z.string().email({ message: "请输入有效的邮箱地址" }),
   password: z.string()
-    .min(8, { message: "密码至少需要8个字符" })
-    .regex(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/, {
-      message: "密码需要包含至少一个大写字母、一个小写字母、一个数字和一个特殊字符",
-    }),
+  .min(8, { message: "密码至少需要8个字符" })
+  .regex(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/, {
+    message: "密码需要包含至少一个大写字母、一个小写字母、一个数字和一个特殊字符",
+  }),
   confirmPassword: z.string(),
   phoneNumber: z.string().regex(/^1[3-9]\d{9}$/, { message: "请输入有效的手机号码" }),
 }).refine((data) => data.password === data.confirmPassword, {
@@ -56,7 +56,7 @@ export function SignUpForm({ onSuccess, onError }: SignUpFormProps) {
       if (response.ok) {
         onSuccess(result.message)
       } else {
-        throw new Error(result.message || "注册失败")
+        throw new Error(result.error || "注册失败")
       }
     } catch (error) {
       onError(error instanceof Error ? error.message : "注册失败，请稍后再试。")

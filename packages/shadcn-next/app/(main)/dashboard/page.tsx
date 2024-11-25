@@ -7,45 +7,79 @@ import { ProgressCards } from '@/app/(main)/dashboard/components/progress'
 import { TimeCards } from '@/app/(main)/dashboard/components/time-cards'
 import { ShowCloud } from '@/components/custom/ShowCloud'
 import { PanelCharts } from '@/components/custom/PanelCharts'
+import { verify } from 'jsonwebtoken'
+import { redirect } from 'next/navigation'
 
 export const metadata: Metadata = {
   title: 'Dashboard',
   description: 'Example dashboard app built using the components.',
 }
 
-export default function DashboardPage() {
-  return (
-    <main className="flex-1 space-y-4 p-8 pt-6">
-      <div className="flex items-center justify-between space-y-2">
-        <div className="flex items-center space-x-2">
-          <CalendarDateRangePicker/>
-          <Button size="sm">下载</Button>
-        </div>
-      </div>
-      <div className="grid grid-cols-4 gap-4 ">
-        <div className="grid col-span-4 xl:col-span-3 flex-1 gap-4">
-          <PanelCharts/>
-        </div>
-        <div className="flex-1 gap-4 hidden xl:grid">
-          <ShowCloud/>
-        </div>
-      </div>
-      <div
-        className="chart-wrapper mx-auto flex flex-col flex-wrap items-start justify-center gap-4 sm:flex-row sm:p-1">
-        {/*lg:max-w-[18rem] xl:max-w-[20rem] lg:max-w-[20rem] w-full*/}
-        <div className="grid flex-1 max-w-[38rem] gap-4">
-          <Card1/>
-          <Card2/>
-        </div>
-        {/*lg:max-w-[24rem]*/}
-        <div className="grid max-w-[32rem] gap-4">
-          <ProgressCards/>
-        </div>
-        <div className="grid  flex-1 gap-4">
-          <TimeCards/>
-        </div>
+const supabase = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!)
 
-      </div>
-    </main>
-  )
+async function getUser(userId: string) {
+  const { data: user, error } = await supabase.auth.admin.getUserById(userId)
+  if (error) {
+    console.error('Error fetching user:', error)
+    return null
+  }
+  return user
+}
+
+
+export default function DashboardPage() {
+  const cookieStore = cookies()
+  const token = cookieStore.get('auth_token')?.value
+
+  if (!token) {
+    redirect('/login')
+  }
+  try {
+    const decoded = verify(token, process.env.JWT_SECRET!) as { userId: string }
+    const user = await getUser(decoded.userId)
+
+    if (!user) {
+      redirect('/login')
+    }
+
+    return (
+      <main className="flex-1 space-y-4 p-8 pt-6">
+        <div className="flex items-center justify-between space-y-2">
+          <div className="flex items-center space-x-2">
+            <CalendarDateRangePicker/>
+            <Button size="sm">下载</Button>
+          </div>
+        </div>
+        <div className="grid grid-cols-4 gap-4 ">
+          <div className="grid col-span-4 xl:col-span-3 flex-1 gap-4">
+            <PanelCharts/>
+          </div>
+          <div className="flex-1 gap-4 hidden xl:grid">
+            <ShowCloud/>
+          </div>
+        </div>
+        <div
+          className="chart-wrapper mx-auto flex flex-col flex-wrap items-start justify-center gap-4 sm:flex-row sm:p-1">
+          {/*lg:max-w-[18rem] xl:max-w-[20rem] lg:max-w-[20rem] w-full*/}
+          <div className="grid flex-1 max-w-[38rem] gap-4">
+            <Card1/>
+            <Card2/>
+          </div>
+          {/*lg:max-w-[24rem]*/}
+          <div className="grid max-w-[32rem] gap-4">
+            <ProgressCards/>
+          </div>
+          <div className="grid  flex-1 gap-4">
+            <TimeCards/>
+          </div>
+
+        </div>
+      </main>
+    )
+  } catch (error) {
+    console.error('Error verifying token:', error)
+    redirect('/login')
+  }
+
+
 }
