@@ -9,34 +9,25 @@ import { ShowCloud } from '@/components/custom/ShowCloud'
 import { PanelCharts } from '@/components/custom/PanelCharts'
 import { verify } from 'jsonwebtoken'
 import { redirect } from 'next/navigation'
+import { getUser } from '@/app/lib/user'
 
 export const metadata: Metadata = {
   title: 'Dashboard',
   description: 'Example dashboard app built using the components.',
 }
 
-const supabase = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!)
-
-async function getUser(userId: string) {
-  const { data: user, error } = await supabase.auth.admin.getUserById(userId)
-  if (error) {
-    console.error('Error fetching user:', error)
-    return null
-  }
-  return user
-}
-
-
-export default function DashboardPage() {
-  const cookieStore = cookies()
+export default async function DashboardPage() {
+  const { cookies } = await import('next/headers')
+  const cookieStore = await cookies()
   const token = cookieStore.get('auth_token')?.value
-
+  console.log('🚀 ~ file:page.tsx, line:23-----', token)
   if (!token) {
     redirect('/login')
   }
   try {
-    const decoded = verify(token, process.env.JWT_SECRET!) as { userId: string }
+    const decoded = verify(token, process.env.SUPABASE_JWT_SECRET!) as { userId: string }
     const user = await getUser(decoded.userId)
+    console.log('🚀 ~ file:page.tsx, line:23-----', user)
 
     if (!user) {
       redirect('/login')

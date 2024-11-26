@@ -6,7 +6,7 @@ import { cookies } from 'next/headers'
 const supabase = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!)
 
 export async function POST(request: Request) {
-  const cookieStore = cookies()
+  const cookieStore = await cookies()
   const token = cookieStore.get('auth_token')?.value
 
   if (!token) {
@@ -14,7 +14,7 @@ export async function POST(request: Request) {
   }
 
   try {
-    const decoded = verify(token, process.env.JWT_SECRET!) as { userId: string }
+    const decoded = verify(token, process.env.SUPABASE_JWT_SECRET!) as { userId: string }
     const { username, email, phone_number } = await request.json()
 
     const { data, error } = await supabase.auth.admin.updateUserById(

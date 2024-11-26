@@ -7,6 +7,7 @@ import * as z from 'zod'
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form"
+import { useRouter } from 'next/navigation'
 
 const signUpSchema = z.object({
   username: z.string().min(3, { message: "用户名至少需要3个字符" }),
@@ -32,6 +33,7 @@ interface SignUpFormProps {
 
 export function SignUpForm({ onSuccess, onError }: SignUpFormProps) {
   const [isLoading, setIsLoading] = useState(false)
+  const router = useRouter()
 
   const form = useForm<SignUpFormValues>({
     resolver: zodResolver(signUpSchema),
@@ -55,6 +57,8 @@ export function SignUpForm({ onSuccess, onError }: SignUpFormProps) {
       const result = await response.json()
       if (response.ok) {
         onSuccess(result.message)
+        // Redirect to login page with email and password as query parameters
+        router.push(`/auth?email=${encodeURIComponent(data.email)}&password=${encodeURIComponent(data.password)}`)
       } else {
         throw new Error(result.error || "注册失败")
       }
