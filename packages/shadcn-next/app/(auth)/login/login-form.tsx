@@ -1,18 +1,19 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import * as z from 'zod'
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form"
-import { Checkbox } from "@/components/ui/checkbox"
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form'
+import { Checkbox } from '@/components/ui/checkbox'
 import { useRouter } from 'next/navigation'
+import { useSearchParams } from 'next/navigation'
 
 const loginSchema = z.object({
-  email: z.string().email({ message: "请输入有效的邮箱地址" }),
-  password: z.string().min(1, { message: "请输入密码" }),
+  email: z.string().email({ message: '请输入有效的邮箱地址' }),
+  password: z.string().min(1, { message: '请输入密码' }),
   rememberMe: z.boolean().optional(),
 })
 
@@ -26,12 +27,13 @@ interface LoginFormProps {
 export function LoginForm({ onSuccess, onError }: LoginFormProps) {
   const [isLoading, setIsLoading] = useState(false)
   const router = useRouter()
+  const searchParams = useSearchParams()
 
   const form = useForm<LoginFormValues>({
     resolver: zodResolver(loginSchema),
     defaultValues: {
-      email: '',
-      password: '',
+      email: searchParams?.get('email') || '',
+      password: searchParams?.get('password') || '',
       rememberMe: false,
     },
   })
@@ -53,17 +55,27 @@ export function LoginForm({ onSuccess, onError }: LoginFormProps) {
         } else {
           localStorage.removeItem('rememberedEmail')
         }
-        // 登录成功后重定向到仪表板
-        router.push('/dashboard')
+        // 重定向到仪表板
+        router.replace('/dashboard')
       } else {
-        throw new Error(result.error || "登录失败")
+        throw new Error(result.error || '登录失败')
       }
     } catch (error) {
-      onError(error instanceof Error ? error.message : "登录失败，请检查您的邮箱和密码。")
+      onError(error instanceof Error ? error.message : '登录失败，请检查您的邮箱和密码。')
     } finally {
       setIsLoading(false)
     }
   }
+
+  useEffect(() => {
+    const email = searchParams?.get('email')
+    const password = searchParams?.get('password')
+    if (email && password) {
+      form.setValue('email', email)
+      form.setValue('password', password)
+      form.handleSubmit(onSubmit)()
+    }
+  }, [searchParams])
 
   return (
     <Form {...form}>
@@ -77,7 +89,7 @@ export function LoginForm({ onSuccess, onError }: LoginFormProps) {
               <FormControl>
                 <Input placeholder="your@email.com" {...field} />
               </FormControl>
-              <FormMessage />
+              <FormMessage/>
             </FormItem>
           )}
         />
@@ -90,7 +102,7 @@ export function LoginForm({ onSuccess, onError }: LoginFormProps) {
               <FormControl>
                 <Input type="password" {...field} />
               </FormControl>
-              <FormMessage />
+              <FormMessage/>
             </FormItem>
           )}
         />

@@ -1,6 +1,7 @@
 import { createClient } from '@supabase/supabase-js'
 import { NextResponse } from 'next/server'
 import crypto from 'crypto'
+import { sendVerificationEmail } from '@/app/lib/email'
 
 const supabase = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!)
 
@@ -47,10 +48,5 @@ export async function POST(request: Request) {
       error: error instanceof Error ? error.message : "注册失败，请稍后再试"
     }, { status: 500 })
   }
-}
-
-async function sendVerificationEmail(email: string, code: string) {
-  // 实现邮件发送逻辑
-  console.log(`Sending verification email to ${email} with code ${code}`)
 }
 
