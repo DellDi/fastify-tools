@@ -25,8 +25,8 @@ export default async function DashboardPage() {
     redirect('/login')
   }
   try {
-    const decoded = verify(token, process.env.SUPABASE_JWT_SECRET!) as { userId: string }
-    const user = await getUser(decoded.userId)
+    const cookieStore = cookies()
+    const supabase = createClientComponentClient({ cookies: () => cookieStore })
     console.log('🚀 ~ file:page.tsx, line:23-----', user)
 
     if (!user) {

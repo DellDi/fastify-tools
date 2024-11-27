@@ -15,7 +15,7 @@ export default async function SettingsPage() {
 
   try {
     const decoded = verify(token, process.env.SUPABASE_JWT_SECRET!) as { userId: string }
-    const user = await getUser(decoded.userId)
+    const user = await getUser()
 
     if (!user) {
       notFound()
