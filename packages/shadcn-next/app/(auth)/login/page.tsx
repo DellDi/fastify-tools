@@ -29,7 +29,7 @@ export default function AuthPage() {
   }
 
   return (
-    <div className="flex items-center justify-center min-h-screen bg-gray-100">
+    <div className="flex items-center justify-center min-h-screen bg-gray-100 w-full dark:bg-gray-900">
       <Card className="w-[400px]">
         <CardHeader>
           <CardTitle>
