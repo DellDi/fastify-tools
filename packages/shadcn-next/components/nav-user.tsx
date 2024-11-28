@@ -20,6 +20,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
+import { LogoutButton } from '@/components/login/logout-button'
 
 export function NavUser({
   user,
@@ -89,8 +90,7 @@ export function NavUser({
         </DropdownMenuGroup>
         <DropdownMenuSeparator/>
         <DropdownMenuItem className="gap-2">
-          <LogOut className="h-4 w-4 text-muted-foreground"/>
-          Log out
+          <LogoutButton />
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>

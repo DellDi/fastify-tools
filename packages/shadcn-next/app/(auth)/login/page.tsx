@@ -7,7 +7,7 @@ import { ForgotPasswordForm } from './forgot-password-form'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Toaster } from '@/components/ui/toaster'
-import { useToast } from '@/hooks/use-toast'
+import { useToast } from '@/components/ui/use-toast'
 
 export default function AuthPage() {
   const [authState, setAuthState] = useState<'login' | 'signup' | 'forgot-password'>('login')

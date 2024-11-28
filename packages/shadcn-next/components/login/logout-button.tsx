@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { Button } from "@/components/ui/button"
+import { LogOut } from 'lucide-react'
 
 export function LogoutButton() {
   const [isLoading, setIsLoading] = useState(false)
@@ -17,7 +17,7 @@ export function LogoutButton() {
       if (response.ok) {
         router.push('/auth')
       } else {
-        throw new Error("登出失败")
+        throw new Error('登出失败')
       }
     } catch (error) {
       console.error('Logout error:', error)
@@ -27,9 +27,11 @@ export function LogoutButton() {
   }
 
   return (
-    <Button onClick={handleLogout} disabled={isLoading}>
-      {isLoading ? '登出中...' : '登出'}
-    </Button>
+    <>
+      <LogOut className="h-4 w-4 text-muted-foreground" onClick={
+        () => handleLogout()}/>
+      Log out
+    </>
   )
 }
 
