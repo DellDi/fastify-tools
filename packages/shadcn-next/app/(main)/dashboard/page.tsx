@@ -7,9 +7,8 @@ import { ProgressCards } from '@/app/(main)/dashboard/components/progress'
 import { TimeCards } from '@/app/(main)/dashboard/components/time-cards'
 import { ShowCloud } from '@/components/custom/ShowCloud'
 import { PanelCharts } from '@/components/custom/PanelCharts'
-import { verify } from 'jsonwebtoken'
 import { redirect } from 'next/navigation'
-import { getUser } from '@/app/lib/user'
+import { createClient } from '@/utils/supabase/server'
 
 export const metadata: Metadata = {
   title: 'Dashboard',
@@ -17,22 +16,12 @@ export const metadata: Metadata = {
 }
 
 export default async function DashboardPage() {
-  const { cookies } = await import('next/headers')
-  const cookieStore = await cookies()
-  const token = cookieStore.get('auth_token')?.value
-  console.log('🚀 ~ file:page.tsx, line:23-----', token)
-  if (!token) {
-    redirect('/login')
-  }
   try {
-    const cookieStore = cookies()
-    const supabase = createClientComponentClient({ cookies: () => cookieStore })
-    console.log('🚀 ~ file:page.tsx, line:23-----', user)
-
-    if (!user) {
+    const supabase = await createClient()
+    const { data, error } = await supabase.auth.getUser()
+    if (error || !data?.user) {
       redirect('/login')
     }
-
     return (
       <main className="flex-1 space-y-4 p-8 pt-6">
         <div className="flex items-center justify-between space-y-2">
@@ -67,7 +56,8 @@ export default async function DashboardPage() {
         </div>
       </main>
     )
-  } catch (error) {
+  } catch
+    (error) {
     console.error('Error verifying token:', error)
     redirect('/login')
   }

@@ -43,7 +43,7 @@ export default function AuthPage() {
         </CardHeader>
         <CardContent>
           {authState === 'login' && (
-            <LoginForm onSuccess={handleAuthSuccess} onError={handleAuthError}/>
+            <LoginForm onSuccessAction={handleAuthSuccess} onErrorAction={handleAuthError}/>
           )}
           {authState === 'signup' && (
             <SignUpForm onSuccess={handleAuthSuccess} onError={handleAuthError}/>

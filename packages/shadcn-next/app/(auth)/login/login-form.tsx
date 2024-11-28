@@ -20,11 +20,11 @@ const loginSchema = z.object({
 type LoginFormValues = z.infer<typeof loginSchema>
 
 interface LoginFormProps {
-  onSuccess: (message: string) => void
-  onError: (error: string) => void
+  onSuccessAction: (message: string) => void
+  onErrorAction: (error: string) => void
 }
 
-export function LoginForm({ onSuccess, onError }: LoginFormProps) {
+export function LoginForm({ onSuccessAction, onErrorAction }: LoginFormProps) {
   const [isLoading, setIsLoading] = useState(false)
   const router = useRouter()
   const searchParams = useSearchParams()
@@ -41,6 +41,7 @@ export function LoginForm({ onSuccess, onError }: LoginFormProps) {
   async function onSubmit(data: LoginFormValues) {
     setIsLoading(true)
     try {
+      console.log('🚀 ~ file:login-form.tsx, line:44-----', data)
       const response = await fetch('/api/auth/login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -48,7 +49,7 @@ export function LoginForm({ onSuccess, onError }: LoginFormProps) {
       })
       const result = await response.json()
       if (response.ok) {
-        onSuccess(result.message)
+        onSuccessAction(result.message)
         // 如果选择了"记住我"，可以在这里设置相应的本地存储
         if (data.rememberMe) {
           localStorage.setItem('rememberedEmail', data.email)
@@ -58,10 +59,11 @@ export function LoginForm({ onSuccess, onError }: LoginFormProps) {
         // 重定向到仪表板
         router.replace('/dashboard')
       } else {
+
         throw new Error(result.error || '登录失败')
       }
     } catch (error) {
-      onError(error instanceof Error ? error.message : '登录失败，请检查您的邮箱和密码。')
+      onErrorAction(error instanceof Error ? error.message : '登录失败，请检查您的邮箱和密码。')
     } finally {
       setIsLoading(false)
     }
@@ -70,12 +72,13 @@ export function LoginForm({ onSuccess, onError }: LoginFormProps) {
   useEffect(() => {
     const email = searchParams?.get('email')
     const password = searchParams?.get('password')
+
+    // 只有在手动提交表单时才执行登录
     if (email && password) {
       form.setValue('email', email)
       form.setValue('password', password)
-      form.handleSubmit(onSubmit)()
     }
-  }, [searchParams])
+  }, [searchParams, form])
 
   return (
     <Form {...form}>
