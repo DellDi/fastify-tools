@@ -1,10 +1,10 @@
-import { createClient } from '@supabase/supabase-js'
+'use server'
 
-const supabase = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!)
+import { createClient } from '@/utils/supabase/server'
 
 export async function getUser() {
+  const supabase = await createClient()
   const { data: { user }, error } = await supabase.auth.getUser()
-
   if (error) {
     console.error('Error fetching user:', error)
     return null

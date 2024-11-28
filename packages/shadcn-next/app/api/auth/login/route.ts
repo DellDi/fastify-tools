@@ -1,8 +1,11 @@
+'use server'
 import { NextResponse } from 'next/server'
-import { createClient } from '@/supabase/server'
+import { createClient } from '@/utils/supabase/server'
 
 export async function POST(request: Request) {
   const { email, password } = await request.json()
+  console.log('🚀 ~ file:route.ts, line:13-----', email, password)
+
   const supabase = await createClient()
 
   try {
@@ -10,7 +13,6 @@ export async function POST(request: Request) {
       email,
       password,
     })
-    console.log('🚀 ~ file:route.ts, line:13-----', data, error)
     if (error) throw error
 
     if (!data.user) {

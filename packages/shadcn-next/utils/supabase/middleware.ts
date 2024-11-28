@@ -6,7 +6,7 @@ export async function updateSession(request: NextRequest) {
     request,
   })
 
-  const supabase =  createServerClient(
+  const supabase = createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
     {
@@ -20,16 +20,16 @@ export async function updateSession(request: NextRequest) {
             request,
           })
           cookiesToSet.forEach(({ name, value, options }) =>
-            supabaseResponse.cookies.set(name, value, options)
+            supabaseResponse.cookies.set(name, value, options),
           )
         },
       },
-    }
+    },
   )
 
-  // IMPORTANT: Avoid writing any logic between createServerClient and
-  // supabase.auth.getUser(). A simple mistake could make it very hard to debug
-  // issues with users being randomly logged out.
+  // 重要提示：避免在 createServerClient 和
+  // supabase.auth.getUser（） 的 API API 中。一个简单的错误可能会使调试变得非常困难
+  // 用户被随机注销的问题。
 
   const {
     data: { user },
@@ -38,7 +38,7 @@ export async function updateSession(request: NextRequest) {
   if (
     !user &&
     !request.nextUrl.pathname.startsWith('/login') &&
-    !request.nextUrl.pathname.startsWith('/auth')
+    !request.nextUrl.pathname.startsWith('/api/auth/login')
   ) {
     // no user, potentially respond by redirecting the user to the login page
     const url = request.nextUrl.clone()
@@ -46,18 +46,18 @@ export async function updateSession(request: NextRequest) {
     return NextResponse.redirect(url)
   }
 
-  // IMPORTANT: You *must* return the supabaseResponse object as it is. If you're
-  // creating a new response object with NextResponse.next() make sure to:
-  // 1. Pass the request in it, like so:
-  //    const myNewResponse = NextResponse.next({ request })
-  // 2. Copy over the cookies, like so:
-  //    myNewResponse.cookies.setAll(supabaseResponse.cookies.getAll())
-  // 3. Change the myNewResponse object to fit your needs, but avoid changing
-  //    the cookies!
-  // 4. Finally:
-  //    return myNewResponse
-  // If this is not done, you may be causing the browser and server to go out
-  // of sync and terminate the user's session prematurely!
+// 重要提示：您*必须*按原样返回 supabaseResponse 对象。如果你是
+//   使用 NextResponse.next（） 创建新的响应对象，请确保：
+//   // 1.在其中传递请求，如下所示：
+//   const myNewResponse = NextResponse.next（{ 请求 }）
+//   // 2.复制 Cookie，如下所示：
+//   myNewResponse.cookies.setAll（supabaseResponse.cookies.getAll（））
+//   // 3.更改 myNewResponse 对象以满足您的需要，但避免更改
+//   饼干！
+//   // 4.最后：
+//   返回 myNewResponse
+//   如果不这样做，可能会导致浏览器和服务器崩溃
+//   sync 并提前终止用户的会话！
 
   return supabaseResponse
 }
