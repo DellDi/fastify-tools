@@ -115,8 +115,8 @@ export const routesConfig = {
       icon: Settings2,
       items: [
         {
-          title: '通用',
-          url: '#',
+          title: '账户',
+          url: '/settings',
         },
         {
           title: '团队',

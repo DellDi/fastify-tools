@@ -3,7 +3,7 @@ import { Button } from '@/components/ui/button'
 import React, { useCallback, useRef, useState } from 'react'
 import { FileBatchSuccessResponse, useHandleDrop, useHandleFileChange, useUploadProgress } from '@/hooks/use-file'
 import { FileUploadStatus } from '@/components/upload/file-list'
-import { toast } from '@/hooks/use-toast'
+import { toast } from '@/components/ui/use-toast'
 
 /**
  * 批量文件上传函数
