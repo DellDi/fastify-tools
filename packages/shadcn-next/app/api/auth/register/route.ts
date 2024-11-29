@@ -41,6 +41,75 @@ export async function POST(request: Request) {
     // 发送验证邮件（这里需要实现实际的邮件发送逻辑）
     await sendVerificationEmail(email, verificationCode)
 
+    // 1. 给新用户分配角色
+    const defaultRole = 'basic_user' // 假设我们有一个默认角色 basic_user
+
+    const { data: role, error: roleError } = await supabase
+    .from('roles')
+    .select('id')
+    .eq('name', defaultRole)
+    .single()
+
+    if (roleError || !role) {
+      throw new Error(`角色 "${defaultRole}" 不存在`)
+    }
+
+    // 2. 更新 auth.users 表，设置角色
+    const { error: updateRoleError } = await supabase
+    .from('auth.users')
+    .update({ role_id: role.id })
+    .eq('id', authUser.user.id)
+
+    if (updateRoleError) throw updateRoleError
+
+    // 3. 为新角色赋予基本权限 (这里假设我们有基本权限如：`view_dashboard`, `edit_profile`)
+    const permissions = ['view_dashboard', 'edit_profile'] // 默认权限
+
+    for (const permissionName of permissions) {
+      const { data: permission, error: permissionError } = await supabase
+      .from('permissions')
+      .select('id')
+      .eq('name', permissionName)
+      .single()
+
+      if (permissionError || !permission) {
+        throw new Error(`权限 "${permissionName}" 不存在`)
+      }
+
+      // 为角色分配权限
+      const { error: rolePermissionError } = await supabase
+      .from('role_permissions')
+      .upsert([
+        { role_id: role.id, permission_id: permission.id }
+      ])
+
+      if (rolePermissionError) throw rolePermissionError
+    }
+
+    // 4. 给新角色分配菜单权限（假设我们有基本菜单：`dashboard`, `profile`）
+    const menus = ['dashboard', 'profile'] // 默认菜单
+
+    for (const menuName of menus) {
+      const { data: menu, error: menuError } = await supabase
+      .from('menus')
+      .select('id')
+      .eq('name', menuName)
+      .single()
+
+      if (menuError || !menu) {
+        throw new Error(`菜单 "${menuName}" 不存在`)
+      }
+
+      // 为角色分配菜单
+      const { error: roleMenuError } = await supabase
+      .from('role_menus')
+      .upsert([
+        { role_id: role.id, menu_id: menu.id }
+      ])
+
+      if (roleMenuError) throw roleMenuError
+    }
+
     return NextResponse.json({ message: "注册成功，请查收验证邮件" })
   } catch (error) {
     console.error('Registration error:', error)
@@ -49,4 +118,3 @@ export async function POST(request: Request) {
     }, { status: 500 })
   }
 }
-

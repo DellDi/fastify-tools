@@ -41,7 +41,6 @@ export function LoginForm({ onSuccessAction, onErrorAction }: LoginFormProps) {
   async function onSubmit(data: LoginFormValues) {
     setIsLoading(true)
     try {
-      console.log('🚀 ~ file:login-form.tsx, line:44-----', data)
       const response = await fetch('/api/auth/login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
