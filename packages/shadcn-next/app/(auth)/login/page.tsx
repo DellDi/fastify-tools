@@ -46,7 +46,7 @@ export default function AuthPage() {
             <LoginForm onSuccessAction={handleAuthSuccess} onErrorAction={handleAuthError}/>
           )}
           {authState === 'signup' && (
-            <SignUpForm onSuccess={handleAuthSuccess} onError={handleAuthError}/>
+            <SignUpForm onSignUpSuccess={handleAuthSuccess} onSignUpError={handleAuthError}/>
           )}
           {authState === 'forgot-password' && (
             <ForgotPasswordForm onSuccess={handleAuthSuccess} onError={handleAuthError}/>

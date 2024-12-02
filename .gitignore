@@ -66,6 +66,7 @@ services/fastify/test/types/index.js
 dist
 
 # env
+.env
 .env.development
 .env.production
 .env.test
