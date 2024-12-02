@@ -1,6 +1,5 @@
 # Logs
 logs
-.git
 *.log
 npm-debug.log*
 
@@ -65,6 +64,3 @@ services/fastify/test/types/index.js
 # compiled app
 dist
 api
-
-# env
-.env.*
