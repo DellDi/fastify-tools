@@ -54,7 +54,6 @@ profile-*
 *code-workspace
 
 # clinic
-profile*
 *clinic*
 *flamegraph*
 
