@@ -11,9 +11,9 @@ import { GithubIcon } from '@/components/custom/base/custom-icon'
 
 const navLinks = [
   { href: '/dashboard', label: '首页' },
+  { href: '/login', label: '登录' },
   { href: '#', label: '模型实例' },
-  { href: '#', label: '博客' },
-  { href: '#', label: '登录' },
+  { href: '/changelog/list', label: '更新日志' },
   { href: '/password/newsee', label: '解密' },
   { href: 'https://github.com/DellDi', label: 'GitHub', icon: <GithubIcon className="h-5 w-5"/> },
 ]
