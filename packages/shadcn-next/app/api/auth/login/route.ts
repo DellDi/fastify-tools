@@ -4,8 +4,6 @@ import { createClient } from '@/utils/supabase/server'
 
 export async function POST(request: Request) {
   const { email, password } = await request.json()
-  console.log('🚀 ~ file:route.ts, line:13-----', email, password)
-
   const supabase = await createClient()
 
   try {
@@ -13,10 +11,11 @@ export async function POST(request: Request) {
       email,
       password,
     })
-    if (error) throw error
+
+    if (error) return NextResponse.json({ error: error.message }, { status: 401 })
 
     if (!data.user) {
-      return NextResponse.json({ error: 'Invalid credentials' }, { status: 401 })
+      return NextResponse.json({ error: 'Invalid credentials: 账号未注册、或未通过验证' }, { status: 401 })
     }
 
     // // 生成 JWT token

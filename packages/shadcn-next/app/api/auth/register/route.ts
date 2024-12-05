@@ -62,8 +62,8 @@ export async function POST(request: Request) {
 
     if (updateRoleError) throw updateRoleError
 
-    // 3. 为新角色赋予基本权限 (这里假设我们有基本权限如：`view_dashboard`, `edit_profile`)
-    const permissions = ['view_dashboard', 'edit_profile'] // 默认权限
+    // 3. 为新角色赋予基本权限 (这里假设我们有基本权限如：`view:dashboard`, `edit:profile`)
+    const permissions = ['view:dashboard', 'edit:profile'] // 默认权限
 
     for (const permissionName of permissions) {
       const { data: permission, error: permissionError } = await supabase
