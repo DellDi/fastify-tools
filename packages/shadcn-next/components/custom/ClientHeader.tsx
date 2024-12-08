@@ -15,7 +15,7 @@ const navLinks = [
   { href: '#', label: '模型实例' },
   { href: '/changelog/list', label: '更新日志' },
   { href: '/password/newsee', label: '解密' },
-  { href: 'https://github.com/DellDi', label: 'GitHub', icon: <GithubIcon className="h-5 w-5"/> },
+  { href: 'https://github.com/DellDi', label: 'GitHub', icon: <GithubIcon className="h-5 w-5 dark:border-2 bg-white rounded-xl"/> },
 ]
 
 export default function ClientHeader() {
