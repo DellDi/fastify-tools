@@ -1,6 +1,7 @@
 'use server'
 import { NextResponse } from 'next/server'
 import { createClient } from '@/utils/supabase/server'
+import { setUserStore } from '@/utils/store/user'
 
 export async function POST(request: Request) {
   const { email, password } = await request.json()
@@ -30,6 +31,9 @@ export async function POST(request: Request) {
     .from('login_logs')
     .insert({ user_id: data.user.id, login_time: new Date().toISOString() })
 
+    setUserStore(
+      data.user ,
+    )
     // 设置 cookie
     // response.cookies.set('auth_token', token, {
     //   httpOnly: true,
