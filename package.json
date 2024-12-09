@@ -18,7 +18,7 @@
     "upload batch",
     "aes"
   ],
-  "packageManager": "pnpm@9.12.2",
+  "packageManager": "pnpm@9.15.0",
   "devDependencies": {
     "concurrently": "^9.0.1",
     "@types/node": "^20.16.10",

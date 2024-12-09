@@ -8,7 +8,6 @@
     "start": "next start -p 3001",
     "lint": "next lint"
   },
-  "packageManager": "pnpm@9.12.3",
   "dependencies": {
     "@hookform/resolvers": "^3.9.1",
     "@monaco-editor/react": "^4.6.0",

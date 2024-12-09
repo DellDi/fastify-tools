@@ -4,22 +4,22 @@ import { useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import * as z from 'zod'
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form"
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form'
 
 const forgotPasswordSchema = z.object({
-  email: z.string().email({ message: "请输入有效的邮箱地址" }),
+  email: z.string().email({ message: '请输入有效的邮箱地址' }),
 })
 
 type ForgotPasswordFormValues = z.infer<typeof forgotPasswordSchema>
 
 interface ForgotPasswordFormProps {
-  onSuccess: (message: string) => void
-  onError: (error: string) => void
+  onSuccessAction: (message: string) => void
+  onErrorAction: (error: string) => void
 }
 
-export function ForgotPasswordForm({ onSuccess, onError }: ForgotPasswordFormProps) {
+export function ForgotPasswordForm({ onSuccessAction, onErrorAction }: ForgotPasswordFormProps) {
   const [isLoading, setIsLoading] = useState(false)
 
   const form = useForm<ForgotPasswordFormValues>({
@@ -39,12 +39,12 @@ export function ForgotPasswordForm({ onSuccess, onError }: ForgotPasswordFormPro
       })
       const result = await response.json()
       if (response.ok) {
-        onSuccess(result.message)
+        onSuccessAction(result.message)
       } else {
-        throw new Error(result.message || "密码重置失败")
+        throw new Error(result.message || '密码重置失败')
       }
     } catch (error) {
-      onError(error instanceof Error ? error.message : "密码重置失败，请稍后再试。")
+      onErrorAction(error instanceof Error ? error.message : '密码重置失败，请稍后再试。')
     } finally {
       setIsLoading(false)
     }
@@ -62,7 +62,7 @@ export function ForgotPasswordForm({ onSuccess, onError }: ForgotPasswordFormPro
               <FormControl>
                 <Input placeholder="your@email.com" {...field} />
               </FormControl>
-              <FormMessage />
+              <FormMessage/>
             </FormItem>
           )}
         />

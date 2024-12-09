@@ -27,11 +27,11 @@ const signUpSchema = z.object({
 type SignUpFormValues = z.infer<typeof signUpSchema>
 
 interface SignUpFormProps {
-  onSignUpSuccess: (message: string) => void
-  onSignUpError: (error: string) => void
+  onSignUpAction: (message: string) => void
+  onSignUpErrorAction: (error: string) => void
 }
 
-export function SignUpForm({ onSignUpSuccess, onSignUpError }: SignUpFormProps) {
+export function SignUpForm({ onSignUpAction, onSignUpErrorAction }: SignUpFormProps) {
   const [isLoading, setIsLoading] = useState(false)
   const router = useRouter()
 
@@ -56,14 +56,14 @@ export function SignUpForm({ onSignUpSuccess, onSignUpError }: SignUpFormProps) 
       })
       const result = await response.json()
       if (response.ok) {
-        onSignUpSuccess(result.message)
+        onSignUpAction(result.message)
         // Redirect to login page with email and password as query parameters
         router.push(`/auth?email=${encodeURIComponent(data.email)}&password=${encodeURIComponent(data.password)}`)
       } else {
         new Error(result.error || '注册失败')
       }
     } catch (error) {
-      onSignUpError(error instanceof Error ? error.message : '注册失败，请稍后再试。')
+      onSignUpErrorAction(error instanceof Error ? error.message : '注册失败，请稍后再试。')
     } finally {
       setIsLoading(false)
     }
