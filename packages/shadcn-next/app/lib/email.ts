@@ -9,7 +9,23 @@
 //   },
 // })
 
+import crypto from 'crypto'
+
 export async function sendVerificationEmail(to: string, code: string) {
+  // 生成验证码
+  const verificationCode = crypto.randomBytes(3).toString('hex').toUpperCase()
+  const expiresAt = new Date(Date.now() + 15 * 60 * 1000) // 15 minutes from now
+
+  // 插入验证码
+  const { error: insertError } = await supabase
+  .from('verification_codes')
+  .insert({ user_id: authUser.user.id, code: verificationCode, expires_at: expiresAt })
+
+  if (insertError) throw insertError
+
+  // 发送验证邮件（这里需要实现实际的邮件发送逻辑）
+  await sendVerificationEmail(email, verificationCode)
+
   const mailOptions = {
     from: process.env.SMTP_FROM,
     to: to,

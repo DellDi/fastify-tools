@@ -2,6 +2,7 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@/utils/supabase/server'
 import { setUserStore } from '@/utils/store/user'
+import { initRolePermission } from '@/app/api/auth/register/role_permission'
 
 export async function POST(request: Request) {
   const { email, password } = await request.json()
@@ -32,16 +33,12 @@ export async function POST(request: Request) {
     .insert({ user_id: data.user.id, login_time: new Date().toISOString() })
 
     setUserStore(
-      data.user ,
+      data.user,
     )
-    // 设置 cookie
-    // response.cookies.set('auth_token', token, {
-    //   httpOnly: true,
-    //   secure: process.env.NODE_ENV === 'production',
-    //   sameSite: 'strict',
-    //   maxAge: 86400, // 1 day
-    //   path: '/',
-    // })
+
+    if (!data.user.role_id) {
+      await initRolePermission(data.user)
+    }
 
     return NextResponse.json({ message: '登录成功' })
   } catch (error) {

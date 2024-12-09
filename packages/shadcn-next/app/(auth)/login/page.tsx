@@ -46,10 +46,10 @@ export default function AuthPage() {
             <LoginForm onSuccessAction={handleAuthSuccess} onErrorAction={handleAuthError}/>
           )}
           {authState === 'signup' && (
-            <SignUpForm onSignUpSuccess={handleAuthSuccess} onSignUpError={handleAuthError}/>
+            <SignUpForm onSignUpAction={handleAuthSuccess} onSignUpErrorAction={handleAuthError}/>
           )}
           {authState === 'forgot-password' && (
-            <ForgotPasswordForm onSuccess={handleAuthSuccess} onError={handleAuthError}/>
+            <ForgotPasswordForm onSuccessAction={handleAuthSuccess} onErrorAction={handleAuthError}/>
           )}
           <div className="mt-4 space-y-2">
             {authState !== 'login' && (
