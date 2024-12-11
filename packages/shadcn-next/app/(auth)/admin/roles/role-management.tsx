@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { useRouter } from 'next/navigation'
+// import { useRouter } from 'next/navigation'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
@@ -11,6 +11,17 @@ import { usePermissions } from '@/hooks/use-permissions'
 
 export default function RoleManagement() {
   const { hasPermission, isLoading: permissionsLoading } = usePermissions()
+  const { toast } = useToast()
+  // const router = useRouter()
+  const [roles, setRoles] = useState([])
+  const [newRoleName, setNewRoleName] = useState('')
+  const [isLoading, setIsLoading] = useState(false)
+  const supabase = createClient()
+
+  useEffect(() => {
+    fetchRoles()
+  }, [])
+
 
   if (permissionsLoading) {
     return <div>加载权限中...</div>
@@ -21,16 +32,6 @@ export default function RoleManagement() {
   }
 
 
-  const [roles, setRoles] = useState([])
-  const [newRoleName, setNewRoleName] = useState('')
-  const [isLoading, setIsLoading] = useState(false)
-  const router = useRouter()
-  const supabase = createClient()
-  const { toast } = useToast()
-
-  useEffect(() => {
-    fetchRoles()
-  }, [])
 
   async function fetchRoles() {
     const { data, error } = await supabase
