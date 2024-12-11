@@ -38,11 +38,11 @@ export function SignUpForm({ onSignUpAction, onSignUpErrorAction }: SignUpFormPr
   const form = useForm<SignUpFormValues>({
     resolver: zodResolver(signUpSchema),
     defaultValues: {
-      username: '',
-      email: '',
-      password: '',
-      confirmPassword: '',
-      phoneNumber: '',
+      username: 'delldi',
+      email: 'delldi808611@outlook.com',
+      password: 'Zd808611@',
+      confirmPassword: 'Zd808611@',
+      phoneNumber: '18668184122',
     },
   })
 
@@ -58,7 +58,7 @@ export function SignUpForm({ onSignUpAction, onSignUpErrorAction }: SignUpFormPr
       if (response.ok) {
         onSignUpAction(result.message)
         // Redirect to login page with email and password as query parameters
-        router.push(`/auth?email=${encodeURIComponent(data.email)}&password=${encodeURIComponent(data.password)}`)
+        router.push(`/login?email=${encodeURIComponent(data.email)}&password=${encodeURIComponent(data.password)}`)
       } else {
         new Error(result.error || '注册失败')
       }

@@ -27,10 +27,10 @@ export async function POST(request: Request) {
     //   { expiresIn: '1d' }
     // )
 
-    // 记录登录
-    await supabase
-    .from('login_logs')
-    .insert({ user_id: data.user.id, login_time: new Date().toISOString() })
+    // 记录登录，先别记录，影响业务整体注册流程的判断
+    // await supabase
+    // .from('login_logs')
+    // .insert({ user_id: data.user.id, login_time: new Date().toISOString() })
 
     setUserStore(
       data.user,

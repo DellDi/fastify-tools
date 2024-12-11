@@ -10,9 +10,10 @@ export async function POST(request: Request) {
     const { data: userInfo, error: authError } = await supabase.auth.signUp({
       email,
       password,
-      role: email.includes('delldi') ? 'admin' : 'user',
-      user_metadata: {
-        username,
+      options: {
+        data: {
+          username: username,
+        },
       },
     })
 
