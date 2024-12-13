@@ -9,13 +9,14 @@ const newsee: FastifyPluginAsync = async (fastify): Promise<void> => {
   fastify.register(cors, {
     origin: (origin, cb) => {
       const hostname = new URL(origin || '').hostname
-      if (hostname === 'localhost') {
+      const allowedHostnames = ['localhost', '127.0.0.1']
+      if (allowedHostnames.includes(hostname)) {
         //  Request from localhost will pass
         cb(null, true)
         return
       }
       // Generate an error on other origins, disabling access
-      cb(new Error('Not allowed'), false)
+      cb(new Error('origin Not allowed'), false)
     },
   })
   fastify.withTypeProvider<TypeBoxTypeProvider>().post('/handlePassword', {
