@@ -1,6 +1,6 @@
 import { FastifyPluginAsync } from 'fastify'
 import cors from '@fastify/cors'
-import { deCryptoBase64, decryptSQLOrigin, enCryptBase64, encryptSQLOrigin } from '../../utils/crypto.js'
+import { aesDecrypt, deCryptoBase64, decryptSQLOrigin, enCryptBase64, encryptSQLOrigin } from '../../utils/crypto.js'
 import { cryptoSchema, sqlSchema } from '../../schema/newsee.js'
 import { TypeBoxTypeProvider } from '@fastify/type-provider-typebox'
 import { handleSQL } from './handleSQL.js'
@@ -37,6 +37,12 @@ const newsee: FastifyPluginAsync = async (fastify): Promise<void> => {
           break
         case 'aesDeOrigin':
           result = deCryptoBase64(content)
+          break
+        case 'encryptFs':
+          result = enCryptBase64(content, 'fatfs')
+          break
+        case 'decryptFs':
+          result = aesDecrypt(content, 'fatfs')
           break
       }
       reply.code(200).send({ result, statusCode: 200 })

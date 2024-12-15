@@ -6,10 +6,10 @@ const passwordBody = Type.Object({
     description: '需要处理的string',
   }),
   aesEnOrDeType: Type.String({
-    enum: ['encrypt', 'decrypt', 'aesEnOrigin', 'aesDeOrigin'],
+    enum: ['encrypt', 'decrypt', 'aesEnOrigin', 'aesDeOrigin', 'decryptFs', 'encryptFs'],
     default: 'decrypt',
     description:
-      '加密处理的类型encrypt（数据库SS） | decrypt(数据库) | aesEnOrigin | aesDeOrigin',
+      '加密处理的类型encrypt（数据库SS） | decrypt(数据库) | aesEnOrigin | aesDeOrigin | 附件加密解密模式decryptFs、encryptFs',
   }),
 })
 

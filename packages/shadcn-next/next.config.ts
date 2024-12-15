@@ -37,7 +37,7 @@ const nextConfig: NextConfig = {
     ignoreBuildErrors: true,
   },
   webpack: (config: { plugins: any[] }) => {
-    config.plugins.push(codeInspectorPlugin({ bundler: 'webpack' }))
+    config.plugins.push(codeInspectorPlugin({ bundler: 'esbuild' }))
     return config
   },
 }
