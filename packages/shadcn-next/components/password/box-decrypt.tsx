@@ -6,12 +6,13 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Textarea } from '@/components/ui/textarea'
 import { Switch } from '@/components/ui/switch'
+import { type ModeSelect } from '@/components/password/handle'
 
 interface PasswordCardProps {
   title: string
   description: string
   mode: string
-  setMode: (value: string) => void
+  setMode: (string: ModeSelect) => void
   modeOptions: { value: string; label: string }[]
   content: string
   setContent: (value: string) => void
