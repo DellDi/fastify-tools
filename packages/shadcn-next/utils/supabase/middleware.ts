@@ -28,7 +28,7 @@ export async function updateSession(request: NextRequest) {
   )
 
   // 重要提示：避免在 createServerClient 和
-  // supabase.auth.getUser（） 的 API API 中。一个简单的错误可能会使调试变得非常困难
+  // supabase.auth.getUser() 的 API API 中。一个简单的错误可能会使调试变得非常困难
   // 用户被随机注销的问题。
 
   const {
@@ -58,6 +58,5 @@ export async function updateSession(request: NextRequest) {
 //   返回 myNewResponse
 //   如果不这样做，可能会导致浏览器和服务器崩溃
 //   sync 并提前终止用户的会话！
-
   return supabaseResponse
 }

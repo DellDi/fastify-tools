@@ -1,3 +1,28 @@
+-- 创建 login_logs 表
+CREATE TABLE IF NOT EXISTS public.login_logs
+(
+    id         UUID PRIMARY KEY         DEFAULT uuid_generate_v4(),
+    user_id    UUID NOT NULL REFERENCES auth.users (id),
+    login_time TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    ip_address INET,
+    user_agent TEXT
+);
+
+-- 创建 verification_codes 表
+CREATE TABLE IF NOT EXISTS public.verification_codes
+(
+    id         UUID PRIMARY KEY         DEFAULT uuid_generate_v4(),
+    user_id    UUID                     NOT NULL REFERENCES auth.users (id),
+    code       VARCHAR(6)               NOT NULL,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    expires_at TIMESTAMP WITH TIME ZONE NOT NULL
+);
+
+-- 创建索引
+CREATE INDEX IF NOT EXISTS idx_login_logs_user_id ON public.login_logs (user_id);
+CREATE INDEX IF NOT EXISTS idx_verification_codes_user_id ON public.verification_codes (user_id);
+
+
 -- 1. 创建角色表 (roles)
 CREATE TABLE IF NOT EXISTS public.roles
 (
@@ -51,20 +76,24 @@ CREATE INDEX IF NOT EXISTS idx_role_permissions_permission_id ON public.role_per
 CREATE INDEX IF NOT EXISTS idx_permissions_group_name ON public.permissions(group_name);
 CREATE INDEX IF NOT EXISTS idx_permissions_status ON public.permissions(status);
 
--- 8. 创建菜单表 (menus)
+-- 8.菜单表
 CREATE TABLE IF NOT EXISTS public.menus
 (
     id          UUID PRIMARY KEY         DEFAULT uuid_generate_v4(),
     name        VARCHAR(255) NOT NULL,
-    url         VARCHAR(255) NOT NULL,  -- 对应的路由路径
-    parent_id   UUID REFERENCES public.menus(id),  -- 父菜单
-    sort_order  INT DEFAULT 0,           -- 排序，避免与保留字冲突
+    url         VARCHAR(255),         -- 路由路径 (可以为空，例如一级菜单)
+    parent_id   UUID REFERENCES public.menus(id),
+    sort_order  INT DEFAULT 0,
+    icon        VARCHAR(255),      -- 图标
+    description TEXT,                -- 描述
+    component VARCHAR(255), -- 组件路径或标识符(可选)
+    permission VARCHAR(255), -- 权限标识符(可选)
     created_at  TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
     updated_at  TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-    deleted_at  TIMESTAMP WITH TIME ZONE  -- 软删除字段
+    deleted_at  TIMESTAMP WITH TIME ZONE
 );
 
--- 9. 创建角色与菜单关联表 (role_menus)
+-- 9.角色与菜单关联表
 CREATE TABLE IF NOT EXISTS public.role_menus
 (
     role_id     UUID REFERENCES public.roles(id) ON DELETE CASCADE,
@@ -72,7 +101,6 @@ CREATE TABLE IF NOT EXISTS public.role_menus
     created_at  TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
     PRIMARY KEY (role_id, menu_id)
 );
-
 -- 10. 为角色与菜单关联表创建索引
 CREATE INDEX IF NOT EXISTS idx_role_menus_role_id ON public.role_menus(role_id);
 CREATE INDEX IF NOT EXISTS idx_role_menus_menu_id ON public.role_menus(menu_id);
