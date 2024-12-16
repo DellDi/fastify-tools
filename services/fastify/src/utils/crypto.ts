@@ -10,26 +10,28 @@ const keyModeType = {
   fatfs: '01234567890123456789012345678901',
 }
 
-// 定义一个加密函数，将传入的字符串进行加密，并返回加密后的字符串
-export const enCryptBase64 = (val: string, type: modeKeyType = 'dec'): string => {
-  // 定义密钥
-  const key = keyModeType[type]
-  // 将密钥转换为Utf8编码
-  const keyStr = CryptoJS.enc.Utf8.parse(key)
-  // 将密钥转换为Utf8编码
-  const iv = CryptoJS.enc.Utf8.parse(key)
-  // 将传入的字符串转换为Utf8编码
-  const srcs = CryptoJS.enc.Utf8.parse(val)
-  // 使用AES加密算法，CBC模式和ZeroPadding填充方式对传入的字符串进行加密
-  const encrypted = CryptoJS.AES.encrypt(srcs, keyStr, {
-    iv,
-    mode: CryptoJS.mode.CBC,
-    padding: CryptoJS.pad.ZeroPadding,
-  })
-  // 将加密后的字符串转换为Base64编码
-  return CryptoJS.enc.Base64.stringify(encrypted.ciphertext)
+export function aesEncrypt(plaintext: string, type: modeKeyType): string {
+  try {
+    const key = keyModeType[type];
+    const iv = '\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00';
+
+    const keyWordArray = CryptoJS.enc.Utf8.parse(key);
+    const ivWordArray = CryptoJS.enc.Latin1.parse(iv);
+
+    const encrypted = CryptoJS.AES.encrypt(plaintext, keyWordArray, {
+      iv: ivWordArray,
+      mode: CryptoJS.mode.CBC,
+      padding: CryptoJS.pad.Pkcs7,
+    });
+
+    return encrypted.toString(); // 返回加密后的Base64字符串
+  } catch (error) {
+    console.error('Encryption error:', error);
+    return 'null';
+  }
 }
 
+// 新增按照文件系统的加密方式
 export function aesDecrypt(ciphertext: string, type: modeKeyType): string {
   try {
     const key = keyModeType[type]
@@ -76,11 +78,34 @@ export const deCryptoBase64 = (val: string, type: modeKeyType = 'dec'): string =
   // 返回解密后的字符串
   return decryptedStr.toString()
 }
+
+
+// 定义一个加密函数，将传入的字符串进行加密，并返回加密后的字符串
+export const enCryptBase64 = (val: string, type: modeKeyType = 'dec'): string => {
+  // 定义密钥
+  const key = keyModeType[type]
+  // 将密钥转换为Utf8编码
+  const keyStr = CryptoJS.enc.Utf8.parse(key)
+  // 将密钥转换为Utf8编码
+  const iv = CryptoJS.enc.Utf8.parse(key)
+  // 将传入的字符串转换为Utf8编码
+  const srcs = CryptoJS.enc.Utf8.parse(val)
+  // 使用AES加密算法，CBC模式和ZeroPadding填充方式对传入的字符串进行加密
+  const encrypted = CryptoJS.AES.encrypt(srcs, keyStr, {
+    iv,
+    mode: CryptoJS.mode.CBC,
+    padding: CryptoJS.pad.ZeroPadding,
+  })
+  // 将加密后的字符串转换为Base64编码
+  return CryptoJS.enc.Base64.stringify(encrypted.ciphertext)
+}
+
+
 // 定义一个SQL密钥
 const sqlKey = Buffer.from('WJ19938888', 'utf8')
-.subarray(0, 16)
-.toString('utf8')
-.padEnd(16, '\0')
+  .subarray(0, 16)
+  .toString('utf8')
+  .padEnd(16, '\0')
 
 // 定义一个加密SQL函数，将传入的字符串进行加密，并返回加密后的字符串
 export function encryptSQLOrigin(text: string): string {
@@ -105,3 +130,72 @@ export function decryptSQLOrigin(encryptedBase64: string): string {
   // 返回解密后的字符串
   return decrypted
 }
+
+
+// 策略接口
+interface Strategy {
+  execute(content: string): string;
+}
+
+// 具体策略类
+class EncryptStrategy implements Strategy {
+  execute(content: string): string {
+    return encryptSQLOrigin(content);
+  }
+}
+
+class DecryptStrategy implements Strategy {
+  execute(content: string): string {
+    return decryptSQLOrigin(content);
+  }
+}
+
+class AesEnOriginStrategy implements Strategy {
+  execute(content: string): string {
+    return enCryptBase64(content);
+  }
+}
+
+class AesDeOriginStrategy implements Strategy {
+  execute(content: string): string {
+    return deCryptoBase64(content);
+  }
+}
+
+class EncryptFsStrategy implements Strategy {
+  execute(content: string): string {
+    return aesEncrypt(content, 'fatfs');
+  }
+}
+
+class DecryptFsStrategy implements Strategy {
+  execute(content: string): string {
+    return aesDecrypt(content, 'fatfs');
+  }
+}
+
+// 上下文类
+export class AesContext {
+  private strategy: Strategy;
+
+  constructor(strategy: Strategy = new EncryptStrategy()) {
+    this.strategy = strategy;
+  }
+
+  setStrategy(strategy: Strategy) {
+    this.strategy = strategy;
+  }
+
+  executeStrategy(content: string): string {
+    return this.strategy.execute(content);
+  }
+}
+
+export const strategyMap = {
+  'encrypt': new EncryptStrategy(),
+  'decrypt': new DecryptStrategy(),
+  'aesEnOrigin': new AesEnOriginStrategy(),
+  'aesDeOrigin': new AesDeOriginStrategy(),
+  'encryptFs': new EncryptFsStrategy(),
+  'decryptFs': new DecryptFsStrategy(),
+};

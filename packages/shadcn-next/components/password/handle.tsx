@@ -25,16 +25,18 @@ const modeOptions = [
   { value: 'fatfs', label: '附件模式' },
 ]
 
-export type ModeSelect = 'database' | 'business' | 'fatfs';
-type SelectValue = typeof selectOptions[keyof typeof selectOptions][number]['value'];
+export type ModeSelect = 'database' | 'business' | 'fatfs'
+type SelectValue =
+  (typeof selectOptions)[keyof typeof selectOptions][number]['value']
 
 export function PasswordComponent() {
   // 取modeOptions的value 做枚举类型
   const [mode, setMode] = useState<ModeSelect>('database')
+  const [isBatchInput, setIsBatchInput] = useState(false)
   const [content, setContent] = useState('')
   const [result, setResult] = useState('')
   const [selectValue, setSelect] = useState<SelectValue>(
-    selectOptions[mode][0].value,
+    selectOptions[mode][0].value
   )
 
   const setSelectValue = () => {
@@ -56,11 +58,18 @@ export function PasswordComponent() {
     e.preventDefault()
 
     try {
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/newsee/handlePassword`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ content, aesEnOrDeType: selectValue }),
-      })
+      const response = await fetch(
+        `${process.env.NEXT_PUBLIC_API_URL}/newsee/handlePassword`,
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            content,
+            isBatch: isBatchInput,
+            aesEnOrDeType: selectValue,
+          }),
+        }
+      )
       const data = await response.json()
 
       setResult(data.result)
@@ -69,10 +78,12 @@ export function PasswordComponent() {
       toast({
         title: statusFail ? '解析异常' : '解析成功',
         variant: statusFail ? 'destructive' : 'default',
-        description: statusFail ? `${data.code}:${data.message}` : (
+        description: statusFail ? (
+          `${data.code}:${data.message}`
+        ) : (
           <pre className="mt-2 w-[340px] rounded-md bg-slate-950 p-4 overflow-auto">
             <code className="text-white whitespace-pre-wrap break-words">
-              处理结果: {data.result} ({selectValue})
+              处理结果: <br/> {data.result} ({selectValue})
             </code>
           </pre>
         ),
@@ -92,12 +103,14 @@ export function PasswordComponent() {
   return (
     <div className="mt-4">
       <PasswordCard
-        title="密码处理"
+        title="明密文处理"
         description="支持数据库模式和业务模式的密码加密解密"
         mode={mode}
         setMode={setMode}
         modeOptions={modeOptions}
         content={content}
+        isBatchInput={isBatchInput}
+        setIsBatchInput={setIsBatchInput}
         setContent={setContent}
         selectValue={selectValue}
         setSelectValue={setSelect}
@@ -108,4 +121,3 @@ export function PasswordComponent() {
     </div>
   )
 }
-

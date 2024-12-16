@@ -5,6 +5,10 @@ const passwordBody = Type.Object({
     default: 'r5deoK7XdPmX6iilAchDKA==',
     description: '需要处理的string',
   }),
+  isBatch: Type.Boolean({
+    default: false,
+    description: '是否批量处理',
+  }),
   aesEnOrDeType: Type.String({
     enum: ['encrypt', 'decrypt', 'aesEnOrigin', 'aesDeOrigin', 'decryptFs', 'encryptFs'],
     default: 'decrypt',

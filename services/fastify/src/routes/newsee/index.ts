@@ -1,6 +1,6 @@
 import { FastifyPluginAsync } from 'fastify'
 import cors from '@fastify/cors'
-import { aesDecrypt, deCryptoBase64, decryptSQLOrigin, enCryptBase64, encryptSQLOrigin } from '../../utils/crypto.js'
+import { AesContext, strategyMap } from '../../utils/crypto.js'
 import { cryptoSchema, sqlSchema } from '../../schema/newsee.js'
 import { TypeBoxTypeProvider } from '@fastify/type-provider-typebox'
 import { handleSQL } from './handleSQL.js'
@@ -23,28 +23,29 @@ const newsee: FastifyPluginAsync = async (fastify): Promise<void> => {
     schema: cryptoSchema,
     handler: async (request, reply) => {
       request.headers['content-type'] = 'application/json'
-      const { content, aesEnOrDeType = 'decrypt' } = request.body
-      let result = ''
-      switch (aesEnOrDeType) {
-        case 'encrypt':
-          result = encryptSQLOrigin(content)
-          break
-        case 'decrypt':
-          result = decryptSQLOrigin(content)
-          break
-        case 'aesEnOrigin':
-          result = enCryptBase64(content)
-          break
-        case 'aesDeOrigin':
-          result = deCryptoBase64(content)
-          break
-        case 'encryptFs':
-          result = enCryptBase64(content, 'fatfs')
-          break
-        case 'decryptFs':
-          result = aesDecrypt(content, 'fatfs')
-          break
+      const { content, aesEnOrDeType = 'decrypt', isBatch } = request.body
+      const strategy = strategyMap[aesEnOrDeType as keyof typeof strategyMap]
+      if (!strategy) {
+        throw new Error('Unsupported encryption/decryption type');
       }
+      const fucAes = new AesContext(strategy)
+      // content 支持批量处理，是换行符拼接的字符串
+      let result = ''
+      if (isBatch) {
+        const contentArr = content.split('\n')
+        for (let i = 0; i < contentArr.length; i++) {
+          const item = contentArr[i]
+          // 最后一个不加,
+          if (i !== contentArr.length - 1) {
+            result += fucAes.executeStrategy(item) + ',' + '\n'
+          } else {
+            result += fucAes.executeStrategy(item)
+          }
+        }
+      } else {
+        result = fucAes.executeStrategy(content)
+      }
+
       reply.code(200).send({ result, statusCode: 200 })
     },
   })
