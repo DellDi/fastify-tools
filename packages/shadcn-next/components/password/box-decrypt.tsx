@@ -2,8 +2,20 @@ import React from 'react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select'
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from '@/components/ui/card'
 import { Textarea } from '@/components/ui/textarea'
 import { Switch } from '@/components/ui/switch'
 import { type ModeSelect } from '@/components/password/handle'
@@ -16,6 +28,8 @@ interface PasswordCardProps {
   modeOptions: { value: string; label: string }[]
   content: string
   setContent: (value: string) => void
+  isBatchInput: boolean
+  setIsBatchInput: (value: boolean) => void
   selectValue: string
   setSelectValue: (value: string) => void
   selectOptions: { value: string; label: string }[]
@@ -31,14 +45,14 @@ export function PasswordCard({
   modeOptions,
   content,
   setContent,
+  isBatchInput,
+  setIsBatchInput,
   selectValue,
   setSelectValue,
   selectOptions,
   onSubmit,
-  result
+  result,
 }: PasswordCardProps) {
-  const [isBatchInput, setIsBatchInput] = React.useState(false)
-
   return (
     <Card className="w-full max-w-md mx-auto text-left">
       <CardHeader>
@@ -47,11 +61,20 @@ export function PasswordCard({
       </CardHeader>
       <CardContent>
         <form onSubmit={onSubmit} className="space-y-4">
+          <div className="flex items-center space-x-2">
+            <Switch
+              id="batch-input"
+              checked={isBatchInput}
+              onCheckedChange={setIsBatchInput}
+            />
+            <Label htmlFor="batch-input">批量输入</Label>
+          </div>
+
           <div className="space-y-2">
             <Label htmlFor="mode">处理模式</Label>
             <Select value={mode} onValueChange={setMode}>
               <SelectTrigger id="mode">
-                <SelectValue placeholder="选择处理模式"/>
+                <SelectValue placeholder="选择处理模式" />
               </SelectTrigger>
               <SelectContent>
                 {modeOptions.map((option) => (
@@ -62,20 +85,14 @@ export function PasswordCard({
               </SelectContent>
             </Select>
           </div>
-          <div className="flex items-center space-x-2">
-            <Switch
-              id="batch-input"
-              checked={isBatchInput}
-              onCheckedChange={setIsBatchInput}
-            />
-            <Label htmlFor="batch-input">批量输入</Label>
-          </div>
+
           <div className="space-y-2">
             <Label htmlFor="content">需要处理的字符串</Label>
             {isBatchInput ? (
               <Textarea
                 id="content"
                 value={content}
+                className="min-h-[6rem]"
                 onChange={(e) => setContent(e.target.value)}
                 placeholder="输入需要处理的字符串（每行一个）"
                 required
@@ -94,7 +111,7 @@ export function PasswordCard({
             <Label htmlFor="selectValue">处理类型</Label>
             <Select value={selectValue} onValueChange={setSelectValue}>
               <SelectTrigger id="selectValue">
-                <SelectValue placeholder="选择处理类型"/>
+                <SelectValue placeholder="选择处理类型" />
               </SelectTrigger>
               <SelectContent>
                 {selectOptions.map((option) => (
@@ -105,7 +122,9 @@ export function PasswordCard({
               </SelectContent>
             </Select>
           </div>
-          <Button type="submit" className="w-full">处理</Button>
+          <Button type="submit" className="w-full">
+            处理
+          </Button>
         </form>
         {result && (
           <div className="mt-4 p-2 bg-gray-100 rounded dark:bg-gray-900">
@@ -117,4 +136,3 @@ export function PasswordCard({
     </Card>
   )
 }
-
