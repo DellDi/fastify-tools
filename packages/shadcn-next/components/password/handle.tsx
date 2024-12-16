@@ -1,8 +1,9 @@
 'use client'
 
-import React, { useEffect, useState } from 'react'
+import React, { useCallback, useEffect, useState } from 'react'
 import { toast } from '@/components/ui/use-toast'
 import { PasswordCard } from '@/components/password/box-decrypt'
+import { CopyButton } from '@/components/copy-button'
 
 const selectOptions = {
   database: [
@@ -36,10 +37,10 @@ export function PasswordComponent() {
   const [content, setContent] = useState('')
   const [result, setResult] = useState('')
   const [selectValue, setSelect] = useState<SelectValue>(
-    selectOptions[mode][0].value
+    selectOptions[mode][0].value,
   )
 
-  const setSelectValue = () => {
+  const setSelectValue = useCallback(() => {
     if (mode === 'database') {
       setSelect(selectOptions[mode][0].value)
     } else if (mode === 'business') {
@@ -47,11 +48,11 @@ export function PasswordComponent() {
     } else if (mode === 'fatfs') {
       setSelect(selectOptions[mode][0].value)
     }
-  }
+  }, [mode])
 
   useEffect(() => {
     setSelectValue()
-  }, [mode])
+  }, [mode, setSelectValue])
 
   const options = selectOptions[mode]
   const handleSubmit = async (e: React.FormEvent) => {
@@ -68,7 +69,7 @@ export function PasswordComponent() {
             isBatch: isBatchInput,
             aesEnOrDeType: selectValue,
           }),
-        }
+        },
       )
       const data = await response.json()
 
@@ -81,12 +82,18 @@ export function PasswordComponent() {
         description: statusFail ? (
           `${data.code}:${data.message}`
         ) : (
-          <pre className="mt-2 w-[340px] rounded-md bg-slate-950 p-4 overflow-auto">
+          <>
+            <pre className="mt-2 w-[340px] rounded-md bg-gray-900  p-4 overflow-auto">
             <code className="text-white whitespace-pre-wrap break-words">
-              处理结果: <br/> {data.result} ({selectValue})
+               {data.result}
             </code>
           </pre>
+            <CopyButton text={data.result as string} size="sm" className="">
+              复制
+            </CopyButton>
+          </>
         ),
+        // action: <CopyButton text={data.result as string}/>,
         duration: 1500,
       })
     } catch (error) {
