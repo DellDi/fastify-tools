@@ -6,9 +6,7 @@ ALTER TABLE public.roles
 CREATE
     POLICY "Allow users to view and update their own roles"
     ON public.roles
-    FOR
-    SELECT ,
-UPDATE
+    FOR ALL
     USING (created_by = auth.uid());
 
 -- 策略：管理员可以访问所有角色数据
@@ -48,8 +46,7 @@ CREATE
     POLICY "Allow users to view and update their role permissions"
     ON public.role_permissions
     FOR
-    SELECT ,
-UPDATE
+    ALL
     USING (EXISTS (
     SELECT 1
     FROM public.roles r
@@ -93,8 +90,7 @@ CREATE
     POLICY "Allow users to view and update their own data"
     ON auth.users
     FOR
-    SELECT ,
-UPDATE
+    ALL
     USING (auth.uid() = auth.users.id);
 
 -- 策略：管理员可以访问所有用户数据
@@ -104,10 +100,13 @@ CREATE
     FOR ALL
     USING (auth.role() = 'admin');
 
+-- 安装 uuid-ossp 扩展（如果尚未安装）
+CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
+
 -- 初始化： roles 表 内置几个默认角色
 INSERT INTO public.roles (name, created_by)
-VALUES ('admin', 'admin'),
-       ('user', 'admin');
+VALUES ('admin', gen_random_uuid()) RETURNING id INTO @roleAdminId,
+       ('user', gen_random_uuid());
 
 -- 初始化： permissions 表 内置几个默认权限
 INSERT INTO public.permissions (name, description, group_name)
@@ -160,7 +159,11 @@ VALUES ((SELECT id FROM public.roles WHERE name = 'admin'), (SELECT id FROM publ
        ((SELECT id FROM public.roles WHERE name = 'admin'), (SELECT id FROM public.menus WHERE name = 'users')),
        ((SELECT id FROM public.roles WHERE name = 'admin'), (SELECT id FROM public.menus WHERE name = 'roles')),
        ((SELECT id FROM public.roles WHERE name = 'admin'), (SELECT id FROM public.menus WHERE name = 'permissions')),
-       ((SELECT id FROM public.roles WHERE name = 'admin'), (SELECT id FROM public.menus WHERE name = 'menus'));
+       ((SELECT id FROM public.roles WHERE name = 'admin'), (SELECT id FROM public.menus WHERE name = 'menus')),
+       ((SELECT id FROM public.roles WHERE name = 'user'), (SELECT id FROM public.menus WHERE name = 'dashboard')),
+       ((SELECT id FROM public.roles WHERE name = 'user'), (SELECT id FROM public.menus WHERE name = 'users')),
+       ((SELECT id FROM public.roles WHERE name = 'user'), (SELECT id FROM public.menus WHERE name = 'roles')),
+       ((SELECT id FROM public.roles WHERE name = 'user'), (SELECT id FROM public.menus WHERE name = 'permissions'));
 
 
 -- ALTER TABLE public.roles ENABLE POLICY;
