@@ -11,7 +11,7 @@ export function usePermissions() {
       const { data: { user } } = await supabase.auth.getUser()
       if (user) {
         const { data, error } = await supabase
-        .from('role_permissions')
+        .from('public.permissions')
         .select('permissions(name)')
         .eq('role_id', user.role_id)
 
@@ -22,7 +22,8 @@ export function usePermissions() {
       setIsLoading(false)
     }
 
-    fetchPermissions().then(r => {})
+    fetchPermissions().then(r => {
+    })
   }, [])
 
   function hasPermission(permissionName: string): boolean {
