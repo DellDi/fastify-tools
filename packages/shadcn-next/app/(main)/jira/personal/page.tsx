@@ -3,7 +3,7 @@ import { SearchJiraComponent } from '@/components/jira/search'
 import { JiraSaaSTable } from '@/components/jira/table'
 import { InvoicesTableSkeleton } from '@/components/jira/tableSkeleton'
 import { Suspense } from 'react'
-import { SAAS_JQL_3M } from '@/lib/jira/jql'
+import { SAAS_JQL_3M } from '@/utils/jira/jql'
 import { JiraPaginator } from '@/components/jira/paginator'
 
 export const experimental_ppr = true

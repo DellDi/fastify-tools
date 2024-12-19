@@ -36,7 +36,7 @@ export async function sendVerificationEmail(authUser: {
   const mailOptions = {
     from: process.env.SMTP_FROM,
     to: to,
-    subject: '验证您的邮箱',
+    subject: `验证您的邮箱${email}`,
     text: `您的验证码是: ${code}`,
     html: `
       <h1>验证您的邮箱</h1>
@@ -47,7 +47,7 @@ export async function sendVerificationEmail(authUser: {
 
   try {
     // await transporter.sendMail(mailOptions)
-    console.log(`Verification email sent to ${to}`)
+    console.log(`Verification email sent to ${to} ,${mailOptions}`)
   } catch (error) {
     console.error('Error sending verification email:', error)
     throw new Error('Failed to send verification email')

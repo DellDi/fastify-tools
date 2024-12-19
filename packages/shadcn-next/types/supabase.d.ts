@@ -5,10 +5,7 @@ declare module '@supabase/supabase-js' {
   interface User {
     role_id?: number;  // 这里添加你的自定义字段
   }
-}
 
-// 拓展数据库类型
-declare module 'types/supabase' {
   interface Role {
     id: string
     name: string
@@ -51,6 +48,7 @@ declare module 'types/supabase' {
     created_at: string
     updated_at: string
     deleted_at: string
+    children?: Menu[]
   }
 
   interface RoleMenu {
@@ -58,5 +56,5 @@ declare module 'types/supabase' {
     menu_id: string
     created_at: string
   }
-
 }
+

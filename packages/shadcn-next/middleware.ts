@@ -14,11 +14,16 @@ export async function middleware(req: NextRequest) {
   if (isAuthRoute || isAdminRoute) {
     return await updateSession(req)
   }
-  // const userRole = await getUserRole()
+  const userRole = await getUserRole()
   // if (userRole?.name !== 'admin') {
   //   // 如果用户不是管理员，重定向到仪表板
   //   return NextResponse.redirect(new URL('/dashboard', req.url))
   // }
+  // 判断是否具有路由菜单权限
+  if (isAdminRoute && userRole?.name !== 'admin') {
+    return NextResponse.redirect(new URL('/dashboard', req.url))
+  }
+
   return NextResponse.next()
 }
 

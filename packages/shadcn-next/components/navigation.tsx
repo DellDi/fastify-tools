@@ -2,7 +2,7 @@
 
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { cn } from "@/lib/utils"
+import { cn } from "@/utils/utils"
 
 const navItems = [
   { href: '/dashboard', label: '仪表板' },

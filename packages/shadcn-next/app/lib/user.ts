@@ -3,7 +3,7 @@
 import { createClient } from '@/utils/supabase/server'
 import { getUserStore } from '@/utils/store/user'
 import { UserRole } from '@/utils/store/role'
-import { type User } from '@supabase/supabase-js'
+import { Menu, Role, type User } from '@supabase/supabase-js'
 
 export async function getUser(): Promise<User | null> {
   const userInfo = getUserStore()
@@ -43,25 +43,24 @@ export async function getCurrentUserRole(): Promise<userRole | null> {
   }
 }
 
-async function getUserMenus(roles: Role[]): Promise<Menu[]> {
+export async function getUserMenus(roles: Role[]): Promise<Menu[]> {
   if (!roles || roles.length === 0) {
     return []
   }
   const roleIds = roles.map(role => role.id)
-
+  const supabase = await createClient()
   const { data: menuData, error: menuError } = await supabase
   .from('role_menus')
-  .select('menus(*)')
+  .select('*')
   .in('role_id', roleIds)
+
   if (menuError) {
     console.error('Error fetching user menus:', menuError)
     return []
   }
   if (!menuData) return []
-  const menus = menuData.map(rm => rm.menus)
   // 去重
-  const uniqueMenus = Array.from(new Set(menus.map(JSON.stringify))).map(JSON.parse)
-  return buildMenuTree(uniqueMenus)
+  return buildMenuTree(menuData)
 }
 
 // 构建菜单树
@@ -70,12 +69,12 @@ function buildMenuTree(menus: Menu[]): Menu[] {
   const rootMenus: Menu[] = []
 
   menus.forEach(menu => {
-    menu.children = [] // 初始化 children 属性
+    menu['children'] = [] // 初始化 children 属性
     menuMap.set(menu.id, menu)
-    if (menu.parentId) {
-      const parentMenu = menuMap.get(menu.parentId)
+    if (menu.parent_id) {
+      const parentMenu = menuMap.get(menu.parent_id)
       if (parentMenu) {
-        parentMenu.children!.push(menu)
+        parentMenu['children']!.push(menu)
       }
     } else {
       rootMenus.push(menu)
