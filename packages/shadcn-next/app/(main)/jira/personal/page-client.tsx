@@ -8,7 +8,7 @@ import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/componen
 import { Skeleton } from '@/components/ui/skeleton'
 import { AlertCircle, CheckCircle2, ChevronLeft, ChevronRight, Clock } from 'lucide-react'
 
-import { SAAS_JQL_3M } from '@/lib/jira/jql'
+import { SAAS_JQL_3M } from '@/utils/jira/jql'
 import { useBasePath } from '@/hooks/use-path'
 import { JiraResponse, JiraIssue } from '@/app/api/jira/jira-filtered/route'
 
