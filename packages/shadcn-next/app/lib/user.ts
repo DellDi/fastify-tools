@@ -84,3 +84,22 @@ function buildMenuTree(menus: Menu[]): Menu[] {
   return rootMenus
 }
 
+// 如果用户是第一次注册，且注册验证成功了，但是用户还没有分配默认角色、需要分配一个默认的角色给到当前注册成功的用户
+export async function assignDefaultRole(user: User): Promise<void> {
+  const supabase = await createClient()
+  const { data, error } = await supabase
+  .from('roles')
+  .select('id')
+  .eq('name', 'user') // 假设默认角色名为 'default'
+  if (error) {
+    console.error('Error fetching default role:', error)
+    return
+  }
+  if (data && data.length > 0) {
+    const defaultRoleId = data[0].id
+    await supabase
+    .from('users')
+    .update({ role_id: defaultRoleId })
+    .eq('id', user.id)
+  }
+}

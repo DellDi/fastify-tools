@@ -1,7 +1,11 @@
 import { type NextRequest, NextResponse } from 'next/server'
 import { updateSession } from '@/utils/supabase/middleware'
+import { forbidden } from 'next/navigation'
+import { getCurrentUserRole } from '@/app/lib/user'
+import { isWhiteRoute } from '@/utils/auth/config'
 
 export async function middleware(req: NextRequest) {
+  if (isWhiteRoute(req.nextUrl.pathname)) return NextResponse.next()
   // 需要认证的路由
   const authRoutes = ['/dashboard', '/profile', '/settings']
   // 也需要需要管理员权限的路由
@@ -14,14 +18,10 @@ export async function middleware(req: NextRequest) {
   if (isAuthRoute || isAdminRoute) {
     return await updateSession(req)
   }
-  const userRole = await getUserRole()
-  // if (userRole?.name !== 'admin') {
-  //   // 如果用户不是管理员，重定向到仪表板
-  //   return NextResponse.redirect(new URL('/dashboard', req.url))
-  // }
+  const userRoles = await getCurrentUserRole()
   // 判断是否具有路由菜单权限
-  if (isAdminRoute && userRole?.name !== 'admin') {
-    return NextResponse.redirect(new URL('/dashboard', req.url))
+  if (userRoles && isAdminRoute && userRoles.roles.some(role => role.name === 'admin')) {
+    forbidden()
   }
 
   return NextResponse.next()
