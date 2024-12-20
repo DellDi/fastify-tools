@@ -4,17 +4,50 @@ import { useState } from 'react'
 import Link from 'next/link'
 import { motion } from 'framer-motion'
 import { AlertCircle, RefreshCw, Home, LogIn } from 'lucide-react'
-import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
+import { Button } from '@/components/ui/button'
+import {
+  Card,
+  CardContent,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from '@/components/ui/card'
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
+import { getUser } from '@/app/lib/user'
+import { createClient } from '@/utils/supabase/client'
+import { toast } from '@/components/ui/use-toast'
 
 export function ErrorCard({ errorMessage }: { errorMessage: string }) {
   const [isResending, setIsResending] = useState(false)
 
   const handleResendEmail = async () => {
     setIsResending(true)
-    // TODO: Implement the actual email resend logic here
-    await new Promise(resolve => setTimeout(resolve, 2000)) // Simulating API call
+
+    const user = await getUser()
+    const susabase = createClient()
+
+    if (user) {
+      console.log('User:', user)
+      try {
+        await susabase.auth.resend({
+          type: 'signup',
+          email: user.email as string,
+        })
+      } catch (error) {
+        toast({
+          title: '发送失败',
+          description: `${error}`,
+          variant: 'destructive',
+        })
+      }
+    } else {
+      console.error('User not found')
+      toast({
+        title: '发送失败',
+        description: '用户未找到',
+        variant: 'destructive',
+      })
+    }
     setIsResending(false)
   }
 
@@ -46,9 +79,7 @@ export function ErrorCard({ errorMessage }: { errorMessage: string }) {
           <Alert variant="destructive">
             <AlertCircle className="h-4 w-4" />
             <AlertTitle>错误</AlertTitle>
-            <AlertDescription>
-              {errorMessage}
-            </AlertDescription>
+            <AlertDescription>{errorMessage}</AlertDescription>
           </Alert>
           <p className="mt-4 text-center text-gray-600">
             看起来您的确认链接已经过期或无效。不用担心，我们可以为您重新发送一封确认邮件。
@@ -88,4 +119,3 @@ export function ErrorCard({ errorMessage }: { errorMessage: string }) {
     </motion.div>
   )
 }
-
