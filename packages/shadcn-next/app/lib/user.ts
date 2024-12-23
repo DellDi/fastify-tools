@@ -1,9 +1,10 @@
 'use server'
 
 import { createClient } from '@/utils/supabase/server'
-import { getUserStore } from '@/utils/store/user'
-import { UserRole } from '@/utils/store/role'
-import { Menu, Role, type User } from '@supabase/supabase-js'
+import { getUserStore, setUserStore } from '@/utils/store/user'
+import { getRoleStore, setRoleStore, UserRole } from '@/utils/store/role'
+import { type Menu, type User } from '@supabase/supabase-js'
+import { getMenusStore, setMenusStore } from '@/utils/store/role_menu'
 
 export async function getUser(): Promise<User | null> {
   const userInfo = getUserStore()
@@ -25,7 +26,11 @@ type userRole = {
 export async function getCurrentUserRole(): Promise<userRole | null> {
   const user = await getUser()
   if (!user) return null
-
+  const role = getRoleStore()
+  if (role) return {
+    user,
+    roles: role,
+  }
   const supabase = await createClient()
   const { data: userRole, error } = await supabase
   .from('roles')
@@ -43,63 +48,83 @@ export async function getCurrentUserRole(): Promise<userRole | null> {
   }
 }
 
-export async function getUserMenus(roles: Role[]): Promise<Menu[]> {
+export async function getUserMenus(roles: Pick<UserRole, 'name' | 'description' | 'id' | 'status'>[]): Promise<Menu[]> {
   if (!roles || roles.length === 0) {
     return []
   }
+  // const routeMenusTree =  getMenusStore()
+  // if (routeMenusTree) return routeMenusTree
   const roleIds = roles.map(role => role.id)
-  const supabase = await createClient()
-  const { data: menuData, error: menuError } = await supabase
-  .from('role_menus')
-  .select('*')
-  .in('role_id', roleIds)
-
-  if (menuError) {
-    console.error('Error fetching user menus:', menuError)
-    return []
-  }
-  if (!menuData) return []
-  // 去重
-  return buildMenuTree(menuData)
+  return await buildMenuTree(roleIds)
 }
 
-// 构建菜单树
-function buildMenuTree(menus: Menu[]): Menu[] {
-  const menuMap = new Map<string, Menu>()
-  const rootMenus: Menu[] = []
+// 假设 role_ids 是一个字符串数组，包含角色 ID
+async function buildMenuTree(roleIds: string[]) {
+  const supabase = await createClient()
+  // 查询角色关联的菜单
+  const { data: roleMenus, error: roleMenusError } = await supabase
+  .from('role_menus')
+  .select('menu_id')
+  .in('role_id', roleIds)
 
-  menus.forEach(menu => {
-    menu['children'] = [] // 初始化 children 属性
-    menuMap.set(menu.id, menu)
+  if (roleMenusError) {
+    console.error('Error fetching role menus:', roleMenusError)
+    return []
+  }
+
+  // 获取所有相关菜单的 ID
+  const menuIds = roleMenus.map(rm => rm.menu_id)
+
+  // 查询菜单详情
+  const { data: menus, error: menusError } = await supabase
+  .from('menus')
+  .select('*')
+  .in('id', menuIds)
+
+  if (menusError) {
+    console.error('Error fetching menus:', menusError)
+    return []
+  }
+
+  // 构建菜单树
+  const menuMap = new Map<string, Menu>()
+  menus.forEach(menu => menuMap.set(menu.id, { ...menu, children: [] }))
+
+  const rootMenus = []
+
+  // 构建父子关系
+  for (const menu of menuMap.values()) {
     if (menu.parent_id) {
-      const parentMenu = menuMap.get(menu.parent_id)
-      if (parentMenu) {
-        parentMenu['children']!.push(menu)
+      const parent = menuMap.get(menu.parent_id)
+      if (parent) {
+        parent.children = parent.children || []
+        parent.children.push(menu)
       }
     } else {
       rootMenus.push(menu)
     }
-  })
+  }
 
-  return rootMenus
+  // 排序菜单
+  const sortMenu = (menuList: Menu[]): Menu[] => {
+    return menuList.sort((a, b) => a.sort_order - b.sort_order).map(menu => ({
+      ...menu,
+      children: menu.children ? sortMenu(menu.children) : [],
+    }))
+  }
+
+  return sortMenu(rootMenus)
 }
 
-// 如果用户是第一次注册，且注册验证成功了，但是用户还没有分配默认角色、需要分配一个默认的角色给到当前注册成功的用户
-export async function assignDefaultRole(user: User): Promise<void> {
-  const supabase = await createClient()
-  const { data, error } = await supabase
-  .from('roles')
-  .select('id')
-  .eq('name', 'user') // 假设默认角色名为 'default'
-  if (error) {
-    console.error('Error fetching default role:', error)
-    return
+export async function initUserStore(user: User | null) {
+  if (user) {
+    setUserStore(user)
   }
-  if (data && data.length > 0) {
-    const defaultRoleId = data[0].id
-    await supabase
-    .from('users')
-    .update({ role_id: defaultRoleId })
-    .eq('id', user.id)
+  const userRole = await getCurrentUserRole()
+  if (userRole) {
+    setRoleStore(userRole.roles)
+    const userMenus = await getUserMenus(userRole.roles)
+    setMenusStore(userMenus)
   }
 }
+

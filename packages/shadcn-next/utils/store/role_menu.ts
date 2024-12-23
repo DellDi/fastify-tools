@@ -1,37 +1,28 @@
 // 基于supabase的role_menu菜单管理
-import { create } from 'zustand'
+// import { create } from 'zustand'
 
-export type UserRoleMenu = {
-  id: string
-  name: string
-  description: string
-  status: string
-  created_by: string
-  updated_by: string
-  created_at: Date
-  updated_at: Date
-  deleted_at: Date | null
+import { create } from 'zustand/index'
+import { Menu } from '@supabase/supabase-js'
+
+interface UserRoleMenus {
+  menus: Menu[] | null
+  setMenus: (Menu: Menu[]) => void
+  resetMenus: () => void
 }
 
-interface UserRoleStore {
-  roleMenu: UserRole | null
-  setRoleMenu: (role: UserRole | null) => void
-  resetRole: () => void
-}
-
-const useRoleStore = create<UserRoleStore>((set) => ({
-  role: null,
-  setRole: (role) => set({ role }),
-  resetRole: () => set({ role: null }),
+const useMenusStore = create<UserRoleMenus>((set) => ({
+  menus: null,
+  setMenus: (menus) => set({ menus }),
+  resetMenus: () => set({ menus: null }),
 }))
 
-const setRoleStore = (role: UserRole) => useRoleStore.getState().setRole(role)
-const getRoleStore = () => useRoleStore.getState().role
-const resetRoleStore = () => useRoleStore.getState().resetRole()
+const setMenusStore = (menus: Menu[]) => useMenusStore.getState().setMenus(menus)
+const getMenusStore = () => useMenusStore.getState().menus
+const resetMenusStore = () => useMenusStore.getState().resetMenus()
 
 export {
-  useRoleStore,
-  setRoleStore,
-  getRoleStore,
-  resetRoleStore,
+  useMenusStore,
+  setMenusStore,
+  getMenusStore,
+  resetMenusStore,
 }

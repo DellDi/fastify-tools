@@ -1,8 +1,7 @@
 'use server'
 import { NextResponse } from 'next/server'
 import { createClient } from '@/utils/supabase/server'
-import { setUserStore } from '@/utils/store/user'
-import { initRolePermission } from '@/app/api/auth/register/role_permission'
+import { initUserStore } from '@/app/lib/user'
 
 export async function POST(request: Request) {
   const { email, password } = await request.json()
@@ -32,13 +31,7 @@ export async function POST(request: Request) {
     // .from('login_logs')
     // .insert({ user_id: data.user.id, login_time: new Date().toISOString() })
 
-    setUserStore(
-      data.user,
-    )
-
-    if (!data.user.role_id) {
-      await initRolePermission(data.user)
-    }
+    await initUserStore(data.user)
 
     return NextResponse.json({ message: '登录成功' })
   } catch (error) {

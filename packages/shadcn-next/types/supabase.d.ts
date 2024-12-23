@@ -6,7 +6,7 @@ declare module '@supabase/supabase-js' {
     role_id?: number;  // 这里添加你的自定义字段
   }
 
-  interface Role {
+  export interface Role {
     id: string
     name: string
     description: string
@@ -18,7 +18,7 @@ declare module '@supabase/supabase-js' {
     deleted_at: string
   }
 
-  interface Permission {
+  export interface Permission {
     id: string
     name: string
     description: string
@@ -29,14 +29,14 @@ declare module '@supabase/supabase-js' {
     deleted_at: string
   }
 
-  interface RolePermission {
+  export interface RolePermission {
     role_id: string
     permission_id: string
     created_at: string
     deleted_at: string
   }
 
-  interface Menu {
+  export interface Menu {
     id: string
     name: string
     url: string
@@ -51,7 +51,7 @@ declare module '@supabase/supabase-js' {
     children?: Menu[]
   }
 
-  interface RoleMenu {
+  export interface RoleMenu {
     role_id: string
     menu_id: string
     created_at: string
