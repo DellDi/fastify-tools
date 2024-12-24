@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { LogOut } from 'lucide-react'
+import { LogOut, Loader } from 'lucide-react'
 
 export function LogoutButton() {
   const [isLoading, setIsLoading] = useState(false)
@@ -17,7 +17,7 @@ export function LogoutButton() {
       if (response.ok) {
         router.push('/auth')
       } else {
-        throw new Error('登出失败')
+        return new Error('登出失败')
       }
     } catch (error) {
       console.error('Logout error:', error)
@@ -28,9 +28,14 @@ export function LogoutButton() {
 
   return (
     <>
-      <LogOut className="h-4 w-4 text-muted-foreground" onClick={
-        () => handleLogout()}/>
-      Log out
+      {isLoading ?
+        (<>
+            <LogOut className="h-4 w-4 text-muted-foreground" onClick={
+              () => handleLogout()}/>
+            Log out
+          </>
+        )
+        : <Loader/>}
     </>
   )
 }

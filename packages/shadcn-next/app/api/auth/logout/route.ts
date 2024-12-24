@@ -1,5 +1,6 @@
 import { NextResponse, type NextRequest } from 'next/server'
 import { createClient } from '@/utils/supabase/server'
+import { resetAllInfo } from '@/app/lib/user'
 
 export async function POST(request: NextRequest) {
   const supabase = await createClient()
@@ -9,6 +10,7 @@ export async function POST(request: NextRequest) {
   } else {
     const url = request.nextUrl.clone()
     url.pathname = '/'
+    await resetAllInfo()
     NextResponse.redirect(url)
     return NextResponse.json({ message: '登出成功' })
   }

@@ -20,7 +20,6 @@ export  function AppSidebar() {
   const pathname = usePathname()
   // const pathSegments = pathname.split('/').filter((segment: string) => segment);
   // Update isActive status based on current route
-
   routesConfig.navMain.forEach(navItem => {
     navItem.isActive = navItem.items.some(item => (pathname || '').includes(item.url))
   })
