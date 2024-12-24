@@ -1,10 +1,10 @@
 'use server'
 
 import { createClient } from '@/utils/supabase/server'
-import { getUserStore, setUserStore } from '@/utils/store/user'
-import { getRoleStore, setRoleStore, UserRole } from '@/utils/store/role'
+import { getUserStore, setUserStore, resetUserStore } from '@/utils/store/user'
+import { getRoleStore, setRoleStore, type UserRole, resetRoleStore } from '@/utils/store/role'
+import { getRouteMenusStore, setMenusStore, resetMenusStore, setRouteMenusStore } from '@/utils/store/role_menu'
 import { type Menu, type User } from '@supabase/supabase-js'
-import { getMenusStore, setMenusStore } from '@/utils/store/role_menu'
 
 export async function getUser(): Promise<User | null> {
   const userInfo = getUserStore()
@@ -48,12 +48,12 @@ export async function getCurrentUserRole(): Promise<userRole | null> {
   }
 }
 
-export async function getUserMenus(roles: Pick<UserRole, 'name' | 'description' | 'id' | 'status'>[]): Promise<Menu[]> {
+export async function getUserRouteMenus(roles: Pick<UserRole, 'name' | 'description' | 'id' | 'status'>[]): Promise<Menu[]> {
   if (!roles || roles.length === 0) {
     return []
   }
-  // const routeMenusTree =  getMenusStore()
-  // if (routeMenusTree) return routeMenusTree
+  const routeMenusTree = getRouteMenusStore()
+  if (routeMenusTree) return routeMenusTree
   const roleIds = roles.map(role => role.id)
   return await buildMenuTree(roleIds)
 }
@@ -85,7 +85,8 @@ async function buildMenuTree(roleIds: string[]) {
     console.error('Error fetching menus:', menusError)
     return []
   }
-
+  // 缓存接口获取的菜单列表
+  setMenusStore(menus)
   // 构建菜单树
   const menuMap = new Map<string, Menu>()
   menus.forEach(menu => menuMap.set(menu.id, { ...menu, children: [] }))
@@ -123,8 +124,14 @@ export async function initUserStore(user: User | null) {
   const userRole = await getCurrentUserRole()
   if (userRole) {
     setRoleStore(userRole.roles)
-    const userMenus = await getUserMenus(userRole.roles)
-    setMenusStore(userMenus)
+    const userMenus = await getUserRouteMenus(userRole.roles)
+    setRouteMenusStore(userMenus)
   }
+}
+
+export async function resetAllInfo() {
+  resetUserStore()
+  resetRoleStore()
+  resetMenusStore()
 }
 

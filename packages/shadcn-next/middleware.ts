@@ -1,27 +1,40 @@
 import { type NextRequest, NextResponse } from 'next/server'
 import { updateSession } from '@/utils/supabase/middleware'
 import { forbidden } from 'next/navigation'
-import { getCurrentUserRole } from '@/app/lib/user'
+import { getCurrentUserRole, getUser } from '@/app/lib/user'
 import { isWhiteRoute } from '@/utils/auth/config'
+import { getMenusStore } from '@/utils/store/role_menu'
 
 export async function middleware(req: NextRequest) {
   if (isWhiteRoute(req.nextUrl.pathname)) return NextResponse.next()
-  // 需要认证的路由
+  // 不需要认证的路由、但需要登录的路由
   const authRoutes = ['/dashboard', '/profile', '/settings']
   // 也需要需要管理员权限的路由
   const adminRoutes = ['/admin/roles', '/admin/permissions', '/admin/user']
   // 检查当前路由是否需要认证或管理员权限
-  const isAuthRoute = authRoutes.some(route => req.nextUrl.pathname.startsWith(route))
+  const isLoginAuthRoute = authRoutes.some(route => req.nextUrl.pathname.startsWith(route))
   const isAdminRoute = adminRoutes.some(route => req.nextUrl.pathname.startsWith(route))
 
+  const user = await getUser()
   // 检查当前路由是否需要认证
-  if (isAuthRoute || isAdminRoute) {
-    return await updateSession(req)
+  if (!user) return NextResponse.redirect(new URL('/login', req.url))
+  await updateSession(req)
+  // 检查当前路由是否需要管理员权限
+  if (isLoginAuthRoute) {
+    return NextResponse.next()
   }
   const userRoles = await getCurrentUserRole()
+  const menus = getMenusStore()
+  const hasAdminRole = userRoles?.roles.some(role => role.name === 'admin')
+
+  // 判断是否具有admin菜单权限
+  if (isAdminRoute && !hasAdminRole) {
+    return forbidden()
+  }
+
   // 判断是否具有路由菜单权限
-  if (userRoles && isAdminRoute && userRoles.roles.some(role => role.name === 'admin')) {
-    forbidden()
+  if (menus && !menus.some(menu => req.nextUrl.pathname.startsWith(menu.url))) {
+    return forbidden()
   }
 
   return NextResponse.next()
