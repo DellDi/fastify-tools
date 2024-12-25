@@ -1,6 +1,6 @@
 'use server'
 
-import { createClient } from '@/utils/supabase/server'
+import { createServerBaseClient } from '@/utils/supabase/server'
 import { getUserStore, setUserStore, resetUserStore } from '@/utils/store/user'
 import { getRoleStore, setRoleStore, type UserRole, resetRoleStore } from '@/utils/store/role'
 import { getRouteMenusStore, setMenusStore, resetMenusStore, setRouteMenusStore } from '@/utils/store/role_menu'
@@ -9,7 +9,7 @@ import { type Menu, type User } from '@supabase/supabase-js'
 export async function getUser(): Promise<User | null> {
   const userInfo = getUserStore()
   if (userInfo) return userInfo
-  const supabase = await createClient()
+  const supabase = await createServerBaseClient()
   const { data: { user }, error } = await supabase.auth.getUser()
   if (error) {
     console.error('Error fetching user:', error)
@@ -31,7 +31,7 @@ export async function getCurrentUserRole(): Promise<userRole | null> {
     user,
     roles: role,
   }
-  const supabase = await createClient()
+  const supabase = await createServerBaseClient()
   const { data: userRole, error } = await supabase
   .from('roles')
   .select('roles(name, id, description, status)')
@@ -60,7 +60,7 @@ export async function getUserRouteMenus(roles: Pick<UserRole, 'name' | 'descript
 
 // 假设 role_ids 是一个字符串数组，包含角色 ID
 async function buildMenuTree(roleIds: string[]) {
-  const supabase = await createClient()
+  const supabase = await createServerBaseClient()
   // 查询角色关联的菜单
   const { data: roleMenus, error: roleMenusError } = await supabase
   .from('role_menus')

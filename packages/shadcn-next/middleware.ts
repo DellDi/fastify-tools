@@ -1,3 +1,4 @@
+
 import { type NextRequest, NextResponse } from 'next/server'
 import { updateSession } from '@/utils/supabase/middleware'
 import { forbidden } from 'next/navigation'
@@ -15,10 +16,11 @@ export async function middleware(req: NextRequest) {
   const isLoginAuthRoute = authRoutes.some(route => req.nextUrl.pathname.startsWith(route))
   const isAdminRoute = adminRoutes.some(route => req.nextUrl.pathname.startsWith(route))
 
+  await updateSession(req)
+
   const user = await getUser()
   // 检查当前路由是否需要认证
   if (!user) return NextResponse.redirect(new URL('/login', req.url))
-  await updateSession(req)
   // 检查当前路由是否需要管理员权限
   if (isLoginAuthRoute) {
     return NextResponse.next()

@@ -1,11 +1,11 @@
 import { NextResponse } from 'next/server'
-import { createClient } from '@/utils/supabase/server'
+import { createServerBaseClient } from '@/utils/supabase/server'
 
 export async function POST(request: Request) {
   const { username, email, password } = await request.json()
   try {
     // 使用 Supabase 注册用户
-    const supabase = await createClient()
+    const supabase = await createServerBaseClient()
 
     const { data: userInfo, error: authError } = await supabase.auth.signUp({
       email,
@@ -16,6 +16,8 @@ export async function POST(request: Request) {
         },
       },
     })
+
+    console.log('🚀 ~ file:route.ts, line:20-----', userInfo, authError)
 
     if (authError) {
       if (authError.message.includes('User already registered')) {

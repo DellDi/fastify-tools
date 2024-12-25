@@ -49,6 +49,7 @@ export function SignUpForm({ onSignUpAction, onSignUpErrorAction }: SignUpFormPr
   async function onSubmit(data: SignUpFormValues) {
     setIsLoading(true)
     try {
+
       const response = await fetch('/api/auth/register', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -57,10 +58,11 @@ export function SignUpForm({ onSignUpAction, onSignUpErrorAction }: SignUpFormPr
       const result = await response.json()
       if (response.ok) {
         onSignUpAction(result.message)
+        localStorage.setItem('rememberedEmail', data.email)
         // Redirect to login page with email and password as query parameters
-        router.push(`/login?email=${encodeURIComponent(data.email)}&password=${encodeURIComponent(data.password)}`)
+        router.push(`/auth/email-verification?email=${encodeURIComponent(data.email)}&password=${encodeURIComponent(data.password)}`)
       } else {
-        new Error(result.error || '注册失败')
+        return new Error(result.error || '注册失败')
       }
     } catch (error) {
       onSignUpErrorAction(error instanceof Error ? error.message : '注册失败，请稍后再试。')

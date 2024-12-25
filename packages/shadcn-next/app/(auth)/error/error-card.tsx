@@ -13,25 +13,27 @@ import {
   CardTitle,
 } from '@/components/ui/card'
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
-import { getUser } from '@/app/lib/user'
 import { createClient } from '@/utils/supabase/client'
 import { toast } from '@/components/ui/use-toast'
+import { Input } from '@/components/ui/input'
 
-export function ErrorCard({ errorMessage }: { errorMessage: string }) {
+export function ErrorCard({ errorMessage, email }: { errorMessage: string, email: string }) {
   const [isResending, setIsResending] = useState(false)
+  const [userEmail, setUserEmail] = useState(email ? email : localStorage.getItem('rememberedEmail') || 'delldi808611@outlook.com')
 
   const handleResendEmail = async () => {
     setIsResending(true)
-
-    const user = await getUser()
     const susabase = createClient()
-
-    if (user) {
-      console.log('User:', user)
+    if (userEmail) {
       try {
-        await susabase.auth.resend({
+        const resendInfo = await susabase.auth.resend({
           type: 'signup',
-          email: user.email as string,
+          email: userEmail,
+        })
+        console.log('🚀 ~ file:error-card.tsx, line:33-----', resendInfo)
+        toast({
+          title: '发送成功',
+          description: '邮件已发送，请查收',
         })
       } catch (error) {
         toast({
@@ -60,30 +62,33 @@ export function ErrorCard({ errorMessage }: { errorMessage: string }) {
       <Card className="w-full max-w-md overflow-hidden">
         <motion.div
           className="absolute inset-0 z-0"
-          animate={{
-            background: [
-              'linear-gradient(to right, #3b82f6, #2563eb)',
-              'linear-gradient(to right, #2563eb, #1d4ed8)',
-              'linear-gradient(to right, #1d4ed8, #3b82f6)',
-            ],
-          }}
+          // animate={{
+          //   background: [
+          //     'linear-gradient(to right, #3b82f6, #2563eb)',
+          //     'linear-gradient(to right, #2563eb, #1d4ed8)',
+          //     'linear-gradient(to right, #1d4ed8, #3b82f6)',
+          //   ],
+          // }}
           transition={{ duration: 5, repeat: Infinity, repeatType: 'reverse' }}
         />
         <CardHeader className="relative z-10">
-          <CardTitle className="text-2xl font-bold text-center text-white">
-            <AlertCircle className="w-12 h-12 mx-auto mb-2" />
+          <CardTitle className="text-2xl font-bold text-center ">
+            <AlertCircle className="w-12 h-12 mx-auto mb-2"/>
             注册失败
           </CardTitle>
         </CardHeader>
-        <CardContent className="relative z-10 bg-white bg-opacity-90">
+        <CardContent className="relative z-10  bg-opacity-90">
           <Alert variant="destructive">
-            <AlertCircle className="h-4 w-4" />
+            <AlertCircle className="h-4 w-4"/>
             <AlertTitle>错误</AlertTitle>
             <AlertDescription>{errorMessage}</AlertDescription>
           </Alert>
           <p className="mt-4 text-center text-gray-600">
             看起来您的确认链接已经过期或无效。不用担心，我们可以为您重新发送一封确认邮件。
           </p>
+
+          <Input className="mt-4" type="text" value={userEmail} onChange={(e) => setUserEmail(e.target.value)}
+                 placeholder="请输入您的邮箱"/>
         </CardContent>
         <CardFooter className="flex flex-col items-center space-y-4 relative z-10 bg-white bg-opacity-90">
           <Button
@@ -93,7 +98,7 @@ export function ErrorCard({ errorMessage }: { errorMessage: string }) {
           >
             {isResending ? (
               <>
-                <RefreshCw className="mr-2 h-4 w-4 animate-spin" />
+                <RefreshCw className="mr-2 h-4 w-4 animate-spin"/>
                 正在重新发送...
               </>
             ) : (
@@ -103,13 +108,13 @@ export function ErrorCard({ errorMessage }: { errorMessage: string }) {
           <div className="flex justify-between w-full">
             <Button variant="outline" asChild>
               <Link href="/">
-                <Home className="mr-2 h-4 w-4" />
+                <Home className="mr-2 h-4 w-4"/>
                 返回首页
               </Link>
             </Button>
             <Button variant="outline" asChild>
               <Link href="/login">
-                <LogIn className="mr-2 h-4 w-4" />
+                <LogIn className="mr-2 h-4 w-4"/>
                 登录
               </Link>
             </Button>

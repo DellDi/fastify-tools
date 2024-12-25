@@ -1,5 +1,6 @@
-const whiteRoutes = ['/login', '/register', '/auth', '/error', '/404', '/500', '/forbidden']
+const whiteRoutes = ['/login', '/auth', '/register', '/error', '/404', '/500', '/forbidden']
 
 export const isWhiteRoute = (path: string) => {
-  return whiteRoutes.includes(path)
+  if (path === '/') return true
+  return whiteRoutes.some(w=> path.startsWith(w))
 }

@@ -1,14 +1,14 @@
 import { redirect } from 'next/navigation'
 import UserManagement from './user-management'
 import { getUser } from '@/app/lib/user'
-import { createClient } from '@/utils/supabase/server'
+import { createServerBaseClient } from '@/utils/supabase/server'
 
 export default async function UsersPage() {
   const user = await getUser()
   if (!user) {
     redirect('/login')
   }
-  const supabase = await createClient()
+  const supabase = await createServerBaseClient()
   // 检查用户是否有管理用户的权限
   const { data: userRole } = await supabase
   .from('roles')

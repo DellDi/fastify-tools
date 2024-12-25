@@ -7,7 +7,7 @@ import {
   MotionSection,
 } from '@/components/custom/base/motion-list'
 import { mapKeys, snakeToCamel } from '@/utils/func'
-import { createClient } from '@/utils/supabase/server'
+import { createServerBaseClient } from '@/utils/supabase/server'
 
 interface Section {
   title: string
@@ -19,7 +19,7 @@ interface Section {
 
 // 静态渲染
 async function getData(): Promise<{ data: Section[]; error: { message: string } | null }> {
-  const supabase = await createClient()
+  const supabase = await createServerBaseClient()
   const res = await supabase.from('dl_ai_sections').select('*')
 
   if (res.error) {

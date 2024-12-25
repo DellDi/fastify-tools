@@ -5,12 +5,13 @@ import { Search } from 'lucide-react'
 import { Input } from '@/components/ui/input'
 import { ToggleTheme } from '@/components/custom/ToggleTheme'
 
-export default async ({ children }: {
+// eslint-disable-next-line react/display-name
+const Layout = async ({ children }: {
   children: React.ReactNode
 }) => {
   const { cookies } = await import('next/headers')
   const sidebarState = await cookies()
-  const sidebar =  sidebarState.get('sidebar:state');
+  const sidebar = sidebarState.get('sidebar:state')
   return (
     <SidebarLayout
       defaultOpen={sidebar?.value === 'true'} // Now you can safely use sidebarState
@@ -43,3 +44,5 @@ export default async ({ children }: {
     </SidebarLayout>
   )
 }
+
+export default Layout
