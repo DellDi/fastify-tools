@@ -1,10 +1,12 @@
+'use server'
+
 import { type User } from '@supabase/supabase-js'
-import { createClient } from '@/utils/supabase/server'
+import { createServerBaseClient } from '@/utils/supabase/server'
 
 export async function initRolePermission(authUser: User) {
   // 1. 给新用户分配角色,先查询roles表的初始化默认角色
   const defaultRole = authUser.role === 'admin' ? authUser.role : 'user' // 默认角色为 user
-  const supabase = await createClient()
+  const supabase = await createServerBaseClient()
   const { data: role, error: roleError } = await supabase
   .from('roles')
   .select('id')

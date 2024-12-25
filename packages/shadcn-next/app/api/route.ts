@@ -1,8 +1,8 @@
 import { NextResponse } from 'next/server'
-import { createClient } from '@/utils/supabase/server'
+import { createServerBaseClient } from '@/utils/supabase/server'
 
 export async function GET() {
-  const supabase = await createClient()
+  const supabase = await createServerBaseClient()
   const { data: dl_ai_sections, error } = await supabase.from('dl_ai_sections').select('*')
   if (error) {
     return NextResponse.json({ error: error.message }, { status: 500 })

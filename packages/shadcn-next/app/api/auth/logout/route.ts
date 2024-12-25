@@ -1,9 +1,9 @@
 import { NextResponse, type NextRequest } from 'next/server'
-import { createClient } from '@/utils/supabase/server'
+import { createServerBaseClient } from '@/utils/supabase/server'
 import { resetAllInfo } from '@/app/lib/user'
 
 export async function POST(request: NextRequest) {
-  const supabase = await createClient()
+  const supabase = await createServerBaseClient()
   const { error } = await supabase.auth.signOut()
   if (error) {
     return NextResponse.json({ message: error.message }, { status: 500 })

@@ -8,6 +8,7 @@ export default function ErrorPage({
   const error = searchParams.error as string
   const errorCode = searchParams.error_code as string
   const errorDescription = searchParams.error_description as string
+  const email = searchParams.email as string
 
   let errorMessage = '发生未知错误，请重试。'
   if (error === 'access_denied') {
@@ -20,6 +21,6 @@ export default function ErrorPage({
     errorMessage = decodeURIComponent(errorDescription.replace(/\+/g, ' '))
   }
 
-  return <ErrorCard errorMessage={errorMessage} />
+  return <ErrorCard errorMessage={errorMessage} email={email} />
 }
 
