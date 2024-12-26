@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import { motion } from 'framer-motion'
 import { Loader2, CheckCircle, XCircle } from 'lucide-react'
@@ -14,6 +14,7 @@ interface AuthTransitionProps {
 }
 
 export default function AuthTransition({ params }: AuthTransitionProps) {
+  const isEffectExecuted = useRef(false)
   const [status, setStatus] = useState<'base' | 'loading' | 'success' | 'error'>('base')
   const [message, setMessage] = useState('正在验证您的身份...')
   const router = useRouter()
@@ -39,7 +40,7 @@ export default function AuthTransition({ params }: AuthTransitionProps) {
           // 分配权限
           await initRolePermission(data.user)
           // 初始化用户信息
-          await initUserStore(data.user)
+          await initUserStore()
 
           setStatus('success')
           setMessage('身份验证成功！正在跳转...')
@@ -65,7 +66,11 @@ export default function AuthTransition({ params }: AuthTransitionProps) {
 
 
   useEffect(() => {
+    if (isEffectExecuted.current) {
+      return // 已经执行过，直接返回
+    }
     setStatus('loading')
+    isEffectExecuted.current = true // 标记为已执行
     authCodeLogin().then(() => {
     })
   }, [authCodeLogin, params])

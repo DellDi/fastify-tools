@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { motion } from 'framer-motion'
 import { AlertCircle, RefreshCw, Home, LogIn } from 'lucide-react'
@@ -19,7 +19,11 @@ import { Input } from '@/components/ui/input'
 
 export function ErrorCard({ errorMessage, email }: { errorMessage: string, email: string }) {
   const [isResending, setIsResending] = useState(false)
-  const [userEmail, setUserEmail] = useState(email ? email : localStorage.getItem('rememberedEmail') || 'delldi808611@outlook.com')
+  const [userEmail, setUserEmail] = useState('')
+
+  useEffect(() => {
+    setUserEmail(email || (typeof window !== 'undefined' ? localStorage.getItem('rememberedEmail') : '') || 'delldi808611@outlook.com')
+  }, [email])
 
   const handleResendEmail = async () => {
     setIsResending(true)

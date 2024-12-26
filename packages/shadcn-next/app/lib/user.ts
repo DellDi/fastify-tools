@@ -15,6 +15,7 @@ export async function getUser(): Promise<User | null> {
     console.error('Error fetching user:', error)
     return null
   }
+  if (user) setUserStore(user)
   return user
 }
 
@@ -33,7 +34,7 @@ export async function getCurrentUserRole(): Promise<userRole | null> {
   }
   const supabase = await createServerBaseClient()
   const { data: userRole, error } = await supabase
-  .from('roles')
+  .from('public.roles')
   .select('roles(name, id, description, status)')
   .eq('id', user.role_id)
   .single()
@@ -117,10 +118,10 @@ async function buildMenuTree(roleIds: string[]) {
   return sortMenu(rootMenus)
 }
 
-export async function initUserStore(user: User | null) {
-  if (user) {
-    setUserStore(user)
-  }
+export async function initUserStore() {
+  // if (user) {
+  //   setUserStore(user)
+  // }
   const userRole = await getCurrentUserRole()
   if (userRole) {
     setRoleStore(userRole.roles)

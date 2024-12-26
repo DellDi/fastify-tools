@@ -28,6 +28,14 @@ export default function AuthPage() {
     })
   }
 
+  const loginWithThird = () => {
+    console.log('loginGithub')
+    toast({
+      title: '敬请期待',
+      description: '登录功能正在开发中',
+    })
+  }
+
   return (
     <div className="flex items-center justify-center min-h-screen bg-gray-100 w-full dark:bg-gray-900">
       <Card className="w-[400px]">
@@ -80,7 +88,7 @@ export default function AuthPage() {
               </div>
             </div>
             <div className="mt-4 space-y-2">
-              <Button variant="outline" className="w-full">
+              <Button variant="outline" className="w-full" onClick={loginWithThird}>
                 <svg className="mr-2 h-4 w-4" aria-hidden="true" focusable="false" data-prefix="fab" data-icon="github" role="img"
                      xmlns="http://www.w3.org/2000/svg" viewBox="0 0 496 512">
                   <path fill="currentColor"
@@ -88,7 +96,7 @@ export default function AuthPage() {
                 </svg>
                 GitHub
               </Button>
-              <Button variant="outline" className="w-full">
+              <Button variant="outline" className="w-full" onClick={loginWithThird}>
                 <svg className="mr-2 h-4 w-4" aria-hidden="true" focusable="false" data-prefix="fab" data-icon="google" role="img"
                      xmlns="http://www.w3.org/2000/svg" viewBox="0 0 488 512">
                   <path fill="currentColor"
