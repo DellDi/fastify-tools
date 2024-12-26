@@ -13,14 +13,17 @@ export async function POST(request: Request) {
       password,
     })
 
-    if (error) return NextResponse.json({ error: error.message }, { status: 401 })
+    if (error) return NextResponse.json({
+      error: `${error.message},检查您的账号或者密码是否存在正确或者重新注册`,
+      code: 401,
+    }, { status: 401 })
 
     if (!data.user) {
-      return NextResponse.json({ error: 'Invalid credentials: 账号未注册、或未通过验证' }, { status: 401 })
+      return NextResponse.json({ error: 'Invalid credentials: 账号未注册、或未通过验证', code: 401 }, { status: 401 })
     }
 
     // // 生成 JWT token
-    // const token = sign(
+    // const token = sign(s
     //   { userId: data.user.id, email: data.user.email },
     //   process.env.SUPABASE_JWT_SECRET!,
     //   { expiresIn: '1d' }
@@ -31,12 +34,12 @@ export async function POST(request: Request) {
     // .from('login_logs')
     // .insert({ user_id: data.user.id, login_time: new Date().toISOString() })
 
-    await initUserStore(data.user)
+    await initUserStore()
 
-    return NextResponse.json({ message: '登录成功' })
+    return NextResponse.json({ message: '登录成功', code: 200 })
   } catch (error) {
     console.error('Login error:', error)
-    return NextResponse.json({ error: '登录失败，请检查您的邮箱和密码。' }, { status: 500 })
+    return NextResponse.json({ error: '登录失败，请检查您的邮箱和密码。', code: 500 }, { status: 500 })
   }
 }
 

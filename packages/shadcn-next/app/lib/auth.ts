@@ -8,7 +8,7 @@ export async function initRolePermission(authUser: User) {
   const defaultRole = authUser.role === 'admin' ? authUser.role : 'user' // 默认角色为 user
   const supabase = await createServerBaseClient()
   const { data: role, error: roleError } = await supabase
-  .from('roles')
+  .from('public.roles')
   .select('id')
   .eq('name', defaultRole)
   .single()

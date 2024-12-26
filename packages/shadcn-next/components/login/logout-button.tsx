@@ -15,7 +15,7 @@ export function LogoutButton() {
         method: 'POST',
       })
       if (response.ok) {
-        router.push('/auth')
+        router.push('/')
       } else {
         return new Error('登出失败')
       }
@@ -28,12 +28,12 @@ export function LogoutButton() {
 
   return (
     <>
-      {isLoading ?
-        (<>
-            <LogOut className="h-4 w-4 text-muted-foreground" onClick={
-              () => handleLogout()}/>
+      {!isLoading ?
+        (<div className="flex items-center gap-2 w-full" onClick={
+            () => handleLogout()}>
+            <LogOut className="h-4 w-4 text-muted-foreground"/>
             Log out
-          </>
+          </div>
         )
         : <Loader/>}
     </>

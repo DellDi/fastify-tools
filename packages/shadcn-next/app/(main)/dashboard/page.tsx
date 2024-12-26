@@ -8,7 +8,7 @@ import { TimeCards } from '@/app/(main)/dashboard/components/time-cards'
 import { ShowCloud } from '@/components/custom/ShowCloud'
 import { PanelCharts } from '@/components/custom/PanelCharts'
 import { redirect } from 'next/navigation'
-import { createServerBaseClient } from '@/utils/supabase/server'
+import { getUser } from '@/app/lib/user'
 
 export const metadata: Metadata = {
   title: 'Dashboard',
@@ -17,9 +17,8 @@ export const metadata: Metadata = {
 
 export default async function DashboardPage() {
   try {
-    const supabase = await createServerBaseClient()
-    const { data, error } = await supabase.auth.getUser()
-    if (error || !data?.user) {
+    const user = await getUser()
+    if (!user) {
       redirect('/login')
     }
     return (
@@ -52,7 +51,6 @@ export default async function DashboardPage() {
           <div className="grid  flex-1 gap-4">
             <TimeCards/>
           </div>
-
         </div>
       </main>
     )
@@ -61,6 +59,4 @@ export default async function DashboardPage() {
     console.error('Error verifying token:', error)
     redirect('/login')
   }
-
-
 }

@@ -1,12 +1,13 @@
 import { createServerClient } from '@supabase/ssr'
 import { NextResponse, type NextRequest } from 'next/server'
+import { getUser } from '@/app/lib/user'
 
 export async function updateSession(request: NextRequest) {
   let supabaseResponse = NextResponse.next({
     request,
   })
 
-  const supabase = createServerClient(
+ createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
     {
@@ -30,11 +31,7 @@ export async function updateSession(request: NextRequest) {
   // 重要提示：避免在 createServerClient 和
   // supabase.auth.getUser() 的 API API 中。一个简单的错误可能会使调试变得非常困难
   // 用户被随机注销的问题。
-
-  const {
-    data: { user },
-  } = await supabase.auth.getUser()
-
+  const user = await getUser()
   if (
     !user &&
     !request.nextUrl.pathname.startsWith('/login') &&

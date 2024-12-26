@@ -1,11 +1,12 @@
 import EmailVerificationWaiting from './email-verification-waiting'
 
-export default function EmailVerificationPage({
+export default async function EmailVerificationPage({
   searchParams,
 }: {
-  searchParams: { [key: string]: string | string[] | undefined }
+  searchParams: Promise<{ [key: string]: string | string[] | undefined }>
 }) {
-  const email = typeof searchParams.email === 'string' ? searchParams.email : ''
+  const params = await searchParams
+  const email = typeof params.email === 'string' ? params.email : ''
   return <EmailVerificationWaiting email={email}/>
 }
 
