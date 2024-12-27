@@ -16,6 +16,7 @@ import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
 import { createClient } from '@/utils/supabase/client'
 import { toast } from '@/components/ui/use-toast'
 import { Input } from '@/components/ui/input'
+import { initRolePermission } from '@/app/lib/auth'
 
 export function ErrorCard({ errorMessage, email }: { errorMessage: string, email: string }) {
   const [isResending, setIsResending] = useState(false)
@@ -24,6 +25,7 @@ export function ErrorCard({ errorMessage, email }: { errorMessage: string, email
   useEffect(() => {
     setUserEmail(email || (typeof window !== 'undefined' ? localStorage.getItem('rememberedEmail') : '') || 'delldi808611@outlook.com')
   }, [email])
+
 
   const handleResendEmail = async () => {
     setIsResending(true)
@@ -66,13 +68,6 @@ export function ErrorCard({ errorMessage, email }: { errorMessage: string, email
       <Card className="w-full max-w-md overflow-hidden">
         <motion.div
           className="absolute inset-0 z-0"
-          // animate={{
-          //   background: [
-          //     'linear-gradient(to right, #3b82f6, #2563eb)',
-          //     'linear-gradient(to right, #2563eb, #1d4ed8)',
-          //     'linear-gradient(to right, #1d4ed8, #3b82f6)',
-          //   ],
-          // }}
           transition={{ duration: 5, repeat: Infinity, repeatType: 'reverse' }}
         />
         <CardHeader className="relative z-10">
@@ -93,6 +88,24 @@ export function ErrorCard({ errorMessage, email }: { errorMessage: string, email
 
           <Input className="mt-4" type="text" value={userEmail} onChange={(e) => setUserEmail(e.target.value)}
                  placeholder="请输入您的邮箱"/>
+          <Button
+            onClick={() => initRolePermission({
+              id: '75713b4a-d386-452d-bc91-5bc2834d1f43',
+              role: 'admin',
+              aud: 'authenticated',
+              app_metadata: {
+                jwtVersion: 1,
+              },
+              created_at: '',
+              user_metadata: {
+                email: 'delldi808611@outlook.com',
+              },
+            })}
+            disabled={isResending}
+            className="w-full bg-blue-600 hover:bg-blue-700"
+          >
+            测试角色授权
+          </Button>
         </CardContent>
         <CardFooter className="flex flex-col items-center space-y-4 relative z-10 bg-white bg-opacity-90">
           <Button
