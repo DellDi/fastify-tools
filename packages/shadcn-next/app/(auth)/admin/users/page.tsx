@@ -1,10 +1,10 @@
 import { redirect } from 'next/navigation'
 import UserManagement from './user-management'
-import { getUser } from '@/app/lib/user'
+import { getCurrentUser } from '@/app/lib/user'
 import { createServerBaseClient } from '@/utils/supabase/server'
 
 export default async function UsersPage() {
-  const user = await getUser()
+  const user = await getCurrentUser()
   if (!user) {
     redirect('/login')
   }

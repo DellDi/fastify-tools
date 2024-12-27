@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useCallback, useRef } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 import { motion } from 'framer-motion'
 import { Loader2, CheckCircle, XCircle } from 'lucide-react'
@@ -13,67 +13,67 @@ interface AuthTransitionProps {
   params: Record<string, string | undefined>
 }
 
+
 export default function AuthTransition({ params }: AuthTransitionProps) {
-  const isEffectExecuted = useRef(false)
   const [status, setStatus] = useState<'base' | 'loading' | 'success' | 'error'>('base')
   const [message, setMessage] = useState('正在验证您的身份...')
   const router = useRouter()
+  const { code, redirect } = params
+
+  // 在某个地方定义这个函数，可能在同一个文件或一个工具文件中
+  const handleError = useCallback((error: unknown, defaultMessage = '身份验证失败。请稍后重试') => {
+    const errorMessage = error instanceof Error ? error.message : defaultMessage
+    toast({
+      title: '登录提示',
+      description: errorMessage,
+      variant: 'destructive',
+    })
+    setStatus('error')
+    setMessage(`身份验证失败。请稍后重试: ${errorMessage}`)
+    setTimeout(() => router.push('/error'), 1000)
+  }, [router]) // 添加 router 作为依赖项
 
   const authCodeLogin = useCallback(async () => {
-    const code = params.code
-    if (code) {
-      setStatus('loading') // 在开始请求前设置 loading 状态
-      setMessage('正在验证您的身份...')
-      try {
-        const supabase = createClient()
-        const { data, error } = await supabase.auth.exchangeCodeForSession(code)
-        if (error) {
-          toast({
-            title: '登录提示',
-            description: '授权登录失败！请重试',
-            variant: 'destructive',
-          })
-          throw error
-        }
+    if (!code) return
 
-        if (data && data.user) { // 确保 data 和 data.user 都存在
-          // 分配权限
-          await initRolePermission(data.user)
-          // 初始化用户信息
-          await initUserStore()
+    setStatus('loading')
+    setMessage('正在验证您的身份...')
 
-          setStatus('success')
-          setMessage('身份验证成功！正在跳转...')
-          setTimeout(() => router.push(params.redirect || '/dashboard'), 1000)
-          return data.user
-        } else {
-          // 处理data或者data.user不存在的情况
-          toast({
-            title: '登录提示',
-            description: '授权登录失败！用户信息不存在',
-            variant: 'destructive',
-          })
-          throw new Error('用户信息不存在')
-        }
-      } catch (error) {
-        setStatus('error')
-        setMessage(`身份验证失败。请稍后重试:${error}`)
-        setTimeout(() => router.push('/error'), 1000)
-        throw error // 重新抛出错误，以便调用者进行进一步处理
+    const supabase = createClient()
+    try {
+      const { data, error } = await supabase.auth.exchangeCodeForSession(code)
+
+      if (error) {
+        handleError(error, '授权登录失败！请重试')
+        return
       }
-    }
-  }, [params.code, params.redirect, router]) // 移除 status 依赖项
 
+      if (!data || !data.user) {
+        handleError(new Error('用户信息不存在'), '授权登录失败！用户信息不存在')
+        return
+      }
+
+      const res = await initRolePermission(data.user)
+      if (res) {
+        handleError(new Error('授权角色失败'), '授权角色失败')
+        return
+      }
+      await initUserStore()
+
+      setStatus('success')
+      setMessage('身份验证成功！正在跳转...')
+      setTimeout(() => router.push(redirect || '/dashboard'), 1000)
+      return data.user
+    } catch (error) {
+      handleError(error) // 处理任何其他未预见的错误
+    }
+  }, [code, redirect, router, handleError]) // 注意添加 handleError 作为依赖项
 
   useEffect(() => {
-    if (isEffectExecuted.current) {
-      return // 已经执行过，直接返回
-    }
-    setStatus('loading')
-    isEffectExecuted.current = true // 标记为已执行
-    authCodeLogin().then(() => {
+    authCodeLogin().catch(() => {
+      // Ignore error
     })
-  }, [authCodeLogin, params])
+  }, [authCodeLogin])
 
   const iconVariants = {
     hidden: { scale: 0.8, opacity: 0 },
@@ -123,4 +123,3 @@ export default function AuthTransition({ params }: AuthTransitionProps) {
     </div>
   )
 }
-

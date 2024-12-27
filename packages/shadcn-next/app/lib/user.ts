@@ -6,7 +6,7 @@ import { getRoleStore, setRoleStore, type UserRole, resetRoleStore } from '@/uti
 import { getRouteMenusStore, setMenusStore, resetMenusStore, setRouteMenusStore } from '@/utils/store/role_menu'
 import { type Menu, type User } from '@supabase/supabase-js'
 
-export async function getUser(): Promise<User | null> {
+export async function getCurrentUser(): Promise<User | null> {
   const userInfo = getUserStore()
   if (userInfo) return userInfo
   const supabase = await createServerBaseClient()
@@ -25,7 +25,7 @@ type userRole = {
 }
 
 export async function getCurrentUserRole(): Promise<userRole | null> {
-  const user = await getUser()
+  const user = await getCurrentUser()
   if (!user) return null
   const role = getRoleStore()
   if (role) return {
@@ -34,7 +34,7 @@ export async function getCurrentUserRole(): Promise<userRole | null> {
   }
   const supabase = await createServerBaseClient()
   const { data: userRole, error } = await supabase
-  .from('public.roles')
+  .from('roles')
   .select('roles(name, id, description, status)')
   .eq('id', user.role_id)
   .single()
@@ -119,9 +119,6 @@ async function buildMenuTree(roleIds: string[]) {
 }
 
 export async function initUserStore() {
-  // if (user) {
-  //   setUserStore(user)
-  // }
   const userRole = await getCurrentUserRole()
   if (userRole) {
     setRoleStore(userRole.roles)

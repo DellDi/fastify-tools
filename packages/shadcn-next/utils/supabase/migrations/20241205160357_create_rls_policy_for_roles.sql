@@ -15,6 +15,7 @@ CREATE
     ON public.roles
     FOR ALL
     USING (auth.role() = 'admin');
+
 -- 启用 RLS
 ALTER TABLE public.permissions
     ENABLE ROW LEVEL SECURITY;

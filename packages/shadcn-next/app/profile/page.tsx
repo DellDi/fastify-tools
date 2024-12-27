@@ -3,7 +3,7 @@
 import { notFound } from 'next/navigation'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
-import { getUser } from '@/app/lib/user'
+import { getCurrentUser } from '@/app/lib/user'
 
 export default async function ProfilePage() {
   // const cookieStore = await cookies()
@@ -13,7 +13,7 @@ export default async function ProfilePage() {
   //   notFound()
   // }
   try {
-    const user = await getUser()
+    const user = await getCurrentUser()
 
     if (!user) {
       notFound()
