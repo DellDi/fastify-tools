@@ -45,7 +45,7 @@ export default function NumberGuessingGame() {
         type="number"
         value={guess}
         onChange={(e) => setGuess(e.target.value)}
-        className="border border-gray-300 rounded-md px-3 py-2 mb-4 w-full"
+        className="border rounded-md px-3 py-2 mb-4 w-full"
         placeholder="输入你的猜测"
         disabled={gameOver}
       />

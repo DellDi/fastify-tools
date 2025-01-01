@@ -34,7 +34,7 @@ export function ErrorCard({ errorMessage, email }: { errorMessage: string, email
           type: 'signup',
           email: userEmail,
         })
-        console.log('🚀 ~ file:error-card.tsx, line:33-----', resendInfo)
+        console.log('🚀 ~ file:error-card.tsx, line:37-----', resendInfo)
         toast({
           title: '发送成功',
           description: '邮件已发送，请查收',
@@ -81,24 +81,24 @@ export function ErrorCard({ errorMessage, email }: { errorMessage: string, email
             注册失败
           </CardTitle>
         </CardHeader>
-        <CardContent className="relative z-10  bg-opacity-90">
+        <CardContent className="relative z-10 ">
           <Alert variant="destructive">
             <AlertCircle className="h-4 w-4"/>
             <AlertTitle>错误</AlertTitle>
             <AlertDescription>{errorMessage}</AlertDescription>
           </Alert>
-          <p className="mt-4 text-center text-gray-600">
+          <p className="mt-4 text-center ">
             看起来您的确认链接已经过期或无效。不用担心，我们可以为您重新发送一封确认邮件。
           </p>
 
           <Input className="mt-4" type="text" value={userEmail} onChange={(e) => setUserEmail(e.target.value)}
                  placeholder="请输入您的邮箱"/>
         </CardContent>
-        <CardFooter className="flex flex-col items-center space-y-4 relative z-10 bg-white bg-opacity-90">
+        <CardFooter className="flex flex-col items-center space-y-4 relative z-10 ">
           <Button
             onClick={handleResendEmail}
             disabled={isResending}
-            className="w-full bg-blue-600 hover:bg-blue-700"
+            className="w-full "
           >
             {isResending ? (
               <>
