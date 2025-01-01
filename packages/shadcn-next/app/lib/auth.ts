@@ -22,6 +22,6 @@ export async function initRolePermission(authUser: User) {
   .from('auth.users')
   .update({ role_id: role.id })
   .eq('id', authUser.id)
-
+  console.log('🚀 ~ file:auth.ts, line:25-----', updateRoleError)
   if (updateRoleError) throw updateRoleError
 }

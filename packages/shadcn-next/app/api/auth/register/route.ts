@@ -17,8 +17,6 @@ export async function POST(request: Request) {
       },
     })
 
-    console.log('🚀 ~ file:route.ts, line:20-----', userInfo, authError)
-
     if (authError) {
       if (authError.message.includes('User already registered')) {
         return NextResponse.json({ error: '该邮箱已被注册' }, { status: 400 })

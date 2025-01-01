@@ -1,25 +1,25 @@
-
 import AuthTransition from './auth-transition'
 import { redirect } from 'next/navigation'
 
-export default function AuthTransitionPage({
+export default async function AuthTransitionPage({
   searchParams,
 }: {
-  searchParams: { [key: string]: string | string[] | undefined }
+  searchParams: Promise<{ [key: string]: string | string[] | undefined }>
 }) {
+  const urlParams = await searchParams
   // 将searchParams转换为一个简单的对象
   const params = Object.fromEntries(
-    Object.entries(searchParams).map(([key, value]) => [
+    Object.entries(urlParams).map(([key, value]) => [
       key,
       Array.isArray(value) ? value[0] : value,
-    ])
+    ]),
   )
   if (params.error) {
     redirect(
       `/error?${new URLSearchParams(
-        params as Record<string, string>
-      ).toString()}`
+        params as Record<string, string>,
+      ).toString()}`,
     )
   }
-  return <AuthTransition params={params} />
+  return <AuthTransition params={params}/>
 }

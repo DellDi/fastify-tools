@@ -6,8 +6,7 @@ import { isWhiteRoute, isUpSessionRoute } from '@/utils/auth/config'
 import { getMenusStore } from '@/utils/store/role_menu'
 
 export async function middleware(req: NextRequest) {
-  const nextUrl = req.nextUrl
-  console.log('🚀 ~ file:middleware.ts, line:10-----', nextUrl.pathname)
+  // const nextUrl = req.nextUrl
   if (isWhiteRoute(req.nextUrl.pathname)) return NextResponse.next()
   // 不需要认证的路由、但需要登录的路由
   const authRoutes = ['/dashboard', '/profile', '/settings']

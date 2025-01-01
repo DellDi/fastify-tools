@@ -98,6 +98,12 @@ CREATE
     FOR ALL
     USING (auth.role() = 'admin');
 
+CREATE
+    POLICY "Allow authenticated to manage all users"
+    ON auth.users
+    FOR ALL
+    USING (auth.role() = 'authenticated');
+
 -- ALTER TABLE public.roles ENABLE POLICY;
 -- ALTER TABLE public.permissions ENABLE POLICY;
 -- ALTER TABLE public.role_permissions ENABLE POLICY;
