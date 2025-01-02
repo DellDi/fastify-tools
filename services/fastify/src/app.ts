@@ -34,8 +34,8 @@ const app: FastifyPluginAsync<AppOptions> = async (
   fastify.ready((err) => {
     if (err) throw err
 
-    if (!fastify.mysqlRegistered) {
-      fastify.log.warn('MySQL plugin not registered, skipping database operations')
+    if (!fastify.isConnectedPg) {
+      fastify.log.warn('sql plugin not registered, skipping database operations')
     }
     fastify.log.info(fastify.printRoutes())
   })
