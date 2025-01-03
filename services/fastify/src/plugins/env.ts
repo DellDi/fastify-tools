@@ -1,21 +1,31 @@
 import fp from 'fastify-plugin'
 import fastifyEnv, { FastifyEnvOptions } from '@fastify/env'
+import { Type } from '@sinclair/typebox'
 import { config } from 'dotenv'
 
-const schema = {
-  type: 'object',
-  required: ['PORT'],
-  properties: {
-    PORT: {
-      type: 'string',
-      default: 3000,
-    },
-    NODE_ENV: {
-      type: 'string',
-      default: 'development',
-    },
-  },
-}
+const schema = Type.Object({
+  // 端口与环境
+  PORT: Type.String(),
+  NODE_ENV: Type.String({ default: 'development' }),
+  // 数据库配置
+  POSTGRES_HOST: Type.String(),
+  POSTGRES_PORT: Type.Number(),
+  POSTGRES_USER: Type.String(),
+  POSTGRES_PASSWORD: Type.String(),
+  POSTGRES_DB: Type.String(),
+
+  // 邮件服务配置
+  SMTP_HOST: Type.String(),
+  SMTP_PORT: Type.Number(),
+  SMTP_USER: Type.String(),
+  SMTP_PASS: Type.String(),
+  SMTP_SECURE: Type.Boolean({ default: false }),
+
+  // 应用配置
+  MAGIC_LINK_BASE_URL: Type.String(),
+  MAGIC_LINK_EXPIRY: Type.Number({ default: 30 }), // minutes
+})
+
 
 export default fp<FastifyEnvOptions>(async (fastify, opts) => {
   // 根据环境变量加载不同的 .env 文件
