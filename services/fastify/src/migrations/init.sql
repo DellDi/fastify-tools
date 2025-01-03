@@ -1,5 +1,7 @@
+CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
+
 -- 邮件模板表
-CREATE TABLE email_templates
+create table if not exists email_templates
 (
     id         UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     name       VARCHAR(255) NOT NULL,
@@ -11,7 +13,7 @@ CREATE TABLE email_templates
 );
 
 -- 邮件发送记录表
-CREATE TABLE email_logs
+create table if not exists email_logs
 (
     id          UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     template_id UUID REFERENCES email_templates (id),
@@ -24,7 +26,7 @@ CREATE TABLE email_logs
 );
 
 -- 魔法链接表
-CREATE TABLE magic_links
+create table if not exists magic_links
 (
     id         UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     email      VARCHAR(255) NOT NULL,
@@ -36,7 +38,7 @@ CREATE TABLE magic_links
 );
 
 -- 订阅表
-CREATE TABLE subscriptions
+create table if not exists subscriptions
 (
     id          UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     email       VARCHAR(255) NOT NULL,
