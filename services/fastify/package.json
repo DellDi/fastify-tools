@@ -29,7 +29,7 @@
     "@fastify/env": "^5.0.1",
     "@fastify/multipart": "^9.0.1",
     "@fastify/one-line-logger": "^2.0.0",
-    "@fastify/mysql": "^5.0.1",
+    "@fastify/postgres": "^6.0.1",
     "@fastify/sensible": "^6.0.1",
     "@fastify/static": "^8.0.1",
     "@fastify/swagger": "^9.0.0",
@@ -46,13 +46,16 @@
     "fastify-cli": "^7.0.1",
     "fastify-plugin": "^5.0.1",
     "module-alias": "^2.2.3",
+    "nodemailer": "^6.9.16",
+    "pg": "^8.13.1",
     "undici": "^6.19.8"
   },
   "devDependencies": {
-    "@types/node": "^20.16.10",
-    "typescript": "^5",
     "@types/crypto-js": "^4.2.2",
+    "@types/node": "^20.16.10",
+    "@types/nodemailer": "^6.4.17",
     "c8": "^10.1.2",
-    "fastify-tsconfig": "^2.0.0"
+    "fastify-tsconfig": "^2.0.0",
+    "typescript": "^5"
   }
 }

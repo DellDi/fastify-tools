@@ -1,11 +1,12 @@
 import { type NextRequest, NextResponse } from 'next/server'
 import { updateSession } from '@/utils/supabase/middleware'
 import { forbidden } from 'next/navigation'
-import { getCurrentUserRole, getCurrentUser } from '@/app/lib/user'
+import { getCurrentUserRole, getUser } from '@/app/lib/user'
 import { isWhiteRoute, isUpSessionRoute } from '@/utils/auth/config'
 import { getMenusStore } from '@/utils/store/role_menu'
 
 export async function middleware(req: NextRequest) {
+  // const nextUrl = req.nextUrl
   if (isWhiteRoute(req.nextUrl.pathname)) return NextResponse.next()
   // 不需要认证的路由、但需要登录的路由
   const authRoutes = ['/dashboard', '/profile', '/settings']
@@ -19,7 +20,7 @@ export async function middleware(req: NextRequest) {
     await updateSession(req)
   }
 
-  const user = await getCurrentUser()
+  const user = await getUser()
   // 检查当前路由是否需要认证
   if (!user) return NextResponse.redirect(new URL('/login', req.url))
   // 检查当前路由是否需要管理员权限
@@ -29,6 +30,7 @@ export async function middleware(req: NextRequest) {
   const userRoles = await getCurrentUserRole()
   const menus = getMenusStore()
   const hasAdminRole = userRoles?.roles.some(role => role.name === 'admin')
+
   // 判断是否具有admin菜单权限
   if (isAdminRoute && !hasAdminRole) {
     return forbidden()
