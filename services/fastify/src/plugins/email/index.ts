@@ -1,7 +1,7 @@
 // src/plugins/email/index.ts
 import fp from 'fastify-plugin'
 import nodemailer from 'nodemailer'
-import { Pool } from 'pg'
+import { type Pool } from 'pg'
 import { randomBytes } from 'crypto'
 import { Type } from '@sinclair/typebox'
 import { EmailService } from '../../types/fastify.js'
