@@ -21,6 +21,10 @@ const app: FastifyPluginAsync<AppOptions> = async (
   void fastify.register(AutoLoad, {
     dir: path.join(__dirname, 'plugins'),
     options: opts,
+    forceESM: true,
+    ignoreFilter: (path) => {
+      return path.includes('index')
+    }
   })
 
   // define your routes in one of these
