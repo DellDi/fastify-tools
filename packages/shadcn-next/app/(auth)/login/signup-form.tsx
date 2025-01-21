@@ -12,16 +12,7 @@ import { useRouter } from 'next/navigation'
 const signUpSchema = z.object({
   username: z.string().min(3, { message: '用户名至少需要3个字符' }),
   email: z.string().email({ message: '请输入有效的邮箱地址' }),
-  password: z.string()
-  .min(8, { message: '密码至少需要8个字符' })
-  .regex(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/, {
-    message: '密码需要包含至少一个大写字母、一个小写字母、一个数字和一个特殊字符',
-  }),
-  confirmPassword: z.string(),
   phoneNumber: z.string().regex(/^1[3-9]\d{9}$/, { message: '请输入有效的手机号码' }),
-}).refine((data) => data.password === data.confirmPassword, {
-  message: '密码不匹配',
-  path: ['confirmPassword'],
 })
 
 type SignUpFormValues = z.infer<typeof signUpSchema>
@@ -38,31 +29,31 @@ export function SignUpForm({ onSignUpAction, onSignUpErrorAction }: SignUpFormPr
   const form = useForm<SignUpFormValues>({
     resolver: zodResolver(signUpSchema),
     defaultValues: {
-      username: 'delldi',
-      email: 'delldi808611@outlook.com',
-      password: 'Zd808611@',
-      confirmPassword: 'Zd808611@',
-      phoneNumber: '18668184122',
+      username: '',
+      email: '',
+      phoneNumber: '',
     },
   })
 
   async function onSubmit(data: SignUpFormValues) {
     setIsLoading(true)
     try {
-
-      const response = await fetch('/api/auth/register', {
+      const BASE_API_URL = process.env.NEXT_PUBLIC_API_URL || '/api'
+      const response = await fetch(`${BASE_API_URL}/auth/magic-link`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(data),
+        body: JSON.stringify({
+          ...data,
+          purpose: 'registration',
+        }),
       })
       const result = await response.json()
       if (response.ok) {
-        onSignUpAction(result.message)
-        localStorage.setItem('rememberedEmail', data.email)
-        // Redirect to login page with email and password as query parameters
-        router.push(`/auth/email-verification?email=${encodeURIComponent(data.email)}&password=${encodeURIComponent(data.password)}`)
+        onSignUpAction('验证邮件已发送到您的邮箱，请查收并点击链接完成注册。')
+        localStorage.setItem('registrationEmail', data.email)
+        router.push('/auth/verify-email')
       } else {
-        return new Error(result.error || '注册失败')
+        throw new Error(result.error || '注册失败')
       }
     } catch (error) {
       onSignUpErrorAction(error instanceof Error ? error.message : '注册失败，请稍后再试。')
@@ -102,32 +93,6 @@ export function SignUpForm({ onSignUpAction, onSignUpErrorAction }: SignUpFormPr
         />
         <FormField
           control={form.control}
-          name="password"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>密码</FormLabel>
-              <FormControl>
-                <Input type="password" {...field} />
-              </FormControl>
-              <FormMessage/>
-            </FormItem>
-          )}
-        />
-        <FormField
-          control={form.control}
-          name="confirmPassword"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>确认密码</FormLabel>
-              <FormControl>
-                <Input type="password" {...field} />
-              </FormControl>
-              <FormMessage/>
-            </FormItem>
-          )}
-        />
-        <FormField
-          control={form.control}
           name="phoneNumber"
           render={({ field }) => (
             <FormItem>
@@ -140,7 +105,7 @@ export function SignUpForm({ onSignUpAction, onSignUpErrorAction }: SignUpFormPr
           )}
         />
         <Button type="submit" className="w-full" disabled={isLoading}>
-          {isLoading ? '注册中...' : '注册'}
+          {isLoading ? '发送验证邮件...' : '注册'}
         </Button>
       </form>
     </Form>

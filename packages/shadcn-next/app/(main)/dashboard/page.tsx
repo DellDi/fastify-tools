@@ -8,7 +8,6 @@ import { TimeCards } from '@/app/(main)/dashboard/components/time-cards'
 import { ShowCloud } from '@/components/custom/ShowCloud'
 import { PanelCharts } from '@/components/custom/PanelCharts'
 import { redirect } from 'next/navigation'
-import { getCurrentUser } from '@/app/lib/user'
 
 export const metadata: Metadata = {
   title: 'Dashboard',
@@ -17,10 +16,6 @@ export const metadata: Metadata = {
 
 export default async function DashboardPage() {
   try {
-    const user = await getCurrentUser()
-    if (!user) {
-      redirect('/login')
-    }
     return (
       <main className="flex-1 space-y-4 p-8 pt-6">
         <div className="flex items-center justify-between space-y-2">

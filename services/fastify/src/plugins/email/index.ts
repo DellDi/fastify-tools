@@ -1,4 +1,4 @@
-// src/plugins/email/index.ts
+import cors from '@fastify/cors'
 import fp from 'fastify-plugin'
 import nodemailer from 'nodemailer'
 import { randomBytes } from 'crypto'
@@ -154,6 +154,37 @@ export default fp(async (fastify, options: EmailPluginOptions) => {
 
   // 设置包装的插件服务
   const plugins: FastifyPluginAsyncTypebox = async (fastify, opts) => {
+    fastify.register(cors, {
+      origin: (origin, cb) => {
+        const hostname = new URL(origin || '').hostname
+        const allowedHostnames = ['localhost', '127.0.0.1']
+        if (allowedHostnames.includes(hostname)) {
+          //  Request from localhost will pass
+          cb(null, true)
+          return
+        }
+        // Generate an error on other origins, disabling access
+        cb(new Error('origin Not allowed'), false)
+      },
+    })
+
+    // 魔法链接注册
+    fastify.post('/auth/magic-link', {
+      schema: {
+        tags: ['email'],
+        body: Type.Object({
+          email: Type.String({ format: 'email' }),
+          purpose: Type.String({ description: 'The purpose of the magic link' }),
+        }),
+      },
+      handler: async (request, reply) => {
+        const { email, purpose } = request.body
+        const link = await fastify.emailService.createMagicLink(email, purpose)
+        fastify.log.info(`Magic link sent to ${email}: ${link}`)
+        reply.send({ message: 'Magic link sent successfully' })
+      },
+    })
+
     // 验证魔法链接
     fastify.get('/auth/verify-magic-link', {
       schema: {
@@ -193,23 +224,6 @@ export default fp(async (fastify, options: EmailPluginOptions) => {
         const { name, subject, body } = request.body
         await fastify.emailService.setEmailTemplate(name, subject, body)
         reply.send({ message: 'Email template saved successfully' })
-      },
-    })
-
-    // 魔法链接注册
-    fastify.post('/auth/magic-link', {
-      schema: {
-        tags: ['email'],
-        body: Type.Object({
-          email: Type.String({ format: 'email' }),
-          purpose: Type.String({ description: 'The purpose of the magic link' }),
-        }),
-      },
-      handler: async (request, reply) => {
-        const { email, purpose } = request.body
-        const link = await fastify.emailService.createMagicLink(email, purpose)
-        fastify.log.info(`Magic link sent to ${email}: ${link}`)
-        reply.send({ message: 'Magic link sent successfully' })
       },
     })
 
