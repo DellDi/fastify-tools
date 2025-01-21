@@ -4,7 +4,7 @@ import nodemailer from 'nodemailer'
 import { randomBytes } from 'crypto'
 import { Type } from '@sinclair/typebox'
 import { EmailService } from '../../types/fastify.js'
-import { TypeBoxTypeProvider } from '@fastify/type-provider-typebox'
+import { FastifyPluginAsyncTypebox } from '@fastify/type-provider-typebox'
 // 配置类型
 interface EmailPluginOptions {
   smtp: {
@@ -152,10 +152,10 @@ export default fp(async (fastify, options: EmailPluginOptions) => {
   // 注册服务
   fastify.decorate('emailService', emailService)
 
-  // 注册接口路由
-  fastify.register(async function (fastify) {
+  // 设置包装的插件服务
+  const plugins: FastifyPluginAsyncTypebox = async (fastify, opts) => {
     // 验证魔法链接
-    fastify.withTypeProvider<TypeBoxTypeProvider>().get('/auth/verify-magic-link', {
+    fastify.get('/auth/verify-magic-link', {
       schema: {
         tags: ['email'],
         // 添加参数的中文描述
@@ -180,7 +180,7 @@ export default fp(async (fastify, options: EmailPluginOptions) => {
     })
 
     // 设置邮箱模版
-    fastify.withTypeProvider<TypeBoxTypeProvider>().post('/email/set-template', {
+    fastify.post('/email/set-template', {
       schema: {
         tags: ['email'],
         body: Type.Object({
@@ -196,9 +196,8 @@ export default fp(async (fastify, options: EmailPluginOptions) => {
       },
     })
 
-
     // 魔法链接注册
-    fastify.withTypeProvider<TypeBoxTypeProvider>().post('/auth/magic-link', {
+    fastify.post('/auth/magic-link', {
       schema: {
         tags: ['email'],
         body: Type.Object({
@@ -214,9 +213,8 @@ export default fp(async (fastify, options: EmailPluginOptions) => {
       },
     })
 
-
     // 订阅管理
-    fastify.withTypeProvider<TypeBoxTypeProvider>().post('/email/subscriptions', {
+    fastify.post('/email/subscriptions', {
       schema: {
         tags: ['email'],
         body: Type.Object({
@@ -232,7 +230,7 @@ export default fp(async (fastify, options: EmailPluginOptions) => {
     })
 
     // 取消订阅
-    fastify.withTypeProvider<TypeBoxTypeProvider>().post('/email/unsubscribe', {
+    fastify.post('/email/unsubscribe', {
       schema: {
         tags: ['email'],
         body: Type.Object({
@@ -245,7 +243,35 @@ export default fp(async (fastify, options: EmailPluginOptions) => {
         reply.send({ message: 'Unsubscribed successfully' })
       },
     })
-  })
+
+    // 获取邮件模版列表
+    fastify.get('/email/templates', {
+      schema: {
+        tags: ['email'],
+        response: {
+          200: Type.Object({
+            templates: Type.Array(Type.Object({
+              name: Type.String({ description: '模板名称' }),
+              subject: Type.String({ description: '邮件主题' }),
+              body: Type.String({ description: '邮件内容' }),
+              created_at: Type.String({ description: '创建时间' }),
+              updated_at: Type.String({ description: '更新时间' })
+            }))
+          })
+        }
+      },
+      handler: async (request, reply) => {
+        const result = await pgPoolClient.query(
+          'SELECT name, subject, body, created_at, updated_at FROM email_templates ORDER BY created_at DESC'
+        )
+        reply.send({ templates: result.rows })
+      },
+    })
+
+  }
+
+  // 注册接口路由
+  fastify.register(plugins)
 })
 
 

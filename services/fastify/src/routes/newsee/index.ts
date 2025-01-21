@@ -1,11 +1,10 @@
-import { FastifyPluginAsync } from 'fastify'
 import cors from '@fastify/cors'
 import { AesContext, strategyMap } from '../../utils/crypto.js'
 import { cryptoSchema, sqlSchema } from '../../schema/newsee.js'
-import { TypeBoxTypeProvider } from '@fastify/type-provider-typebox'
+import { FastifyPluginAsyncTypebox } from '@fastify/type-provider-typebox'
 import { handleSQL } from './handleSQL.js'
 
-const newsee: FastifyPluginAsync = async (fastify): Promise<void> => {
+const newsee: FastifyPluginAsyncTypebox = async (fastify): Promise<void> => {
   fastify.register(cors, {
     origin: (origin, cb) => {
       const hostname = new URL(origin || '').hostname
@@ -19,7 +18,7 @@ const newsee: FastifyPluginAsync = async (fastify): Promise<void> => {
       cb(new Error('origin Not allowed'), false)
     },
   })
-  fastify.withTypeProvider<TypeBoxTypeProvider>().post('/handlePassword', {
+  fastify.post('/handlePassword', {
     schema: cryptoSchema,
     handler: async (request, reply) => {
       request.headers['content-type'] = 'application/json'
@@ -50,7 +49,7 @@ const newsee: FastifyPluginAsync = async (fastify): Promise<void> => {
     },
   })
 
-  fastify.withTypeProvider<TypeBoxTypeProvider>().post('/handleSQL', {
+  fastify.post('/handleSQL', {
     schema: sqlSchema,
     handler: async (request, reply) => {
       request.headers['content-type'] = 'application/json'

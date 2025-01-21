@@ -1,11 +1,10 @@
-import { FastifyPluginAsync } from 'fastify'
+import { FastifyPluginAsyncTypebox } from "@fastify/type-provider-typebox";
 import { request } from 'undici'
 import { JiraSearchResponseType, JiraSearchSchema } from '../../../schema/jira/jira.js'
-import { TypeBoxTypeProvider } from '@fastify/type-provider-typebox'
 import cors from '@fastify/cors'
 import customFieldProcessor from './filter-plugin.js'
 
-const jira: FastifyPluginAsync = async (fastify, opts): Promise<void> => {
+const jira: FastifyPluginAsyncTypebox = async (fastify, opts): Promise<void> => {
   fastify.register(cors, {
     origin: '*',
     methods: ['GET', 'POST'],
@@ -13,7 +12,7 @@ const jira: FastifyPluginAsync = async (fastify, opts): Promise<void> => {
 
   fastify.register(customFieldProcessor)
 
-  fastify.withTypeProvider<TypeBoxTypeProvider>().post('', {
+  fastify.post('', {
     schema: JiraSearchSchema,
     handler: async (req, reply) => {
       try {

@@ -1,5 +1,4 @@
-import { FastifyPluginAsync } from 'fastify'
-import { TypeBoxTypeProvider } from '@fastify/type-provider-typebox'
+import { FastifyPluginAsyncTypebox } from '@fastify/type-provider-typebox'
 import fastifyMultipart from '@fastify/multipart'
 import fastifyStatic from '@fastify/static'
 import fs from 'node:fs'
@@ -12,7 +11,7 @@ import { handleBatch } from './handleBatch.js'
 import { ALLOWED_TYPES, MAX_FILE_SIZE } from '../../utils/upload.js'
 import { handleTrunk } from './handleTrunk.js'
 
-const upload: FastifyPluginAsync = async (fastify): Promise<void> => {
+const upload: FastifyPluginAsyncTypebox = async (fastify): Promise<void> => {
   // Ensure upload directory exists
   if (!fs.existsSync(UPLOAD_DIR)) {
     fs.mkdirSync(UPLOAD_DIR, { recursive: true })
@@ -30,7 +29,7 @@ const upload: FastifyPluginAsync = async (fastify): Promise<void> => {
     prefix: '/static/',
   })
 
-  fastify.withTypeProvider<TypeBoxTypeProvider>().get('', {
+  fastify.get('', {
     schema: uploadBase,
     async handler(req, reply) {
       const { hashId } = req.query
@@ -57,7 +56,7 @@ const upload: FastifyPluginAsync = async (fastify): Promise<void> => {
     },
   })
 
-  fastify.withTypeProvider<TypeBoxTypeProvider>().post(
+  fastify.post(
     '/single',
     {
       schema: singleUpload,
@@ -114,7 +113,7 @@ const upload: FastifyPluginAsync = async (fastify): Promise<void> => {
   )
 
   // Register batch upload handler
-  fastify.withTypeProvider<TypeBoxTypeProvider>().post('/batch', {
+  fastify.post('/batch', {
     schema: uploadBatch,
     handler: handleBatch,
   })

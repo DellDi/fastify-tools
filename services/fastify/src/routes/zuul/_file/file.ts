@@ -1,16 +1,15 @@
-import { FastifyPluginAsync } from 'fastify'
+import { FastifyPluginAsyncTypebox } from "@fastify/type-provider-typebox";
 import fastifyStatic from '@fastify/static'
-import { TypeBoxTypeProvider } from "@fastify/type-provider-typebox";
 import { staticSchema } from "../../../schema/file.js";
 import { UPLOAD_DIR } from "../../../utils/index.js";
 import fs from "node:fs";
 
-const file: FastifyPluginAsync = async (fastify): Promise<void> => {
+const file: FastifyPluginAsyncTypebox = async (fastify): Promise<void> => {
     // Serve static files
     fastify.register(fastifyStatic, {
         root: UPLOAD_DIR,
     })
-    fastify.withTypeProvider<TypeBoxTypeProvider>().get('', {
+    fastify.get('', {
         schema: staticSchema,
         handler: async (req, reply) => {
             const pathFileName = req.params.file

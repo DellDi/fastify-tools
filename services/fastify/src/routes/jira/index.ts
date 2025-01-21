@@ -1,5 +1,4 @@
-import { FastifyPluginAsync } from 'fastify'
-import { TypeBoxTypeProvider } from '@fastify/type-provider-typebox'
+import { FastifyPluginAsyncTypebox } from '@fastify/type-provider-typebox'
 import { request } from 'undici'
 import dayjs from 'dayjs'
 import qs from 'node:querystring'
@@ -14,8 +13,8 @@ import { CustomerInfoResType } from '../../schema/dify/dify.js'
 
 const jiraBaseUrl = 'http://bug.new-see.com:8088'
 
-const jira: FastifyPluginAsync = async (fastify): Promise<void> => {
-  fastify.withTypeProvider<TypeBoxTypeProvider>().post('/create-ticket', {
+const jira: FastifyPluginAsyncTypebox = async (fastify): Promise<void> => {
+  fastify.post('/create-ticket', {
     schema: jiraCreateExport,
     handler: async (req, reply) => {
       const {

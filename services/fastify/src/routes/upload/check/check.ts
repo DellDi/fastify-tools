@@ -1,12 +1,11 @@
 import fs from 'node:fs'
-import { FastifyPluginAsync } from 'fastify'
-import { TypeBoxTypeProvider } from '@fastify/type-provider-typebox'
+import { FastifyPluginAsyncTypebox } from '@fastify/type-provider-typebox'
 import cors from '@fastify/cors'
 import { uploadCheckBase } from '../../../schema/upload.js'
 import { UPLOAD_DIR } from '../../../utils/index.js'
 
 // 新增秒传验证hash功能
-const checkFile: FastifyPluginAsync = async (fastify, opts): Promise<void> => {
+const checkFile: FastifyPluginAsyncTypebox = async (fastify, opts): Promise<void> => {
   // 新增cors
   fastify.register(cors, {
     origin: ['http://localhost:3001', 'http://localhost:3000'],
@@ -14,7 +13,7 @@ const checkFile: FastifyPluginAsync = async (fastify, opts): Promise<void> => {
   })
 
 
-  fastify.withTypeProvider<TypeBoxTypeProvider>().post('', {
+  fastify.post('', {
       schema: uploadCheckBase,
       async handler(req, reply) {
         const fileInfo = req.body
