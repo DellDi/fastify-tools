@@ -5,7 +5,7 @@ import { FastifyInstance, FastifyPluginAsync as OriginalFastifyPluginAsync } fro
 interface EmailService {
   setEmailTemplate(name: string, subject: string, body: string): Promise<void>
   sendTemplateEmail(templateName: string, to: string, variables: Record<string, any>): Promise<void>
-  createMagicLink(email: string, purpose: string): Promise<string>
+  createMagicLink(email: string, purpose: string, username?: string,): Promise<string>
   verifyMagicLink(token: string): Promise<{
     status: 'error' | 'invalid' | 'used' | 'expired' | 'valid';
     // status: string;

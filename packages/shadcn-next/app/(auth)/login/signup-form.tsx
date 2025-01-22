@@ -51,7 +51,7 @@ export function SignUpForm({ onSignUpAction, onSignUpErrorAction }: SignUpFormPr
       if (response.ok) {
         onSignUpAction('验证邮件已发送到您的邮箱，请查收并点击链接完成注册。')
         localStorage.setItem('registrationEmail', data.email)
-        router.push('/auth/verify-email')
+        router.push('/auth/email-verification?email=' + data.email)
       } else {
         throw new Error(result.error || '注册失败')
       }

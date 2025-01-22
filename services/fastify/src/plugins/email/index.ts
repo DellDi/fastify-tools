@@ -23,7 +23,27 @@ interface EmailPluginOptions {
 export default fp(async (fastify, options: EmailPluginOptions) => {
   const { smtp, magicLinkBaseUrl, magicLinkExpiry } = options
   fastify.log.info('Email plugin initialized', options)
-  const transporter = nodemailer.createTransport(smtp)
+
+  // 配置SMTP传输器，添加额外的TLS选项
+  const transportConfig = {
+    ...smtp,
+    secure: false, // 强制使用非安全模式，让Nodemailer自动处理TLS
+    tls: {
+      rejectUnauthorized: false // 允许自签名证书
+    },
+    debug: true // 启用调试模式以获取详细日志
+  }
+
+  const transporter = nodemailer.createTransport(transportConfig)
+
+  // 验证SMTP连接
+  try {
+    await transporter.verify()
+    fastify.log.info('SMTP connection verified successfully')
+  } catch (error) {
+    fastify.log.error('SMTP connection verification failed:', error)
+    throw new Error('Failed to establish SMTP connection')
+  }
   const pgPoolClient = await fastify.pg.connect()
   // 邮件服务实现
   const emailService: EmailService = {
@@ -39,15 +59,29 @@ export default fp(async (fastify, options: EmailPluginOptions) => {
 
       const { subject, body } = template.rows[0]
 
-      // 替换模板变量
-      const renderedBody = body.replace(/\${(\w+)}/g, (_: any, key: string | number) => variables[key] || '')
-      const renderedSubject = subject.replace(/\${(\w+)}/g, (_: any, key: string | number) => variables[key] || '')
-
-      await transporter.sendMail({
-        to,
-        subject: renderedSubject,
-        html: renderedBody,
+      // 替换模板变量 {{key}} 替换为变量值(双花括号)
+      const renderedSubject = subject.replace(/{{(\w+)}}/g, (_: any, key: string | number) => {
+        return variables[key] || ''
       })
+      const renderedBody = body.replace(/{{(\w+)}}/g, (_: any, key: string | number) => {
+        return variables[key] || ''
+      })
+
+      try {
+        await transporter.sendMail({
+          from: smtp.auth.user, // 添加发件人地址
+          to,
+          subject: renderedSubject,
+          html: renderedBody,
+          headers: {
+            'Message-ID': `<${Date.now()}@${smtp.host}>` // 添加消息ID
+          }
+        })
+        fastify.log.info(`Email sent successfully to ${to}`)
+      } catch (error) {
+        fastify.log.error('Failed to send email:', error)
+        throw new Error(`Failed to send email: ${error.message}`)
+      }
 
       // 记录发送日志
       await pgPoolClient.query(
@@ -69,7 +103,7 @@ export default fp(async (fastify, options: EmailPluginOptions) => {
       )
     },
 
-    async createMagicLink(email, purpose) {
+    async createMagicLink(email, purpose, username) {
       const token = randomBytes(32).toString('hex')
       const expiresAt = new Date(Date.now() + magicLinkExpiry * 60000)
 
@@ -83,8 +117,9 @@ export default fp(async (fastify, options: EmailPluginOptions) => {
 
       // 发送魔法链接邮件
       await this.sendTemplateEmail('magic-link', email, {
-        link: magicLink,
-        expiresIn: `${magicLinkExpiry} minutes`,
+        username: username || '佚名',
+        verification_link: magicLink,
+        expiration_time: `${magicLinkExpiry} minutes`,
       })
 
       return magicLink
@@ -174,12 +209,13 @@ export default fp(async (fastify, options: EmailPluginOptions) => {
         tags: ['email'],
         body: Type.Object({
           email: Type.String({ format: 'email' }),
+          username: Type.String({ description: 'The username of the user' }),
           purpose: Type.String({ description: 'The purpose of the magic link' }),
         }),
       },
       handler: async (request, reply) => {
-        const { email, purpose } = request.body
-        const link = await fastify.emailService.createMagicLink(email, purpose)
+        const { email, username, purpose } = request.body
+        const link = await fastify.emailService.createMagicLink(email, purpose, username)
         fastify.log.info(`Magic link sent to ${email}: ${link}`)
         reply.send({ message: 'Magic link sent successfully' })
       },
