@@ -1,107 +1,101 @@
-# fastify-ts 项目
-
-- 这是一个基于 [Fastify](https://www.fastify.io/) 和 TypeScript 的项目。
-- monorepo - 项目使用 [Lerna](https://lerna.js.org/) 进行管理。
-- 项目使用 [Pnpm](https://pnpm.io/) 进行包管理。
-- 项目使用 [ESLint](https://eslint.org/) 和 [Prettier](https://prettier.io/) 进行代码规范检查。
-- 项目使用 [Docker](https://www.docker.com/) 进行容器化部署。
-- 项目使用 [Swagger](https://swagger.io/) 自动生成 API 文档。
-- 项目使用 [Next](https://nextjs.org/) 和 [shadcn-ui](https://shadcn-ui.vercel.app/) 进行前端开发。
+# Fastify-Tools 项目
 
 ## 项目概述
 
-fastify-tools 是一个基于pnpm的monorepo项目，项目包含以下子项目：
+Fastify-Tools 是一个基于 Pnpm 的 Monorepo 项目，旨在提供一个高性能、可扩展的全栈开发框架。项目包含多个子项目，分别负责后端服务、前端应用和工具开发。通过使用 Fastify、Next.js 和 shadcn-ui 等技术栈，项目能够快速构建现代化的 Web 应用。
 
-### fastify子项目
+## 技术栈
 
-是一个 Fastify 和 TypeScript 的项目，旨在提供一个高性能、可扩展的Nodejs服务。项目包含以下特性：
+- **后端**: Fastify, TypeScript
+- **前端**: Next.js, shadcn-ui
+- **包管理**: Pnpm
+- **代码规范**: ESLint, Prettier
+- **容器化**: Docker
+- **API 文档**: Swagger
+- **测试**: Tap
 
-1. 高性能路由处理
-2. 插件系统
-3. 安全性
-4. 数据验证
-5. 异步处理
-6. 接口文档生成，作为shadcn-next项目的主要服务
+## 项目结构
 
-### shadcn-next
+```
+fastify-tools/
+├── packages/                # 前端相关项目
+│   └── shadcn-next/         # 基于 Next.js 和 shadcn-ui 的前端应用
+├── services/                # 后端服务
+│   ├── fastify/             # 基于 Fastify 的后端服务
+│   └── tools/               # 工具类项目
+├── docker-compose.yml       # Docker 容器化配置
+├── pnpm-workspace.yaml      # Pnpm 工作区配置
+└── README.md                # 项目说明文档
+```
 
-是一个基于Next、shadcn-ui、fas的项目，旨在提供一个高性能、可扩展的Web应用程序框架。项目包含以下特性：
+## 安装与运行
 
-1. 服务端渲染
-2. 静态页面生成
-3. 动态路由
-4. 数据获取
-5. AIGC相关服务和功能
-6. 个人工作工具作品展示
+### 前置条件
 
-## 目录结构
+- Node.js 18+
+- Pnpm 8+
+- Docker (可选)
 
-## 开始使用
+### 安装依赖
 
-首先，运行开发服务器。在浏览器中打开 [http://localhost:3000](http://localhost:3000) 查看结果。
+```bash
+pnpm install
+```
 
-## 项目时间线
+### 启动开发环境
 
-1. 项目初始化 (2023-11-01)
+```bash
+pnpm dev
+```
 
-    - 使用 Fastify CLI 创建项目骨架
-    - 集成 TypeScript
+### 构建项目
 
-2. 基础功能开发 (2023-11-15)
+```bash
+pnpm build
+```
 
-    - 实现用户认证系统
-    - 设计并实现 RESTful API
+### 运行测试
 
-3. 数据库集成 (2023-12-01)
+```bash
+pnpm test
+```
 
-    - 选择并集成数据库（如 PostgreSQL）
-    - 实现数据模型和 ORM
+## 子项目介绍
 
-4. 测试与优化 (2023-12-15)
+### Fastify 服务
 
-    - 编写单元测试和集成测试
-    - 性能优化和负载测试
+Fastify 服务是整个项目的核心后端服务，提供高性能的 API 接口。主要特性包括：
 
-5. 文档和部署 (2024-01-01)
-    - 完善 API 文档
-    - 设置 CI/CD 流程
+- 高性能路由处理
+- 插件系统
+- 安全性
+- 数据验证
+- 异步处理
+- 接口文档生成
 
-## 功能思考
+### shadcn-next 前端应用
 
-1. 高性能路由处理
+shadcn-next 是基于 Next.js 和 shadcn-ui 的前端应用，提供现代化的用户界面。主要特性包括：
 
-    - 利用 Fastify 的高性能特性
-    - 实现智能路由缓存机制
+- 服务端渲染
+- 静态页面生成
+- 动态路由
+- 数据获取
+- AIGC 相关服务
+- 个人工作工具展示
 
-2. 插件系统
+### Tools 工具项目
 
-    - 设计可扩展的插件架构
-    - 开发常用功能插件（如日志、监控）
+Tools 项目包含一些实用的工具脚本，如 Excel 数据处理、自动化脚本等。
 
-3. 安全性
+## 贡献指南
 
-    - 实现强大的身份验证和授权系统
-    - 集成 CSRF 保护和 rate limiting
-
-4. 数据验证
-
-    - 使用 JSON Schema 进行请求和响应验证
-    - 实现自定义验证逻辑
-
-5. 异步处理
-
-    - 优化异步操作处理
-    - 实现任务队列系统
-
-6. 文档生成
-    - 自动生成 API 文档
-    - 集成 Swagger UI
+欢迎提交 Pull Requests 和 Issues！请查看 [贡献指南](./CONTRIBUTING.md) 了解更多信息。
 
 ## 学习资源
 
 - [Fastify 文档](https://www.fastify.io/docs/latest/)
 - [TypeScript 文档](https://www.typescriptlang.org/docs/)
-- [Lerna 文档](https://lerna.js.org/)
 - [Pnpm 文档](https://pnpm.io/)
 - [ESLint 文档](https://eslint.org/docs/user-guide/getting-started)
 - [Prettier 文档](https://prettier.io/docs/en/index.html)
@@ -113,7 +107,3 @@ fastify-tools 是一个基于pnpm的monorepo项目，项目包含以下子项目
 ## 部署
 
 推荐使用 [Docker](https://www.docker.com/) 进行容器化部署。详细部署文档请参考 [部署指南](./DEPLOYMENT.md)。
-
-## 贡献
-
-欢迎提交 Pull Requests 和 Issues！请查看 [贡献指南](./CONTRIBUTING.md) 了解更多信息。
