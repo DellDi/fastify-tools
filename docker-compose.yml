@@ -1,13 +1,60 @@
+version: '3.8'
+
 services:
+  # PostgreSQL 数据库服务
+  # 注意: 如果您想使用服务器上已有的共享 PostgreSQL 容器，
+  # 可以注释掉整个 postgres 服务配置，并在 fastify 和 shadcn-next 服务中
+  # 将 POSTGRES_HOST 环境变量指向该共享容器的主机名或 IP
+  postgres:
+    image: postgres:17-alpine
+    container_name: fastify-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
+      POSTGRES_DB: ${POSTGRES_DB:-postgres}
+      PGDATA: /var/lib/postgresql/data/pgdata
+    volumes:
+      # 使用项目特定的卷名称，避免与其他项目冲突
+      - pg-17-data:/var/lib/postgresql/data
+      # 初始化脚本目录，可以放置 .sql 文件进行初始化
+      - ./services/fastify/src/migrations:/docker-entrypoint-initdb.d
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - fastify-network
+
+  # Fastify 后端服务
   fastify:
     build:
       context: ./services/fastify
       dockerfile: Dockerfile
+    container_name: fastify-service
+    restart: unless-stopped
     ports:
       - "4000:3000"
     environment:
-      - NODE_ENV=production
+      - NODE_ENV=${NODE_ENV:-production}
+      # 数据库连接配置
+      # 如果使用共享 PostgreSQL 容器，修改 POSTGRES_HOST 为该容器的主机名或 IP
+      - POSTGRES_HOST=postgres
+      - POSTGRES_PORT=5432
+      - POSTGRES_USER=${POSTGRES_USER:-postgres}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-postgres}
+      - POSTGRES_DB=${POSTGRES_DB:-postgres}
+      - DATABASE_URL=postgresql://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-postgres}@postgres:5432/${POSTGRES_DB:-postgres}
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - fastify-network
 
+  # Next.js 前端服务
   shadcn-next:
     build:
       context: ./packages/shadcn-next
@@ -15,10 +62,35 @@ services:
         NEXT_PUBLIC_BASE_PATH: /next
         NEXT_PUBLIC_API_URL: /fastify
       dockerfile: Dockerfile
+    container_name: shadcn-next
+    restart: unless-stopped
     ports:
       - "4001:3001"
     environment:
-      - NODE_ENV=production
+      - NODE_ENV=${NODE_ENV:-production}
       - BASE_API_URL=http://fastify:3000
+      # 数据库连接配置
+      # 如果使用共享 PostgreSQL 容器，修改 POSTGRES_HOST 为该容器的主机名或 IP
+      - POSTGRES_HOST=postgres
+      - POSTGRES_PORT=5432
+      - POSTGRES_USER=${POSTGRES_USER:-postgres}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-postgres}
+      - POSTGRES_DB=${POSTGRES_DB:-postgres}
+      - DATABASE_URL=postgresql://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-postgres}@postgres:5432/${POSTGRES_DB:-postgres}
     depends_on:
       - fastify
+    networks:
+      - fastify-network
+
+# 使用项目特定的卷名称，避免与其他项目冲突
+volumes:
+  pg-17-data:
+    # 如果需要使用外部卷（如共享给其他项目），可以添加 external: true
+    # external: true
+
+# 网络配置
+# 如果需要连接到外部网络（如共享的 PostgreSQL 容器所在的网络），可以添加 external: true
+networks:
+  fastify-network:
+    driver: bridge
+    # external: true
