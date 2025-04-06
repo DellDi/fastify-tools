@@ -8,7 +8,6 @@ const __dirname = path.dirname(__filename)
 
 export type AppOptions = {} & Partial<AutoloadPluginOptions>
 
-
 // Pass --options via CLI arguments in command to enable these options.
 const options: AppOptions = {}
 
@@ -22,7 +21,8 @@ const app: FastifyPluginAsync<AppOptions> = async (
     options: opts,
     forceESM: true,
     ignoreFilter: (path) => {
-      return path.includes('index')
+      // 忽略原始的 PostgreSQL 插件
+      return path.includes('index') || path.includes('2-pg-link')
     }
   })
 
@@ -37,8 +37,11 @@ const app: FastifyPluginAsync<AppOptions> = async (
   fastify.ready((err) => {
     if (err) throw err
 
-    if (!fastify.isConnectedPg) {
-      fastify.log.warn('sql plugin not registered, skipping database operations')
+    // 检查 Prisma 是否已注册
+    if (!fastify.prisma) {
+      fastify.log.warn('Prisma 插件未注册，跳过数据库操作')
+    } else {
+      fastify.log.info('Prisma 已连接到数据库')
     }
     fastify.log.info(fastify.printRoutes())
   })

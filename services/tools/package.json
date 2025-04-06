@@ -23,11 +23,7 @@
     "@mendable/firecrawl-js": "^1.15.7",
     "@types/puppeteer": "^5.4.7",
     "axios": "^1.7.9",
-    "puppeteer": "^24.1.0"
-  },
-  "devDependencies": {
-    "@types/node": "^20.11.19",
-    "ts-node": "^10.9.2",
-    "typescript": "^5.3.3"
+    "puppeteer": "^24.1.0",
+    "zod": "^3.24.1"
   }
 }

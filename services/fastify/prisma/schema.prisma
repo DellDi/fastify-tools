@@ -1,0 +1,68 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// 邮件模板模型
+model EmailTemplate {
+  id         String     @id @default(uuid()) @db.Uuid
+  name       String     @db.VarChar(255)
+  subject    String     @db.VarChar(255)
+  body       String
+  variables  Json?
+  createdAt  DateTime   @default(now()) @map("created_at") @db.Timestamptz()
+  updatedAt  DateTime   @default(now()) @map("updated_at") @db.Timestamptz()
+  emailLogs  EmailLog[]
+
+  @@map("email_templates")
+}
+
+// 邮件发送记录模型
+model EmailLog {
+  id         String        @id @default(uuid()) @db.Uuid
+  templateId String        @map("template_id") @db.Uuid
+  template   EmailTemplate @relation(fields: [templateId], references: [id])
+  toEmail    String        @map("to_email") @db.VarChar(255)
+  variables  Json?
+  status     String        @db.VarChar(50)
+  error      String?
+  sentAt     DateTime?     @map("sent_at") @db.Timestamptz()
+  createdAt  DateTime      @default(now()) @map("created_at") @db.Timestamptz()
+
+  @@map("email_logs")
+}
+
+// 魔法链接模型
+model MagicLink {
+  id        String    @id @default(uuid()) @db.Uuid
+  email     String    @db.VarChar(255)
+  token     String    @unique @db.VarChar(255)
+  purpose   String    @db.VarChar(50)
+  expiresAt DateTime  @map("expires_at") @db.Timestamptz()
+  usedAt    DateTime? @map("used_at") @db.Timestamptz()
+  createdAt DateTime  @default(now()) @map("created_at") @db.Timestamptz()
+
+  @@map("magic_links")
+}
+
+// 订阅模型
+model Subscription {
+  id          String   @id @default(uuid()) @db.Uuid
+  email       String   @db.VarChar(255)
+  status      String   @db.VarChar(50)
+  preferences Json?
+  createdAt   DateTime @default(now()) @map("created_at") @db.Timestamptz()
+  updatedAt   DateTime @default(now()) @map("updated_at") @db.Timestamptz()
+
+  @@map("subscriptions")
+}
+
+
+// 添加字段注释
