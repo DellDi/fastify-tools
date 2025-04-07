@@ -20,13 +20,17 @@
     "aes"
   ],
   "packageManager": "pnpm@10.7.1",
+  "dependencies": {
+    "@prisma/client": "^6.5.0"
+  },
   "devDependencies": {
     "@types/node": "^20.17.30",
     "@types/pg": "^8.11.11",
     "concurrently": "^9.1.2",
     "pm2": "^6.0.5",
     "ts-node": "^10.9.2",
-    "typescript": "^5.8.3"
+    "typescript": "^5.8.3",
+    "prisma": "^6.5.0"
   },
   "resolutions": {
     "react": "^19.0.0",

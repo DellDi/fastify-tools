@@ -51,7 +51,11 @@ npx prisma migrate resolve --applied manual
 
 这将告诉 Prisma 该迁移已经应用，但不会实际执行这里的相关 SQL。
 
-- 如果是新环境，可以跳过这一步。可以直接运行 `npx prisma migrate deploy`。
+- 如果是新环境，可以跳过这一步。可以直接运行：
+
+```bash
+npx prisma migrate deploy
+```
 
 #### 方式二：生成新的迁移（推荐用于开发环境）
 
