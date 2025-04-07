@@ -2,6 +2,10 @@
   "name": "shadcn-next",
   "version": "1.0.0",
   "private": true,
+  "type": "module",
+  "prisma": {
+    "seed": "tsx prisma/seed.ts"
+  },
   "scripts": {
     "dev": "concurrently -n \"NEXT,ANOTHER\" -c \"blue,green\" \"next dev -p 3001 --turbopack\"",
     "build": "next build",
@@ -27,8 +31,6 @@
     "@radix-ui/react-tabs": "^1.1.2",
     "@radix-ui/react-toast": "^1.2.2",
     "@radix-ui/react-tooltip": "^1.1.6",
-    "@supabase/ssr": "^0.5.2",
-    "@supabase/supabase-js": "^2.46.1",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "date-fns": "^4.1.0",
@@ -52,6 +54,8 @@
     "zustand": "^5.0.2"
   },
   "devDependencies": {
+    "@types/node": "^20.0.0",
+    "tsx": "^4.7.1",
     "@types/jsonwebtoken": "^9.0.2",
     "@types/react": "^18.3.1",
     "@types/react-dom": "^18.3.1",

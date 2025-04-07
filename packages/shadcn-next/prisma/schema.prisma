@@ -1,0 +1,204 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+  output   = "../node_modules/.prisma/client"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// 审计日志表
+model AuditLogEntry {
+  id          String    @id @default(uuid()) @db.Uuid
+  instanceId  String?   @map("instance_id") @db.Uuid
+  payload     Json?
+  createdAt   DateTime? @map("created_at") @db.Timestamptz
+  ipAddress   String    @default("") @map("ip_address") @db.VarChar(64)
+
+  @@map("audit_log_entries")
+}
+
+// 用户表
+model User {
+  id                        String    @id @default(uuid()) @db.Uuid
+  instanceId               String?   @map("instance_id") @db.Uuid
+  aud                      String?   @db.VarChar(255)
+  role                     String?   @db.VarChar(255)
+  email                    String?   @db.VarChar(255)
+  encryptedPassword        String?   @map("encrypted_password") @db.VarChar(255)
+  emailConfirmedAt         DateTime? @map("email_confirmed_at") @db.Timestamptz
+  invitedAt               DateTime? @map("invited_at") @db.Timestamptz
+  confirmationToken        String?   @map("confirmation_token") @db.VarChar(255)
+  confirmationSentAt       DateTime? @map("confirmation_sent_at") @db.Timestamptz
+  recoveryToken           String?   @map("recovery_token") @db.VarChar(255)
+  recoverySentAt          DateTime? @map("recovery_sent_at") @db.Timestamptz
+  emailChangeTokenNew     String?   @map("email_change_token_new") @db.VarChar(255)
+  emailChange             String?   @map("email_change") @db.VarChar(255)
+  emailChangeSentAt       DateTime? @map("email_change_sent_at") @db.Timestamptz
+  lastSignInAt            DateTime? @map("last_sign_in_at") @db.Timestamptz
+  rawAppMetaData          Json?     @map("raw_app_meta_data")
+  rawUserMetaData         Json?     @map("raw_user_meta_data")
+  isSuperAdmin            Boolean?  @map("is_super_admin")
+  createdAt               DateTime? @map("created_at") @db.Timestamptz
+  updatedAt               DateTime? @map("updated_at") @db.Timestamptz
+  phone                   String?   @unique
+  phoneConfirmedAt        DateTime? @map("phone_confirmed_at") @db.Timestamptz
+  phoneChange             String?   @default("") @map("phone_change")
+  phoneChangeToken        String?   @default("") @map("phone_change_token") @db.VarChar(255)
+  phoneChangeSentAt       DateTime? @map("phone_change_sent_at") @db.Timestamptz
+  emailChangeTokenCurrent String?   @default("") @map("email_change_token_current") @db.VarChar(255)
+  emailChangeConfirmStatus Int?     @default(0) @map("email_change_confirm_status")
+  bannedUntil             DateTime? @map("banned_until") @db.Timestamptz
+  reauthenticationToken   String?   @default("") @map("reauthentication_token") @db.VarChar(255)
+  reauthenticationSentAt  DateTime? @map("reauthentication_sent_at") @db.Timestamptz
+  isSsoUser              Boolean   @default(false) @map("is_sso_user")
+  deletedAt              DateTime? @map("deleted_at") @db.Timestamptz
+  isAnonymous            Boolean   @default(false) @map("is_anonymous")
+  username               String?   @db.VarChar(255)
+  phoneNumber            String?   @db.VarChar(20)
+  avatarUrl             String?   @map("avatar_url")
+  roleId                String?   @map("role_id") @db.Uuid
+  status                String?   @default("active") @db.VarChar(20)
+
+  // Relations
+  userRole              Role?      @relation(fields: [roleId], references: [id])
+  loginLogs             LoginLog[]
+  verificationCodes     VerificationCode[]
+
+  @@map("users")
+}
+
+// 登录日志表
+model LoginLog {
+  id        String   @id @default(uuid()) @db.Uuid
+  userId    String   @map("user_id") @db.Uuid
+  loginTime DateTime @default(now()) @map("login_time") @db.Timestamptz
+  ipAddress String?  @map("ip_address")
+  userAgent String?  @map("user_agent")
+
+  // Relations
+  user      User     @relation(fields: [userId], references: [id])
+
+  @@map("login_logs")
+}
+
+// 验证码表
+model VerificationCode {
+  id        String   @id @default(uuid()) @db.Uuid
+  userId    String   @map("user_id") @db.Uuid
+  code      String   @db.VarChar(6)
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz
+  expiresAt DateTime @map("expires_at") @db.Timestamptz
+
+  // Relations
+  user      User     @relation(fields: [userId], references: [id])
+
+  @@map("verification_codes")
+}
+
+// 角色表
+model Role {
+  id          String    @id @default(uuid()) @db.Uuid
+  name        String    @unique @db.VarChar(255)
+  description String?
+  status      String?   @default("active") @db.VarChar(20)
+  createdBy   String?   @map("created_by") @db.Uuid
+  updatedBy   String?   @map("updated_by") @db.Uuid
+  createdAt   DateTime  @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt   DateTime  @default(now()) @map("updated_at") @db.Timestamptz
+  deletedAt   DateTime? @map("deleted_at") @db.Timestamptz
+
+  // Relations
+  users            User[]
+  rolePermissions  RolePermission[]
+  roleMenus        RoleMenu[]
+
+  @@map("roles")
+}
+
+// 权限表
+model Permission {
+  id          String    @id @default(uuid()) @db.Uuid
+  name        String    @unique @db.VarChar(255)
+  description String?
+  groupName   String?   @map("group_name") @db.VarChar(255)
+  status      String?   @default("active") @db.VarChar(20)
+  createdAt   DateTime  @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt   DateTime  @default(now()) @map("updated_at") @db.Timestamptz
+  deletedAt   DateTime? @map("deleted_at") @db.Timestamptz
+
+  // Relations
+  rolePermissions RolePermission[]
+
+  @@map("permissions")
+}
+
+// 角色权限关联表
+model RolePermission {
+  roleId       String    @map("role_id") @db.Uuid
+  permissionId String    @map("permission_id") @db.Uuid
+  createdAt    DateTime  @default(now()) @map("created_at") @db.Timestamptz
+  deletedAt    DateTime? @map("deleted_at") @db.Timestamptz
+
+  // Relations
+  role        Role       @relation(fields: [roleId], references: [id], onDelete: Cascade)
+  permission  Permission @relation(fields: [permissionId], references: [id], onDelete: Cascade)
+
+  @@id([roleId, permissionId])
+  @@map("role_permissions")
+}
+
+// 菜单表
+model Menu {
+  id          String    @id @default(uuid()) @db.Uuid
+  name        String    @db.VarChar(255)
+  url         String?   @db.VarChar(255)
+  parentId    String?   @map("parent_id") @db.Uuid
+  sortOrder   Int?      @default(0) @map("sort_order")
+  icon        String?   @db.VarChar(255)
+  description String?
+  component   String?   @db.VarChar(255)
+  createdAt   DateTime  @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt   DateTime  @default(now()) @map("updated_at") @db.Timestamptz
+  deletedAt   DateTime? @map("deleted_at") @db.Timestamptz
+
+  // Relations
+  parent      Menu?     @relation("MenuToMenu", fields: [parentId], references: [id])
+  children    Menu[]    @relation("MenuToMenu")
+  roleMenus   RoleMenu[]
+
+  @@map("menus")
+}
+
+// 角色菜单关联表
+model RoleMenu {
+  roleId    String   @map("role_id") @db.Uuid
+  menuId    String   @map("menu_id") @db.Uuid
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz
+
+  // Relations
+  role      Role     @relation(fields: [roleId], references: [id], onDelete: Cascade)
+  menu      Menu     @relation(fields: [menuId], references: [id], onDelete: Cascade)
+
+  @@id([roleId, menuId])
+  @@map("role_menus")
+}
+
+// 首页sections表
+model HomeSection {
+  id          BigInt   @id @default(autoincrement())
+  title       String
+  description String
+  linkText    String   @map("link_text")
+  linkHref    String   @map("link_href")
+  gradient    String
+  createdAt   DateTime? @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt   DateTime? @default(now()) @map("updated_at") @db.Timestamptz
+  status      String?  @default("在用")
+
+  @@map("home_sections")
+}

@@ -1,45 +1,42 @@
 import { type NextRequest, NextResponse } from 'next/server'
-import { updateSession } from '@/utils/supabase/middleware'
 import { forbidden } from 'next/navigation'
-// import { getCurrentUserRole, getUser } from '@/app/lib/user'
+import { updateSession, hasAdminRole, verifyAuth } from '@/utils/auth/middleware'
 import { isWhiteRoute, isUpSessionRoute } from '@/utils/auth/config'
 import { getMenusStore } from '@/utils/store/role_menu'
 
 export async function middleware(req: NextRequest) {
-  // const nextUrl = req.nextUrl
   if (isWhiteRoute(req.nextUrl.pathname)) return NextResponse.next()
+
   // 不需要认证的路由、但需要登录的路由
   const authRoutes = ['/dashboard', '/profile', '/settings']
-  // 也需要需要管理员权限的路由
+  // 需要管理员权限的路由
   const adminRoutes = ['/admin/roles', '/admin/permissions', '/admin/user']
+
   // 检查当前路由是否需要认证或管理员权限
   const isLoginAuthRoute = authRoutes.some(route => req.nextUrl.pathname.startsWith(route))
   const isAdminRoute = adminRoutes.some(route => req.nextUrl.pathname.startsWith(route))
 
   if (isUpSessionRoute(req.nextUrl.pathname)) {
-    await updateSession(req)
+    return updateSession(req)
   }
 
-  // const user = await getUser()
-  // 检查当前路由是否需要认证
-  // if (!user) return NextResponse.redirect(new URL('/login', req.url))
-  // 检查当前路由是否需要管理员权限
-  if (isLoginAuthRoute) {
-    return NextResponse.next()
+  // 验证用户身份
+  const authResult = await verifyAuth(req)
+  if (!authResult) return NextResponse.redirect(new URL('/login', req.url))
+
+  // 检查是否需要管理员权限
+  if (isAdminRoute) {
+    const isAdmin = await hasAdminRole(req)
+    if (!isAdmin) {
+      return forbidden()
+    }
   }
-  // const userRoles = await getCurrentUserRole()
-  // const menus = getMenusStore()
-  // const hasAdminRole = userRoles?.roles.some(role => role.name === 'admin')
 
-  // // 判断是否具有admin菜单权限
-  // if (isAdminRoute && !hasAdminRole) {
-  //   return forbidden()
-  // }
-
-  // 判断是否具有路由菜单权限
-  // if (menus && !menus.some(menu => req.nextUrl.pathname.startsWith(menu.url))) {
-  //   return forbidden()
-  // }
+  // 检查菜单权限
+  const menus = authResult.menus
+  if (menus && !menus.some(menu => menu.url && req.nextUrl.pathname.startsWith(menu.url))) {
+    return forbidden()
+  }
 
   return NextResponse.next()
 }
@@ -56,7 +53,3 @@ export const config = {
     '/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)',
   ],
 }
-
-
-
-
