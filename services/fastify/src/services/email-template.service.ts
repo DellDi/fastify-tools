@@ -1,6 +1,5 @@
 import { FastifyInstance } from 'fastify';
 import { EmailTemplate, Prisma } from '@prisma/client';
-
 /**
  * 邮件模板服务
  * 提供邮件模板的增删改查功能

@@ -1,7 +1,7 @@
 import { FastifyPluginAsync } from 'fastify';
 import { Type } from '@sinclair/typebox';
-import { EmailTemplateService } from '../../services/email-template.service';
 import { Prisma } from '@prisma/client';
+import { EmailTemplateService } from '../../services/email-template.service.js';
 
 const emailTemplateRoutes: FastifyPluginAsync = async (fastify): Promise<void> => {
   const emailTemplateService = new EmailTemplateService(fastify);

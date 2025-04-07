@@ -24,7 +24,7 @@ export default fp(async (fastify) => {
   });
 }, {
   name: 'prisma',
-  dependencies: ['env'],
+  // dependencies: ['env'],
 });
 
 // 为 Fastify 实例添加 Prisma 类型

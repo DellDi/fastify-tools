@@ -21,12 +21,11 @@ const app: FastifyPluginAsync<AppOptions> = async (
     options: opts,
     forceESM: true,
     ignoreFilter: (path) => {
-      // 忽略原始的 PostgreSQL 插件
-      return path.includes('index') || path.includes('2-pg-link')
+      return path.includes('test')
     }
   })
 
-  // define your routes in one of these
+  // 加载所有路由
   void fastify.register(AutoLoad, {
     dir: path.join(__dirname, 'routes'),
     options: opts,

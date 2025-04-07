@@ -14,6 +14,9 @@ const schema = Type.Object({
   POSTGRES_PASSWORD: Type.String(),
   POSTGRES_DB: Type.String(),
 
+  // 数据库连接字符串
+  DATABASE_URL: Type.String(),
+
   // 邮件服务配置
   SMTP_HOST: Type.String(),
   SMTP_PORT: Type.Number(),

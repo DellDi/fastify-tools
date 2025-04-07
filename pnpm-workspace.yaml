@@ -6,3 +6,5 @@ onlyBuiltDependencies:
   - '@prisma/engines'
   - esbuild
   - prisma
+  - puppeteer
+  - sharp
