@@ -25,9 +25,6 @@
     "packages/*",
     "services/*"
   ],
-  "dependencies": {
-    "@prisma/client": "^6.5.0"
-  },
   "devDependencies": {
     "@types/node": "^20.17.30",
     "@types/pg": "^8.11.11",

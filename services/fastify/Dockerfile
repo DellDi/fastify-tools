@@ -16,9 +16,6 @@ RUN pnpm config set registry https://registry.npmmirror.com
 # 复制工作区配置和根目录依赖
 COPY pnpm-workspace.yaml package.json ./
 
-# 复制 Prisma 工作区配置
-COPY .prisma ./.prisma
-
 # 复制服务目录
 COPY services/fastify ./services/fastify
 

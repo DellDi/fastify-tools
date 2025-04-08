@@ -7,20 +7,19 @@ echo "🔄 正在启动应用..."
 echo "⏳ 等待数据库连接..."
 npx wait-on -t 60000 tcp:${POSTGRES_HOST:-localhost}:${POSTGRES_PORT:-5432}
 
+cd /app/packages/shadcn-next
+
 # 执行数据库迁移
 echo "🔄 执行数据库迁移..."
-npx prisma migrate deploy --schema=./prisma/schema.prisma
+npx prisma migrate deploy
 
 # 生成 Prisma Client
 echo "🔧 生成 Prisma Client..."
-# 从根目录生成 Prisma 客户端
-cd /app
-npx prisma generate --schema=./packages/shadcn-next/prisma/schema.prisma
-cd /app/packages/shadcn-next
+npx prisma generate
 
 # 执行种子数据
 echo "🌱 执行种子数据..."
-npx prisma db seed --schema=./prisma/schema.prisma
+npx prisma db seed
 
 # 启动应用
 echo "🚀 启动应用..."
