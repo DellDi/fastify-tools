@@ -40,6 +40,9 @@ await prisma.role.upsert({
 # 执行数据库迁移
 npx prisma migrate deploy
 
+# 生成 Prisma Client
+npx prisma generate
+
 # 执行种子数据
 npx prisma db seed
 ```

@@ -1,0 +1,15 @@
+{
+  "version": "1.0.0",
+  "projects": [
+    {
+      "name": "shadcn-next",
+      "schema": "../packages/shadcn-next/prisma/schema.prisma",
+      "output": "../packages/shadcn-next/node_modules/.prisma/client"
+    },
+    {
+      "name": "fastify-service",
+      "schema": "../services/fastify/prisma/schema.prisma",
+      "output": "../services/fastify/node_modules/.prisma/client"
+    }
+  ]
+}

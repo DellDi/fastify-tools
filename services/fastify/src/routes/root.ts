@@ -5,7 +5,7 @@ const example: FastifyPluginAsync = async (fastify, opts): Promise<void> => {
     let headers = request.headers
     return {
       headers: headers,
-      'process.env': process.env,
+      // 'process.env': process.env,
     }
   })
 }

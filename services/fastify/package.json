@@ -24,10 +24,10 @@
     "pm2:stop:config": "pm2 stop ecosystem.config.cjs",
     "c8:html": "node node_modules/c8/bin/c8.js -r html node api/index.js",
     "prisma:init": "prisma init",
-    "prisma:generate": "prisma generate",
-    "prisma:migrate:dev": "prisma migrate dev",
-    "prisma:migrate:deploy": "prisma migrate deploy",
-    "prisma:studio": "prisma studio"
+    "prisma:generate": "prisma generate --schema=./prisma/schema.prisma",
+    "prisma:migrate:dev": "prisma migrate dev --schema=./prisma/schema.prisma",
+    "prisma:migrate:deploy": "prisma migrate deploy --schema=./prisma/schema.prisma",
+    "prisma:studio": "prisma studio --schema=./prisma/schema.prisma"
   },
   "dependencies": {
     "@fastify/auth": "^5.0.2",

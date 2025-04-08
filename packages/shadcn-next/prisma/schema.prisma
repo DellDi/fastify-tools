@@ -3,6 +3,7 @@
 
 generator client {
   provider = "prisma-client-js"
+  output   = "../../node_modules/.prisma/client"
 }
 
 datasource db {
@@ -21,61 +22,61 @@ model SeedVersion {
 
 // 审计日志表
 model AuditLogEntry {
-  id          String    @id @default(uuid()) @db.Uuid
-  instanceId  String?   @map("instance_id") @db.Uuid
-  payload     Json?
-  createdAt   DateTime? @map("created_at") @db.Timestamptz
-  ipAddress   String    @default("") @map("ip_address") @db.VarChar(64)
+  id         String    @id @default(uuid()) @db.Uuid
+  instanceId String?   @map("instance_id") @db.Uuid
+  payload    Json?
+  createdAt  DateTime? @map("created_at") @db.Timestamptz
+  ipAddress  String    @default("") @map("ip_address") @db.VarChar(64)
 
   @@map("audit_log_entries")
 }
 
 // 用户表
 model User {
-  id                        String    @id @default(uuid()) @db.Uuid
+  id                       String    @id @default(uuid()) @db.Uuid
   instanceId               String?   @map("instance_id") @db.Uuid
   aud                      String?   @db.VarChar(255)
   role                     String?   @db.VarChar(255)
   email                    String?   @db.VarChar(255)
   encryptedPassword        String?   @map("encrypted_password") @db.VarChar(255)
   emailConfirmedAt         DateTime? @map("email_confirmed_at") @db.Timestamptz
-  invitedAt               DateTime? @map("invited_at") @db.Timestamptz
+  invitedAt                DateTime? @map("invited_at") @db.Timestamptz
   confirmationToken        String?   @map("confirmation_token") @db.VarChar(255)
   confirmationSentAt       DateTime? @map("confirmation_sent_at") @db.Timestamptz
-  recoveryToken           String?   @map("recovery_token") @db.VarChar(255)
-  recoverySentAt          DateTime? @map("recovery_sent_at") @db.Timestamptz
-  emailChangeTokenNew     String?   @map("email_change_token_new") @db.VarChar(255)
-  emailChange             String?   @map("email_change") @db.VarChar(255)
-  emailChangeSentAt       DateTime? @map("email_change_sent_at") @db.Timestamptz
-  lastSignInAt            DateTime? @map("last_sign_in_at") @db.Timestamptz
-  rawAppMetaData          Json?     @map("raw_app_meta_data")
-  rawUserMetaData         Json?     @map("raw_user_meta_data")
-  isSuperAdmin            Boolean?  @map("is_super_admin")
-  createdAt               DateTime? @map("created_at") @db.Timestamptz
-  updatedAt               DateTime? @map("updated_at") @db.Timestamptz
-  phone                   String?   @unique
-  phoneConfirmedAt        DateTime? @map("phone_confirmed_at") @db.Timestamptz
-  phoneChange             String?   @default("") @map("phone_change")
-  phoneChangeToken        String?   @default("") @map("phone_change_token") @db.VarChar(255)
-  phoneChangeSentAt       DateTime? @map("phone_change_sent_at") @db.Timestamptz
-  emailChangeTokenCurrent String?   @default("") @map("email_change_token_current") @db.VarChar(255)
-  emailChangeConfirmStatus Int?     @default(0) @map("email_change_confirm_status")
-  bannedUntil             DateTime? @map("banned_until") @db.Timestamptz
-  reauthenticationToken   String?   @default("") @map("reauthentication_token") @db.VarChar(255)
-  reauthenticationSentAt  DateTime? @map("reauthentication_sent_at") @db.Timestamptz
-  isSsoUser              Boolean   @default(false) @map("is_sso_user")
-  deletedAt              DateTime? @map("deleted_at") @db.Timestamptz
-  isAnonymous            Boolean   @default(false) @map("is_anonymous")
-  username               String?   @db.VarChar(255)
-  phoneNumber            String?   @db.VarChar(20)
-  avatarUrl             String?   @map("avatar_url")
-  roleId                String?   @map("role_id") @db.Uuid
-  status                String?   @default("active") @db.VarChar(20)
+  recoveryToken            String?   @map("recovery_token") @db.VarChar(255)
+  recoverySentAt           DateTime? @map("recovery_sent_at") @db.Timestamptz
+  emailChangeTokenNew      String?   @map("email_change_token_new") @db.VarChar(255)
+  emailChange              String?   @map("email_change") @db.VarChar(255)
+  emailChangeSentAt        DateTime? @map("email_change_sent_at") @db.Timestamptz
+  lastSignInAt             DateTime? @map("last_sign_in_at") @db.Timestamptz
+  rawAppMetaData           Json?     @map("raw_app_meta_data")
+  rawUserMetaData          Json?     @map("raw_user_meta_data")
+  isSuperAdmin             Boolean?  @map("is_super_admin")
+  createdAt                DateTime? @map("created_at") @db.Timestamptz
+  updatedAt                DateTime? @map("updated_at") @db.Timestamptz
+  phone                    String?   @unique
+  phoneConfirmedAt         DateTime? @map("phone_confirmed_at") @db.Timestamptz
+  phoneChange              String?   @default("") @map("phone_change")
+  phoneChangeToken         String?   @default("") @map("phone_change_token") @db.VarChar(255)
+  phoneChangeSentAt        DateTime? @map("phone_change_sent_at") @db.Timestamptz
+  emailChangeTokenCurrent  String?   @default("") @map("email_change_token_current") @db.VarChar(255)
+  emailChangeConfirmStatus Int?      @default(0) @map("email_change_confirm_status")
+  bannedUntil              DateTime? @map("banned_until") @db.Timestamptz
+  reauthenticationToken    String?   @default("") @map("reauthentication_token") @db.VarChar(255)
+  reauthenticationSentAt   DateTime? @map("reauthentication_sent_at") @db.Timestamptz
+  isSsoUser                Boolean   @default(false) @map("is_sso_user")
+  deletedAt                DateTime? @map("deleted_at") @db.Timestamptz
+  isAnonymous              Boolean   @default(false) @map("is_anonymous")
+  username                 String?   @db.VarChar(255)
+  phoneNumber              String?   @db.VarChar(20)
+  avatarUrl                String?   @map("avatar_url")
+  roleId                   String?   @map("role_id") @db.Uuid
+  status                   String?   @default("active") @db.VarChar(20)
 
   // Relations
-  userRole              Role?      @relation(fields: [roleId], references: [id])
-  loginLogs             LoginLog[]
-  verificationCodes     VerificationCode[]
+  userRole          Role?              @relation(fields: [roleId], references: [id])
+  loginLogs         LoginLog[]
+  verificationCodes VerificationCode[]
 
   @@map("users")
 }
@@ -89,7 +90,7 @@ model LoginLog {
   userAgent String?  @map("user_agent")
 
   // Relations
-  user      User     @relation(fields: [userId], references: [id])
+  user User @relation(fields: [userId], references: [id])
 
   @@map("login_logs")
 }
@@ -103,7 +104,7 @@ model VerificationCode {
   expiresAt DateTime @map("expires_at") @db.Timestamptz
 
   // Relations
-  user      User     @relation(fields: [userId], references: [id])
+  user User @relation(fields: [userId], references: [id])
 
   @@map("verification_codes")
 }
@@ -121,9 +122,9 @@ model Role {
   deletedAt   DateTime? @map("deleted_at") @db.Timestamptz
 
   // Relations
-  users            User[]
-  rolePermissions  RolePermission[]
-  roleMenus        RoleMenu[]
+  users           User[]
+  rolePermissions RolePermission[]
+  roleMenus       RoleMenu[]
 
   @@map("roles")
 }
@@ -153,8 +154,8 @@ model RolePermission {
   deletedAt    DateTime? @map("deleted_at") @db.Timestamptz
 
   // Relations
-  role        Role       @relation(fields: [roleId], references: [id], onDelete: Cascade)
-  permission  Permission @relation(fields: [permissionId], references: [id], onDelete: Cascade)
+  role       Role       @relation(fields: [roleId], references: [id], onDelete: Cascade)
+  permission Permission @relation(fields: [permissionId], references: [id], onDelete: Cascade)
 
   @@id([roleId, permissionId])
   @@map("role_permissions")
@@ -175,9 +176,9 @@ model Menu {
   deletedAt   DateTime? @map("deleted_at") @db.Timestamptz
 
   // Relations
-  parent      Menu?     @relation("MenuToMenu", fields: [parentId], references: [id])
-  children    Menu[]    @relation("MenuToMenu")
-  roleMenus   RoleMenu[]
+  parent    Menu?      @relation("MenuToMenu", fields: [parentId], references: [id])
+  children  Menu[]     @relation("MenuToMenu")
+  roleMenus RoleMenu[]
 
   @@map("menus")
 }
@@ -189,8 +190,8 @@ model RoleMenu {
   createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz
 
   // Relations
-  role      Role     @relation(fields: [roleId], references: [id], onDelete: Cascade)
-  menu      Menu     @relation(fields: [menuId], references: [id], onDelete: Cascade)
+  role Role @relation(fields: [roleId], references: [id], onDelete: Cascade)
+  menu Menu @relation(fields: [menuId], references: [id], onDelete: Cascade)
 
   @@id([roleId, menuId])
   @@map("role_menus")
@@ -198,15 +199,15 @@ model RoleMenu {
 
 // 首页sections表
 model HomeSection {
-  id          BigInt   @id @default(autoincrement())
+  id          BigInt    @id @default(autoincrement())
   title       String
   description String
-  linkText    String   @map("link_text")
-  linkHref    String   @map("link_href")
+  linkText    String    @map("link_text")
+  linkHref    String    @map("link_href")
   gradient    String
   createdAt   DateTime? @default(now()) @map("created_at") @db.Timestamptz
   updatedAt   DateTime? @default(now()) @map("updated_at") @db.Timestamptz
-  status      String?  @default("在用")
+  status      String?   @default("在用")
 
   @@map("home_sections")
 }

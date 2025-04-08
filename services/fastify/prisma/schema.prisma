@@ -3,6 +3,7 @@
 
 generator client {
   provider = "prisma-client-js"
+  output   = "../../node_modules/.prisma/client"
 }
 
 datasource db {
@@ -12,14 +13,14 @@ datasource db {
 
 // 邮件模板模型
 model EmailTemplate {
-  id         String     @id @default(uuid()) @db.Uuid
-  name       String     @db.VarChar(255)
-  subject    String     @db.VarChar(255)
-  body       String
-  variables  Json?
-  createdAt  DateTime   @default(now()) @map("created_at") @db.Timestamptz()
-  updatedAt  DateTime   @default(now()) @map("updated_at") @db.Timestamptz()
-  emailLogs  EmailLog[]
+  id        String     @id @default(uuid()) @db.Uuid
+  name      String     @db.VarChar(255)
+  subject   String     @db.VarChar(255)
+  body      String
+  variables Json?
+  createdAt DateTime   @default(now()) @map("created_at") @db.Timestamptz()
+  updatedAt DateTime   @default(now()) @map("updated_at") @db.Timestamptz()
+  emailLogs EmailLog[]
 
   @@map("email_templates")
 }
@@ -63,6 +64,5 @@ model Subscription {
 
   @@map("subscriptions")
 }
-
 
 // 添加字段注释

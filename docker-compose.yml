@@ -7,7 +7,7 @@ services:
   # 将 POSTGRES_HOST 环境变量指向该共享容器的主机名或 IP
   postgres:
     image: postgres:17-alpine
-    container_name: fastify-postgres
+    container_name: fastify-postgres-17
     restart: unless-stopped
     environment:
       POSTGRES_USER: ${POSTGRES_USER:-postgres}
@@ -32,8 +32,8 @@ services:
   # Fastify 后端服务
   fastify:
     build:
-      context: ./services/fastify
-      dockerfile: Dockerfile
+      context: .
+      dockerfile: services/fastify/Dockerfile
     container_name: fastify-service
     restart: unless-stopped
     ports:
@@ -57,11 +57,11 @@ services:
   # Next.js 前端服务
   shadcn-next:
     build:
-      context: ./packages/shadcn-next
+      context: .
+      dockerfile: packages/shadcn-next/Dockerfile
       args:
         NEXT_PUBLIC_BASE_PATH: /next
         NEXT_PUBLIC_API_URL: /fastify
-      dockerfile: Dockerfile
     container_name: shadcn-next
     restart: unless-stopped
     ports:
@@ -78,6 +78,7 @@ services:
       - POSTGRES_DB=${POSTGRES_DB:-postgres}
       - DATABASE_URL=postgresql://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-postgres}@postgres:5432/${POSTGRES_DB:-postgres}
     depends_on:
+      - postgres
       - fastify
     networks:
       - fastify-network

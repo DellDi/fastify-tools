@@ -10,7 +10,11 @@
     "dev": "concurrently -n \"NEXT,ANOTHER\" -c \"blue,green\" \"next dev -p 3001 --turbopack\"",
     "build": "next build",
     "start": "next start -p 3001",
-    "lint": "next lint"
+    "lint": "next lint",
+    "prisma:generate": "prisma generate --schema=./prisma/schema.prisma",
+    "prisma:migrate:dev": "prisma migrate dev --schema=./prisma/schema.prisma",
+    "prisma:migrate:deploy": "prisma migrate deploy --schema=./prisma/schema.prisma",
+    "prisma:studio": "prisma studio --schema=./prisma/schema.prisma"
   },
   "dependencies": {
     "@hookform/resolvers": "^3.9.1",
