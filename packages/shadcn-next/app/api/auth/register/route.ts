@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server'
-import { createServerBaseClient } from '@/utils/supabase/server'
+
 
 export async function POST(request: Request) {
   const { username, email, password } = await request.json()

@@ -1,5 +1,5 @@
 import { NextResponse, type NextRequest } from 'next/server'
-import { createServerBaseClient } from '@/utils/supabase/server'
+
 import { resetAllInfo } from '@/app/lib/user'
 
 export async function POST(request: NextRequest) {

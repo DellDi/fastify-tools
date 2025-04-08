@@ -1,7 +1,7 @@
 import { redirect } from 'next/navigation'
 import UserManagement from './user-management'
 import { getCurrentUser } from '@/app/lib/user'
-import { createServerBaseClient } from '@/utils/supabase/server'
+
 
 export default async function UsersPage() {
   const user = await getCurrentUser()

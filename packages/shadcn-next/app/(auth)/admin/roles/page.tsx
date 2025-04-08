@@ -1,6 +1,6 @@
 import { redirect } from 'next/navigation'
 import RoleManagement from './role-management'
-import { createServerBaseClient } from '@/utils/supabase/server'
+
 
 export default async function UsersPage() {
   const supabase = await createServerBaseClient()

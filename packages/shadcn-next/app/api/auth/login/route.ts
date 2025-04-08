@@ -1,6 +1,6 @@
 'use server'
 import { NextResponse } from 'next/server'
-import { createServerBaseClient } from '@/utils/supabase/server'
+
 import { initUserStore } from '@/app/lib/user'
 
 export async function POST(request: Request) {

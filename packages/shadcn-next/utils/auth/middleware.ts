@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
-import { prisma } from '@/utils/prisma/client'
+import { prisma } from '../../lib/prisma'
 import { verify } from 'jsonwebtoken'
 import { type Menu, type Permission, type Role, type User } from '@prisma/client'
 

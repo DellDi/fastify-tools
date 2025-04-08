@@ -2,7 +2,6 @@ import { type NextRequest, NextResponse } from 'next/server'
 import { forbidden } from 'next/navigation'
 import { updateSession, hasAdminRole, verifyAuth } from '@/utils/auth/middleware'
 import { isWhiteRoute, isUpSessionRoute } from '@/utils/auth/config'
-import { getMenusStore } from '@/utils/store/role_menu'
 
 export async function middleware(req: NextRequest) {
   if (isWhiteRoute(req.nextUrl.pathname)) return NextResponse.next()

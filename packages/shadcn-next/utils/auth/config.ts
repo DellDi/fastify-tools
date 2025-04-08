@@ -1,5 +1,6 @@
 // 白名单路由，无需身份验证
 export const whiteRoutes = [
+  '/',
   '/login',
   '/register',
   '/forgot-password',

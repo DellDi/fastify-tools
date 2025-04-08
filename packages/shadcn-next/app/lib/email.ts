@@ -1,5 +1,5 @@
 import crypto from 'crypto'
-import { createServerBaseClient } from '@/utils/supabase/server'
+
 
 export async function sendVerificationEmail(authUser: {
   user: { id: string; email: string }

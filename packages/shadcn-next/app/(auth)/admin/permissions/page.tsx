@@ -1,6 +1,6 @@
 import { redirect } from 'next/navigation'
 import PermissionManagement from './permission-management'
-import { createServerBaseClient } from '@/utils/supabase/server'
+
 
 export default async function PermissionsPage() {
   const supabase = await createServerBaseClient()

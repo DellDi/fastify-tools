@@ -1,7 +1,7 @@
 'use client'
 
 import React, { ErrorInfo } from 'react'
-import { Button } from "@/components/ui/button"
+import { Button } from '@/components/ui/button'
 
 interface ErrorBoundaryProps {
   children: React.ReactNode
@@ -12,7 +12,10 @@ interface ErrorBoundaryState {
   error?: Error
 }
 
-export class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoundaryState> {
+export class ErrorBoundary extends React.Component<
+  ErrorBoundaryProps,
+  ErrorBoundaryState
+> {
   constructor(props: ErrorBoundaryProps) {
     super(props)
     this.state = { hasError: false }
@@ -32,9 +35,9 @@ export class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoun
     if (this.state.hasError) {
       // 你可以自定义降级 UI 并渲染
       return (
-        <div className="flex flex-col items-center justify-center min-h-screen bg-gray-100">
+        <div className="flex flex-col items-center justify-center min-h-screen ">
           <h2 className="text-2xl font-bold mb-4">出错了</h2>
-          <p className="text-gray-600 mb-4">很抱歉，发生了一些错误。</p>
+          <p className="mb-4">很抱歉，发生了一些错误。</p>
           <Button onClick={() => this.setState({ hasError: false })}>
             重试
           </Button>
@@ -45,4 +48,3 @@ export class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoun
     return this.props.children
   }
 }
-

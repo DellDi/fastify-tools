@@ -1,7 +1,7 @@
 'use server'
 
 import { type User } from '@supabase/supabase-js'
-import { createServerBaseClient } from '@/utils/supabase/server'
+
 
 export async function initRolePermission(authUser: User) {
   const defaultRoleName = authUser.role === 'admin' ? authUser.role : 'user' // 默认角色为 user
