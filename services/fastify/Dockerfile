@@ -20,8 +20,11 @@ RUN pnpm install
 
 COPY  . .
 
+# 添加执行权限到启动脚本
+RUN chmod +x docker-start.sh
+
 # Expose the port the app runs on
 EXPOSE 3000
 
 # Command to run the application
-CMD ["pnpm", "start"]
+CMD ["./docker-start.sh"]

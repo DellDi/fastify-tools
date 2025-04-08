@@ -10,6 +10,15 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+// 种子版本控制表
+model SeedVersion {
+  id        String   @id
+  version   String
+  appliedAt DateTime @default(now()) @map("applied_at") @db.Timestamptz
+
+  @@map("seed_versions")
+}
+
 // 审计日志表
 model AuditLogEntry {
   id          String    @id @default(uuid()) @db.Uuid

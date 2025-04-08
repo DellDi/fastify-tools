@@ -25,6 +25,9 @@ RUN rm -f .env.local
 # Copy the rest of the files
 COPY  . .
 
+# 添加执行权限到启动脚本
+RUN chmod +x docker-start.sh
+
 # Set the environment variable for the base path
 ARG NEXT_PUBLIC_BASE_PATH
 ENV NEXT_PUBLIC_BASE_PATH=${NEXT_PUBLIC_BASE_PATH}
@@ -38,4 +41,4 @@ RUN pnpm run build
 EXPOSE 3001
 
 # Command to run the application
-CMD ["pnpm", "start"]
+CMD ["./docker-start.sh"]
