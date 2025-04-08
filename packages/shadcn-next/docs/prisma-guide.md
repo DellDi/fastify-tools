@@ -131,3 +131,9 @@ npx prisma db seed
 ```
 
 这样简化的流程更适合容器化部署，无需依赖额外的数据库命令行工具。
+
+## 重置数据库
+
+```bash
+npx prisma migrate reset --force
+```
