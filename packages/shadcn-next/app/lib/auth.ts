@@ -2,7 +2,6 @@
 
 import { type User } from '@supabase/supabase-js'
 
-
 export async function initRolePermission(authUser: User) {
   const defaultRoleName = authUser.role === 'admin' ? authUser.role : 'user' // 默认角色为 user
   const supabase = await createServerBaseClient()
@@ -15,7 +14,6 @@ export async function initRolePermission(authUser: User) {
     .single()
 
     if (roleError || !role) {
-      console.log('🚀 ~ file:auth.ts, line:20-----', roleError)
       return new Error(`角色 "${defaultRoleName}" 不存在`)
     }
 
@@ -26,7 +24,6 @@ export async function initRolePermission(authUser: User) {
     .eq('id', authUser.id)
 
     if (updateRoleError) {
-      console.log('🚀 ~ file:auth.ts, line:31-----', updateRoleError)
       return new Error(`更新角色失败: ${updateRoleError.message}`)
     }
   } catch (e) {

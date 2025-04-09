@@ -34,12 +34,10 @@ export default async function DashboardPage() {
         </div>
         <div
           className="chart-wrapper mx-auto flex flex-col flex-wrap items-start justify-center gap-4 sm:flex-row sm:p-1">
-          {/*lg:max-w-[18rem] xl:max-w-[20rem] lg:max-w-[20rem] w-full*/}
           <div className="grid flex-1 max-w-[38rem] gap-4">
             <Card1/>
             <Card2/>
           </div>
-          {/*lg:max-w-[24rem]*/}
           <div className="grid max-w-[32rem] gap-4">
             <ProgressCards/>
           </div>

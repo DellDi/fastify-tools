@@ -5,7 +5,6 @@ import { Search } from 'lucide-react'
 import { Input } from '@/components/ui/input'
 import { ToggleTheme } from '@/components/custom/ToggleTheme'
 
-// eslint-disable-next-line react/display-name
 const Layout = async ({ children }: {
   children: React.ReactNode
 }) => {

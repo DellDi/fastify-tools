@@ -65,7 +65,7 @@ export function TasksTable() {
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
   const [selectedTask, setSelectedTask] = useState<Task | null>(null)
   const { toast } = useToast()
-  const [statusFilter, setStatusFilter] = useState<string>('') // 在 TasksTable 函数内，useState 部分添加新的状态变量
+  const [statusFilter, setStatusFilter] = useState<string>('all') // 在 TasksTable 函数内，useState 部分添加新的状态变量
   const [typeFilter, setTypeFilter] = useState<string>('jira')
   const { baseToolApiUrl } = useBasePath()
   
@@ -73,10 +73,10 @@ export function TasksTable() {
     setLoading(true)
     try {
       const skip = (currentPage - 1) * limit
-      let url = `${baseToolApiUrl}/scrapy/api/jira/api/tasks?skip=${skip}&limit=${limit}`
+      let url = `${baseToolApiUrl}/scrapy/api/jira/tasks?skip=${skip}&limit=${limit}`
 
       // 添加筛选参数到 URL
-      if (statusFilter !== '') {
+      if (statusFilter !== 'all') {
         url += `&status=${statusFilter}`
       }
       if (typeFilter !== 'jira') {
@@ -85,8 +85,7 @@ export function TasksTable() {
 
       const response = await fetch(url, {
         headers: {
-          'Accept-Language': 'zh-CN,zh;q=0.9,en;q=0.8,en-GB;q=0.7,en-US;q=0.6',
-          Authorization: `Bearer ${process.env.JWT_SECRET}`,
+          Authorization: `Bearer delldi-808611`,
         },
       })
 
@@ -95,7 +94,8 @@ export function TasksTable() {
       }
 
       const data = await response.json()
-      setTasks(data.items || data) // Adjust based on actual API response structure
+      console.log("🚀 ~ fetchTasks ~ data:", data)
+      setTasks(data.tasks || []) // Adjust based on actual API response structure
 
       // Calculate total pages if total count is provided in the response
       if (data.total) {
@@ -118,7 +118,7 @@ export function TasksTable() {
   ) => {
     try {
       const response = await fetch(
-        `${process.env.TOOL_FAST_API_URL}/scrapy/api/jira/api/tasks`,
+        `${process.env.TOOL_FAST_API_URL}/scrapy/api/jira/tasks`,
         {
           method: 'POST',
           headers: {
@@ -153,7 +153,7 @@ export function TasksTable() {
   const handleDeleteTask = async (taskId: string) => {
     try {
       const response = await fetch(
-        `https://poc.new-see.com:88/scrapy/api/jira/task/${taskId}`,
+        `${process.env.NEXT_PUBLIC_FAST_API_URL}/scrapy/api/jira/task/${taskId}`,
         {
           method: 'DELETE',
           headers: {
@@ -199,7 +199,7 @@ export function TasksTable() {
   const handleDownload = async (taskId: string) => {
     try {
       const response = await fetch(
-        `https://poc.new-see.com:88/api/jira/download/${taskId}`,
+        `${process.env.NEXT_PUBLIC_FAST_API_URL}/api/jira/download/${taskId}`,
         {
           headers: {
             Authorization: 'Bearer delldi-808611',
@@ -286,7 +286,7 @@ export function TasksTable() {
                 <SelectValue placeholder="选择状态" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">全部</SelectItem>
+                <SelectItem value="all">全部</SelectItem>
                 <SelectItem value="completed">已完成</SelectItem>
                 <SelectItem value="pending">进行中</SelectItem>
                 <SelectItem value="failed">失败</SelectItem>
@@ -316,7 +316,7 @@ export function TasksTable() {
               className="mr-2"
               onClick={() => {
                 setStatusFilter('all')
-                setTypeFilter('all')
+                setTypeFilter('jira')
               }}
             >
               <Filter className="h-4 w-4 mr-2" />

@@ -27,23 +27,23 @@ export default function RootLayout({
   children: React.ReactNode
 }>) {
   return (
-    <html lang="en">
-    <body
-      className={`${geistSans.variable} ${geistMono.variable} antialiased h-screen dark:bg-dark-bg dark:text-dark-text`}
-      style={{ margin: 0, padding: 0 }}
-    >
-    <ThemeProvider
-      attribute="class"
-      defaultTheme="system"
-      enableSystem
-      disableTransitionOnChange
-    >
-      <ErrorBoundary>
-        {children}
-      </ErrorBoundary>
-      <Toaster/>
-    </ThemeProvider>
-    </body>
+    // 在这里添加 suppressHydrationWarning
+    <html lang="en" suppressHydrationWarning>
+      <body
+        className={`${geistSans.variable} ${geistMono.variable} antialiased h-screen dark:bg-dark-bg dark:text-dark-text`}
+        style={{ margin: 0, padding: 0 }}
+      >
+        {/* ThemeProvider 是导致 html 标签属性变化的原因 */}
+        <ThemeProvider
+          attribute="class" // 如果你是用 class 来切换主题，推荐加上 attribute="class"
+          defaultTheme="system" // 显式设置默认主题可能也有帮助
+          enableSystem
+          disableTransitionOnChange
+        >
+          <ErrorBoundary>{children}</ErrorBoundary>
+          <Toaster />
+        </ThemeProvider>
+      </body>
     </html>
   )
 }
