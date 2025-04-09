@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { useToast } from '@/components/ui/use-toast'
-import { createClient } from '@/utils/supabase/client'
+
 import { usePermissions } from '@/hooks/use-permissions'
 
 export default function RoleManagement() {

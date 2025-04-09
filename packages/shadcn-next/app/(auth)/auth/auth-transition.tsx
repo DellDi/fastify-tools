@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation'
 import { motion } from 'framer-motion'
 import { Loader2, CheckCircle, XCircle } from 'lucide-react'
 import { toast } from '@/components/ui/use-toast'
-import { createClient } from '@/utils/supabase/client'
+
 import { initUserStore } from '@/app/lib/user'
 import { initRolePermission } from '@/app/lib/auth'
 

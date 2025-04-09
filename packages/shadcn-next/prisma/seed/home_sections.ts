@@ -4,35 +4,35 @@ const prisma = new PrismaClient();
 export async function seedHomeSections() {
   const sections = [
     {
-      title: '零配置',
-      description: '自动编译并打包，从一开始就为生产环境而优化。',
-      linkText: '中文文档',
-      linkHref: '/login',
+      title: 'jira中心',
+      description: '解决了saas组非标签立项的bug单和运维单的检索过程',
+      linkText: 'SaaS专项单',
+      linkHref: '/jira/personal',
       gradient: 'from-blue-400 to-purple-500',
       status: '在用'
     },
     {
-      title: '混合模式：SSG和SSR',
-      description: '在一个项目中同时支持静态生成页面（SSG）和服务器端渲染页面（SSR）。',
-      linkText: '中文文档',
-      linkHref: '/login',
+      title: '首页看板',
+      description: '统计中心的专项个人看板概览视图',
+      linkText: '进入首页',
+      linkHref: '/',
       gradient: 'from-green-400 to-cyan-500',
       status: '在用'
     },
     {
-      title: '增量静态生成',
-      description: '在构建之后以增量的方式为新增加的页面生成静态页面。',
-      linkText: '中文文档',
-      linkHref: '/login',
-      gradient: 'from-yellow-400 to-orange-500',
+      title: '密码解析',
+      description: '可以解析出newsee的服务器对应的密文的密码，也可以做加密',
+      linkText: '试试看',
+      linkHref: '/password/newsee',
+      gradient: 'from-pink-400 to-red-500',
       status: '在用'
     },
     {
-      title: '支持 TypeScript',
-      description: '自动配置并编译 TypeScript。',
-      linkText: '中文文档',
+      title: 'RAG与爬虫',
+      description: '解决获取新视窗数据格式文档的规范化的相关难题，支持RAG知识获取、dify对接',
+      linkText: '进入爬虫中心',
       linkHref: '/login',
-      gradient: 'from-pink-400 to-red-500',
+      gradient: 'from-yellow-400 to-orange-500',
       status: '在用'
     },
     {

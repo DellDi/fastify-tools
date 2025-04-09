@@ -4,7 +4,7 @@ import { useState, useEffect, useCallback } from 'react'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { useToast } from '@/components/ui/use-toast'
-import { createClient } from '@/utils/supabase/client'
+
 import { usePermissions } from '@/hooks/use-permissions'
 import { type Role, type User } from '@supabase/supabase-js'
 import { Skeleton } from '@/components/ui/skeleton'

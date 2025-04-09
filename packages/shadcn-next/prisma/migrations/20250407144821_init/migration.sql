@@ -1,3 +1,13 @@
+-- SeedVersion
+CREATE TABLE "seed_versions" (
+    "id" VARCHAR(255) NOT NULL,
+    "version" VARCHAR(255) NOT NULL,
+    "applied_at" TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+    CONSTRAINT "seed_versions_pkey" PRIMARY KEY ("id")
+);
+
+
 -- CreateTable
 CREATE TABLE "audit_log_entries" (
     "id" UUID NOT NULL,

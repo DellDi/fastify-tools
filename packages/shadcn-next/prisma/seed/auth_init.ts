@@ -15,6 +15,9 @@ export async function seedAuthInit() {
     { name: 'jira:create', description: '创建Jira', groupName: 'jira' },
     { name: 'aigc:chat', description: '使用Chat工具', groupName: 'aigc' },
     { name: 'aigc:model', description: '调优模型', groupName: 'aigc' },
+    { name: 'aigc:task', description: '任务管理', groupName: 'aigc' },
+    { name: 'aigc:task:download', description: '任务下载', groupName: 'aigc' },
+    { name: 'aigc:task:delete', description: '任务删除', groupName: 'aigc' },
     { name: 'settings:view', description: '查看设置', groupName: 'settings' },
     { name: 'role:view', description: '查看角色', groupName: 'role' },
     { name: 'role:create', description: '创建角色', groupName: 'role' },
@@ -48,6 +51,8 @@ export async function seedAuthInit() {
     { parentName: 'jira中心', name: '创建工单', url: '/jira/create' },
     { parentName: 'AIGC', name: 'Chat工具', url: '/aigc/chat' },
     { parentName: 'AIGC', name: '模型调优', url: '/aigc/model' },
+    { parentName: 'AIGC', name: '爬虫管理', url: '/aigc/crawler' },
+    { parentName: 'AIGC', name: 'DIFY上传', url: '/aigc/dify' },
     { parentName: '设置', name: '账户', url: '/settings' },
     { parentName: '设置', name: '角色', url: '/role' }
   ]

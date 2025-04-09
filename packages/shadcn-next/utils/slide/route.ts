@@ -106,6 +106,10 @@ export const routesConfig = {
           title: '模型调优',
           url: '/aigc/model',
         },
+        {
+          title: '任务管理',
+          url: '/aigc/task',
+        },
       ],
     },
     {

@@ -3,39 +3,39 @@ import Marquee from '@/components/ui/marquee'
 
 const reviews = [
   {
-    name: 'Jack',
-    username: '@jack',
-    body: 'I\'ve never seen anything like this before. It\'s amazing. I love it.',
+    name: '张伟',
+    username: '@zhangwei',
+    body: '这个产品真是太棒了！用户体验一流',
     img: 'https://avatar.vercel.sh/jack',
   },
   {
-    name: 'Jill',
-    username: '@jill',
-    body: 'I don\'t know what to say. I\'m speechless. This is amazing.',
+    name: '李娜',
+    username: '@lina',
+    body: '界面设计很美观，操作也很流畅',
     img: 'https://avatar.vercel.sh/jill',
   },
   {
-    name: 'John',
-    username: '@john',
-    body: 'I\'m at a loss for words. This is amazing. I love it.',
+    name: '王强',
+    username: '@wangqiang',
+    body: '功能非常强大，完全满足我的需求',
     img: 'https://avatar.vercel.sh/john',
   },
   {
-    name: 'Jane',
-    username: '@jane',
-    body: 'I\'m at a loss for words. This is amazing. I love it.',
+    name: '赵敏',
+    username: '@zhaomin',
+    body: '客服响应很快，问题解决得很及时',
     img: 'https://avatar.vercel.sh/jane',
   },
   {
-    name: 'Jenny',
-    username: '@jenny',
-    body: 'I\'m at a loss for words. This is amazing. I love it.',
+    name: '刘芳',
+    username: '@liufang',
+    body: '性价比超高，强烈推荐给大家',
     img: 'https://avatar.vercel.sh/jenny',
   },
   {
-    name: 'James',
-    username: '@james',
-    body: 'I\'m at a loss for words. This is amazing. I love it.',
+    name: '陈明',
+    username: '@chenming',
+    body: '使用起来非常顺手，学习曲线平缓',
     img: 'https://avatar.vercel.sh/james',
   },
 ]
@@ -49,10 +49,10 @@ const ReviewCard = ({
   username,
   body,
 }: {
-  img: string;
-  name: string;
-  username: string;
-  body: string;
+  img: string
+  name: string
+  username: string
+  body: string
 }) => {
   return (
     <figure
@@ -61,11 +61,11 @@ const ReviewCard = ({
         // light styles
         'border-gray-950/[.1] bg-gray-950/[.01] hover:bg-gray-950/[.05]',
         // dark styles
-        'dark:border-gray-50/[.1] dark:bg-gray-50/[.10] dark:hover:bg-gray-50/[.15]',
+        'dark:border-gray-50/[.1] dark:bg-gray-50/[.10] dark:hover:bg-gray-50/[.15]'
       )}
     >
       <div className="flex flex-row items-center gap-2">
-        <img className="rounded-full" width="32" height="32" alt="" src={img}/>
+        <img className="rounded-full" width="32" height="32" alt="" src={img} />
         <div className="flex flex-col">
           <figcaption className="text-sm font-medium dark:text-white">
             {name}
@@ -80,8 +80,7 @@ const ReviewCard = ({
 
 export function MarqueeDemoVertical() {
   return (
-    <div
-      className="relative flex h-[400px] w-full flex-col items-center justify-center overflow-hidden rounded-lg border bg-background md:shadow-xl">
+    <div className="relative flex h-[400px] w-full flex-col items-center justify-center overflow-hidden rounded-lg border bg-background md:shadow-xl">
       <Marquee pauseOnHover className="[--duration:20s]">
         {firstRow.map((review) => (
           <ReviewCard key={review.username} {...review} />

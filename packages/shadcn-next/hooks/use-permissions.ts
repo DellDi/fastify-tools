@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { createClient } from '@/utils/supabase/client'
+
 
 export function usePermissions() {
   const [permissions, setPermissions] = useState<string[]>([])
