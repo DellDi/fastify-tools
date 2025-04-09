@@ -68,24 +68,21 @@ export function TasksTable() {
   const [statusFilter, setStatusFilter] = useState<string>('all') // 在 TasksTable 函数内，useState 部分添加新的状态变量
   const [typeFilter, setTypeFilter] = useState<string>('jira')
   const { baseToolApiUrl } = useBasePath()
-  
+
   const fetchTasks = async () => {
     setLoading(true)
     try {
       const skip = (currentPage - 1) * limit
-      let url = `${baseToolApiUrl}/scrapy/api/jira/tasks?skip=${skip}&limit=${limit}`
+      let url = `${baseToolApiUrl}/scrapy/api/${typeFilter}/tasks?skip=${skip}&limit=${limit}`
 
       // 添加筛选参数到 URL
       if (statusFilter !== 'all') {
         url += `&status=${statusFilter}`
       }
-      if (typeFilter !== 'jira') {
-        url += `&task_mode=${typeFilter}`
-      }
 
       const response = await fetch(url, {
         headers: {
-          Authorization: `Bearer delldi-808611`,
+          Authorization: `Bearer ${process.env.NEXT_PUBLIC_FAST_API_KEY}`,
         },
       })
 
@@ -94,7 +91,6 @@ export function TasksTable() {
       }
 
       const data = await response.json()
-      console.log("🚀 ~ fetchTasks ~ data:", data)
       setTasks(data.tasks || []) // Adjust based on actual API response structure
 
       // Calculate total pages if total count is provided in the response
@@ -118,12 +114,12 @@ export function TasksTable() {
   ) => {
     try {
       const response = await fetch(
-        `${process.env.TOOL_FAST_API_URL}/scrapy/api/jira/tasks`,
+        `${baseToolApiUrl}/scrapy/api/${typeFilter}/tasks`,
         {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
-            Authorization: 'Bearer delldi-808611',
+            Authorization: `Bearer ${process.env.NEXT_PUBLIC_FAST_API_KEY}`,
           },
           body: JSON.stringify(newTask),
         }
@@ -157,7 +153,7 @@ export function TasksTable() {
         {
           method: 'DELETE',
           headers: {
-            Authorization: 'Bearer delldi-808611',
+            Authorization: `Bearer ${process.env.NEXT_PUBLIC_FAST_API_KEY}`,
           },
         }
       )
@@ -199,10 +195,10 @@ export function TasksTable() {
   const handleDownload = async (taskId: string) => {
     try {
       const response = await fetch(
-        `${process.env.NEXT_PUBLIC_FAST_API_URL}/api/jira/download/${taskId}`,
+        `${process.env.NEXT_PUBLIC_FAST_API_URL}/scrapy/api/jira/download/${taskId}`,
         {
           headers: {
-            Authorization: 'Bearer delldi-808611',
+            Authorization: `Bearer ${process.env.NEXT_PUBLIC_FAST_API_KEY}`,
           },
         }
       )
@@ -302,7 +298,7 @@ export function TasksTable() {
             </label>
             <Select value={typeFilter} onValueChange={setTypeFilter}>
               <SelectTrigger id="type-filter">
-                <SelectValue placeholder="选择类型"  />
+                <SelectValue placeholder="选择类型" />
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="jira">Jira</SelectItem>
@@ -316,7 +312,7 @@ export function TasksTable() {
               className="mr-2"
               onClick={() => {
                 setStatusFilter('all')
-                setTypeFilter('jira')
+                setTypeFilter(typeFilter)
               }}
             >
               <Filter className="h-4 w-4 mr-2" />
