@@ -62,6 +62,7 @@ services:
       args:
         NEXT_PUBLIC_BASE_PATH: /next
         NEXT_PUBLIC_API_URL: /fastify
+        NEXT_PUBLIC_FAST_API_URL: https://poc.new-see.com:88
     container_name: shadcn-next
     restart: unless-stopped
     ports:
