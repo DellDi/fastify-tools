@@ -16,13 +16,15 @@ interface DeleteTaskDialogProps {
   open: boolean
   onOpenChange: (open: boolean) => void
   taskId: string
-  onDelete: (taskId: string) => void
+  mode: string
+  onDelete: (taskId: string, mode: string) => void
 }
 
 export function DeleteTaskDialog({
   open,
   onOpenChange,
   taskId,
+  mode,
   onDelete,
 }: DeleteTaskDialogProps) {
   const [isDeleting, setIsDeleting] = useState(false)
@@ -30,7 +32,7 @@ export function DeleteTaskDialog({
   const handleDelete = async () => {
     setIsDeleting(true)
     try {
-      await onDelete(taskId)
+      await onDelete(taskId, mode)
     } finally {
       setIsDeleting(false)
     }

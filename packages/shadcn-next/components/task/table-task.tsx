@@ -44,16 +44,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
-import { useBasePath } from '@/hooks/use-path'
-
-interface Task {
-  task_id: string
-  task_mode: string
-  status: string
-  message: string
-  created_at: string
-  updated_at: string
-}
+import { Task, CreateTaskRequest, CreateKmsRequest } from './type'
+import { fetchFastApi } from '@/utils/fetch/fastFetch'
 
 export function TasksTable() {
   const [tasks, setTasks] = useState<Task[]>([])
@@ -67,30 +59,27 @@ export function TasksTable() {
   const { toast } = useToast()
   const [statusFilter, setStatusFilter] = useState<string>('all') // 在 TasksTable 函数内，useState 部分添加新的状态变量
   const [typeFilter, setTypeFilter] = useState<string>('jira')
-  const { baseToolApiUrl } = useBasePath()
 
   const fetchTasks = async () => {
     setLoading(true)
     try {
       const skip = (currentPage - 1) * limit
-      let url = `${baseToolApiUrl}/scrapy/api/${typeFilter}/tasks?skip=${skip}&limit=${limit}`
+      let url = `/scrapy/api/${typeFilter}/tasks?skip=${skip}&limit=${limit}`
 
       // 添加筛选参数到 URL
       if (statusFilter !== 'all') {
         url += `&status=${statusFilter}`
       }
 
-      const response = await fetch(url, {
-        headers: {
-          Authorization: `Bearer ${process.env.NEXT_PUBLIC_FAST_API_KEY}`,
-        },
+      const response = await fetchFastApi(url, {
+        method: 'GET',
       })
 
-      if (!response.ok) {
-        throw new Error('Failed to fetch tasks')
+      if (response instanceof Error) {
+        throw response
       }
 
-      const data = await response.json()
+      const data = await response
       setTasks(data.tasks || []) // Adjust based on actual API response structure
 
       // Calculate total pages if total count is provided in the response
@@ -110,24 +99,19 @@ export function TasksTable() {
   }
 
   const handleCreateTask = async (
-    newTask: Omit<Task, 'task_id' | 'created_at' | 'updated_at'>
+    newTask: CreateTaskRequest | CreateKmsRequest,
+    type: string
   ) => {
     try {
-      const response = await fetch(
-        `${baseToolApiUrl}/scrapy/api/${typeFilter}/tasks`,
-        {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            Authorization: `Bearer ${process.env.NEXT_PUBLIC_FAST_API_KEY}`,
-          },
-          body: JSON.stringify(newTask),
-        }
-      )
-
-      if (!response.ok) {
-        throw new Error('Failed to create task')
-      }
+      await fetchFastApi(`/scrapy/api/${type}/crawl`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          ...newTask,
+        }),
+      })
 
       toast({
         title: '创建成功',
@@ -146,21 +130,11 @@ export function TasksTable() {
     }
   }
 
-  const handleDeleteTask = async (taskId: string) => {
+  const handleDeleteTask = async (taskId: string, mode: string) => {
     try {
-      const response = await fetch(
-        `${process.env.NEXT_PUBLIC_FAST_API_URL}/scrapy/api/jira/task/${taskId}`,
-        {
-          method: 'DELETE',
-          headers: {
-            Authorization: `Bearer ${process.env.NEXT_PUBLIC_FAST_API_KEY}`,
-          },
-        }
-      )
-
-      if (!response.ok) {
-        throw new Error('Failed to delete task')
-      }
+      await fetchFastApi(`/scrapy/api/${mode}/task/${taskId}`, {
+        method: 'DELETE',
+      })
 
       toast({
         title: '删除成功',
@@ -184,6 +158,7 @@ export function TasksTable() {
       case 'completed':
         return <Badge className="bg-green-500">已完成</Badge>
       case 'pending':
+      case 'running':
         return <Badge className="bg-yellow-500">进行中</Badge>
       case 'failed':
         return <Badge className="bg-red-500">失败</Badge>
@@ -192,20 +167,14 @@ export function TasksTable() {
     }
   }
 
-  const handleDownload = async (taskId: string) => {
+  const handleDownload = async (taskId: string, mode: string) => {
     try {
-      const response = await fetch(
-        `${process.env.NEXT_PUBLIC_FAST_API_URL}/scrapy/api/jira/download/${taskId}`,
+      const response = await fetchFastApi(
+        `/scrapy/api/${mode}/download/${taskId}`,
         {
-          headers: {
-            Authorization: `Bearer ${process.env.NEXT_PUBLIC_FAST_API_KEY}`,
-          },
+          method: 'GET',
         }
       )
-
-      if (!response.ok) {
-        throw new Error('Failed to download file')
-      }
 
       // 获取文件名
       const contentDisposition = response.headers.get('content-disposition')
@@ -301,8 +270,8 @@ export function TasksTable() {
                 <SelectValue placeholder="选择类型" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="jira">Jira</SelectItem>
-                <SelectItem value="kms">KMS</SelectItem>
+                <SelectItem value="jira">Jira工单</SelectItem>
+                <SelectItem value="kms">KMS知识库</SelectItem>
               </SelectContent>
             </Select>
           </div>
@@ -312,7 +281,7 @@ export function TasksTable() {
               className="mr-2"
               onClick={() => {
                 setStatusFilter('all')
-                setTypeFilter(typeFilter)
+                setTypeFilter('jira')
               }}
             >
               <Filter className="h-4 w-4 mr-2" />
@@ -337,7 +306,7 @@ export function TasksTable() {
                 <TableHead>消息</TableHead>
                 <TableHead>创建时间</TableHead>
                 <TableHead>更新时间</TableHead>
-                <TableHead className="text-right">操作</TableHead>
+                <TableHead>操作</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -369,23 +338,27 @@ export function TasksTable() {
                     </TableCell>
                     <TableCell>{formatDate(task.created_at)}</TableCell>
                     <TableCell>{formatDate(task.updated_at)}</TableCell>
-                    <TableCell className="text-right">
+                    <TableCell className=" min-w-[100px]">
+                      {task.status.toLowerCase() === 'completed' && (
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          aria-placeholder='下载'
+                          onClick={() =>
+                            handleDownload(task.task_id, task.task_mode)
+                          }
+                        >
+                          <Download className="h-2 w-2" />
+                        </Button>
+                      )}
+
                       <DropdownMenu>
                         <DropdownMenuTrigger asChild>
                           <Button variant="ghost" size="icon">
                             <MoreHorizontal className="h-4 w-4" />
-                            <span className="sr-only">打开菜单</span>
                           </Button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end">
-                          {task.status.toLowerCase() === 'completed' && (
-                            <DropdownMenuItem
-                              onClick={() => handleDownload(task.task_id)}
-                            >
-                              <Download className="h-4 w-4 mr-2" />
-                              下载附件
-                            </DropdownMenuItem>
-                          )}
                           <DropdownMenuItem
                             onClick={() => {
                               setSelectedTask(task)
@@ -406,7 +379,7 @@ export function TasksTable() {
         </div>
 
         <div className="mt-4 flex items-center justify-between">
-          <div className="text-sm text-muted-foreground">
+          <div className="text-sm text-nowrap text-muted-foreground">
             共 {totalPages} 页，当前第 {currentPage} 页
           </div>
           <Pagination>
@@ -416,7 +389,7 @@ export function TasksTable() {
                   onClick={() =>
                     setCurrentPage((prev) => Math.max(prev - 1, 1))
                   }
-                  disabled={currentPage === 1 || loading}
+                  // disabled={currentPage === 1 || loading}
                 />
               </PaginationItem>
               {Array.from({ length: Math.min(totalPages, 5) }, (_, i) => {
@@ -426,7 +399,7 @@ export function TasksTable() {
                     <PaginationLink
                       isActive={pageNumber === currentPage}
                       onClick={() => setCurrentPage(pageNumber)}
-                      disabled={loading}
+                      // disabled={loading}
                     >
                       {pageNumber}
                     </PaginationLink>
@@ -438,7 +411,7 @@ export function TasksTable() {
                   onClick={() =>
                     setCurrentPage((prev) => Math.min(prev + 1, totalPages))
                   }
-                  disabled={currentPage === totalPages || loading}
+                  // disabled={currentPage === totalPages || loading}
                 />
               </PaginationItem>
             </PaginationContent>
@@ -448,6 +421,7 @@ export function TasksTable() {
 
       <CreateTaskDialog
         open={createDialogOpen}
+        taskMode={typeFilter}
         onOpenChange={setCreateDialogOpen}
         onSubmit={handleCreateTask}
       />
@@ -457,6 +431,7 @@ export function TasksTable() {
           open={deleteDialogOpen}
           onOpenChange={setDeleteDialogOpen}
           taskId={selectedTask.task_id}
+          mode={selectedTask.task_mode}
           onDelete={handleDeleteTask}
         />
       )}
