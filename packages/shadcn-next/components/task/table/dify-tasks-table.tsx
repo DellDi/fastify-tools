@@ -85,7 +85,7 @@ export function DifyTasksTable() {
   // 删除Dify任务接口
   const handleDeleteDifyTask = async (taskId: string) => {
     try {
-      const response = await fetchFastApi(`/scrapy/api/dify/tasks/${taskId}`, {
+      const response = await fetchFastApi(`/scrapy/api/dify/task/${taskId}`, {
         method: 'DELETE',
       })
 
@@ -217,6 +217,7 @@ export function DifyTasksTable() {
                         <Button
                           variant="ghost"
                           size="icon"
+                          aria-placeholder='删除记录'
                           onClick={() => {
                             setSelectedTask(task)
                             setDeleteDifyTaskDialogOpen(true)

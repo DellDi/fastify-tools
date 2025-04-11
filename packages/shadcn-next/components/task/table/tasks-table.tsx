@@ -42,11 +42,25 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
-import { Task, CreateTaskRequest, CreateKmsRequest } from '../type'
+import {
+  Task,
+  CreateTaskRequest,
+  CreateKmsRequest,
+  DifyUploadRequest,
+} from '../type'
 import { fetchFastApi } from '@/utils/fetch/fastFetch'
 import { CreateTaskDialog } from '../dialog/create-task-dialog'
 import { DeleteTaskDialog } from '../dialog/delete-task-dialog'
 import { UploadTaskDialog } from '../dialog/upload-task-dialog'
+
+import { Progress } from '@/components/ui/progress'
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+} from '@/components/ui/dialog'
 
 interface TasksTableProps {
   onCreateTask: () => void
@@ -70,6 +84,12 @@ export function TasksTable() {
   const [deleteTaskDialogOpen, setDeleteTaskDialogOpen] = useState(false)
   const [uploadDialogOpen, setUploadDialogOpen] = useState(false)
   const [selectedTask, setSelectedTask] = useState<Task | null>(null)
+
+  // 下载状态管理
+  const [isDownloading, setIsDownloading] = useState(false)
+  const [downloadProgress, setDownloadProgress] = useState(0)
+  const [downloadDialogOpen, setDownloadDialogOpen] = useState(false)
+  const [downloadFileName, setDownloadFileName] = useState('')
 
   const handleFilterChange = (value: string) => {
     setTypeFilter(value)
@@ -116,12 +136,35 @@ export function TasksTable() {
 
   const handleDownload = async (taskId: string, mode: string) => {
     try {
+      // 打开下载对话框并初始化进度
+      setIsDownloading(true)
+      setDownloadProgress(0)
+      setDownloadDialogOpen(true)
+      setDownloadFileName('准备下载...')
+
+      // 模拟进度增长 - 使用 setInterval 定期增加进度值
+      const progressInterval = setInterval(() => {
+        setDownloadProgress((prev) => {
+          // 最多增长到 90%，剩余 10% 留给实际文件处理
+          if (prev < 90) {
+            return prev + Math.random() * 5
+          }
+          return prev
+        })
+      }, 300)
+
+      // 发起下载请求
       const response = await fetchFastApi(
         `/scrapy/api/${mode}/download/${taskId}`,
         {
           method: 'GET',
         }
       )
+
+      // 打印所有响应头，以便调试
+      response.headers.forEach((value: string, key: string) => {
+        console.log('🚀 ~ response.headers.forEach ~ value:', key, value)
+      })
 
       // 获取文件名
       const contentDisposition = response.headers.get('content-disposition')
@@ -131,10 +174,30 @@ export function TasksTable() {
         if (filenameMatch && filenameMatch[1]) {
           filename = filenameMatch[1]
         }
+      } else {
+        // 尝试直接从URL中提取文件名作为备选方案
+        const urlParts = response.url.split('/')
+        const lastPart = urlParts[urlParts.length - 1]
+        if (lastPart && lastPart !== taskId) {
+          filename = `${lastPart}.zip`
+        } else {
+          filename = `task_${taskId}.zip`
+        }
       }
+
+      setDownloadFileName(filename)
 
       // 创建 blob 并下载
       const blob = await response.blob()
+
+      // 完成最后 10% 进度
+      clearInterval(progressInterval)
+      setDownloadProgress(100)
+
+      // 延迟一小段时间，让用户看到 100% 进度
+      await new Promise((resolve) => setTimeout(resolve, 500))
+
+      // 执行下载
       const url = window.URL.createObjectURL(blob)
       const a = document.createElement('a')
       a.href = url
@@ -148,6 +211,12 @@ export function TasksTable() {
         title: '下载成功',
         description: '文件已成功下载',
       })
+
+      // 关闭下载对话框
+      setTimeout(() => {
+        setDownloadDialogOpen(false)
+        setIsDownloading(false)
+      }, 1000)
     } catch (error) {
       console.error('Error downloading file:', error)
       toast({
@@ -155,6 +224,8 @@ export function TasksTable() {
         description: '请检查网络连接或API权限',
         variant: 'destructive',
       })
+      setDownloadDialogOpen(false)
+      setIsDownloading(false)
     }
   }
 
@@ -234,7 +305,10 @@ export function TasksTable() {
   }
 
   // 上传任务到Dify接口
-  const handleUploadTask = async (crawlerTaskId: string, payload: any) => {
+  const handleUploadTask = async (
+    crawlerTaskId: string,
+    payload: DifyUploadRequest
+  ) => {
     try {
       await fetchFastApi(`/scrapy/api/dify/upload/${crawlerTaskId}`, {
         method: 'POST',
@@ -397,14 +471,23 @@ export function TasksTable() {
                           onClick={() =>
                             handleDownload(task.task_id, task.task_mode)
                           }
+                          disabled={isDownloading}
                         >
-                          <Download className="h-2 w-2" />
+                          <Download
+                            className={`h-2 w-2 ${
+                              isDownloading ? 'animate-pulse' : ''
+                            }`}
+                          />
                         </Button>
                       )}
 
                       <DropdownMenu>
                         <DropdownMenuTrigger asChild>
-                          <Button variant="ghost" size="icon">
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            disabled={isDownloading}
+                          >
                             <MoreHorizontal className="h-4 w-4" />
                           </Button>
                         </DropdownMenuTrigger>
@@ -473,6 +556,20 @@ export function TasksTable() {
           </Pagination>
         </div>
       </CardContent>
+
+      {/* 下载进度对话框 */}
+      <Dialog open={downloadDialogOpen} onOpenChange={setDownloadDialogOpen}>
+        <DialogContent className="sm:max-w-[425px]">
+          <DialogHeader>
+            <DialogTitle>文件下载中</DialogTitle>
+            <DialogDescription>正在下载: {downloadFileName}</DialogDescription>
+          </DialogHeader>
+          <div className="py-4">
+            <Progress value={downloadProgress} className="w-full" />
+            <p className="text-center mt-2">{Math.round(downloadProgress)}%</p>
+          </div>
+        </DialogContent>
+      </Dialog>
 
       {/* 对话框组件 */}
       <CreateTaskDialog

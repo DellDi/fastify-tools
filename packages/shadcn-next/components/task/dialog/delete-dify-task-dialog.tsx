@@ -11,13 +11,7 @@ import {
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog'
 import { useState } from 'react'
-
-interface DeleteDifyTaskDialogProps {
-  open: boolean
-  onOpenChange: (open: boolean) => void
-  taskId: string
-  onDelete: (taskId: string) => void
-}
+import { DeleteDifyTaskDialogProps } from '../type'
 
 export function DeleteDifyTaskDialog({
   open,

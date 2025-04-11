@@ -11,14 +11,7 @@ import {
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog'
 import { useState } from 'react'
-
-interface DeleteTaskDialogProps {
-  open: boolean
-  onOpenChange: (open: boolean) => void
-  taskId: string
-  mode: string
-  onDelete: (taskId: string, mode: string) => void
-}
+import { DeleteTaskDialogProps } from '../type'
 
 export function DeleteTaskDialog({
   open,

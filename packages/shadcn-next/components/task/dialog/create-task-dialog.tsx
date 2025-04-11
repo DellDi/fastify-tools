@@ -23,14 +23,7 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 
-import { CreateTaskRequest, CreateKmsRequest } from '../type'
-
-interface CreateTaskDialogProps {
-  open: boolean
-  taskMode: string
-  onOpenChange: (open: boolean) => void
-  onSubmit: (task: CreateTaskRequest | CreateKmsRequest, type: string) => void
-}
+import { CreateTaskDialogProps } from '../type'
 
 export function CreateTaskDialog({
   open,

@@ -9,19 +9,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { useState } from 'react'
-
-export interface DifyUploadRequest {
-  dataset_prefix: string
-  max_docs: number
-  indexing_technique: 'high_quality' | 'economy' | 'parent' | 'qa'
-}
-
-interface UploadTaskDialogProps {
-  open: boolean
-  onOpenChange: (open: boolean) => void
-  crawlerTaskId: string
-  onUpload: (crawlerTaskId: string, payload: DifyUploadRequest) => Promise<void>
-}
+import { UploadTaskDialogProps } from '../type'
 
 export function UploadTaskDialog({
   open,
@@ -32,6 +20,8 @@ export function UploadTaskDialog({
   const [datasetPrefix, setDatasetPrefix] = useState('智慧数据标准知识库')
   const [maxDocs, setMaxDocs] = useState(12000)
   const [indexingTechnique, setIndexingTechnique] = useState<'high_quality' | 'economy' | 'parent' | 'qa'>('high_quality')
+  const [baseUrl, setBaseUrl] = useState('')
+  const [apiKey, setApiKey] = useState('')
   const [isSubmitting, setIsSubmitting] = useState(false)
 
   const handleSubmit = async () => {
@@ -41,6 +31,8 @@ export function UploadTaskDialog({
         dataset_prefix: datasetPrefix,
         max_docs: maxDocs,
         indexing_technique: indexingTechnique,
+        base_url: baseUrl || undefined,
+        api_key: apiKey || undefined,
       })
       onOpenChange(false)
     } finally {
@@ -89,6 +81,23 @@ export function UploadTaskDialog({
                 <SelectItem value="qa">问答</SelectItem>
               </SelectContent>
             </Select>
+          </div>
+          <div>
+            <label className="text-sm font-medium">Dify API 地址 (可选)</label>
+            <Input
+              value={baseUrl}
+              onChange={(e) => setBaseUrl(e.target.value)}
+              placeholder="留空使用默认地址"
+            />
+          </div>
+          <div>
+            <label className="text-sm font-medium">Dify API 密钥 (可选)</label>
+            <Input
+              value={apiKey}
+              onChange={(e) => setApiKey(e.target.value)}
+              placeholder="留空使用默认密钥"
+              type="password"
+            />
           </div>
         </div>
         <DialogFooter>
