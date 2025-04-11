@@ -46,6 +46,9 @@ import {
 } from '@/components/ui/select'
 import { Task, CreateTaskRequest, CreateKmsRequest } from './type'
 import { fetchFastApi } from '@/utils/fetch/fastFetch'
+import { UploadTaskDialog } from './upload-task-dialog'
+import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs'
+import { DifyTasksTable } from './dify-tasks-table'
 
 export function TasksTable() {
   const [tasks, setTasks] = useState<Task[]>([])
@@ -59,6 +62,8 @@ export function TasksTable() {
   const { toast } = useToast()
   const [statusFilter, setStatusFilter] = useState<string>('all') // 在 TasksTable 函数内，useState 部分添加新的状态变量
   const [typeFilter, setTypeFilter] = useState<string>('jira')
+  const [uploadDialogOpen, setUploadDialogOpen] = useState(false)
+  const [selectedTaskForUpload, setSelectedTaskForUpload] = useState<Task | null>(null)
 
   const fetchTasks = async () => {
     setLoading(true)
@@ -153,6 +158,30 @@ export function TasksTable() {
     }
   }
 
+  const handleUploadTask = async (crawlerTaskId: string, payload: any) => {
+    try {
+      await fetchFastApi(`/scrapy/api/dify/upload/${crawlerTaskId}`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(payload),
+      })
+
+      toast({
+        title: '启动成功',
+        description: 'Dify 知识库导入任务已启动',
+      })
+    } catch (error) {
+      console.error('Error uploading task:', error)
+      toast({
+        title: '启动失败',
+        description: '请检查输入数据或API权限',
+        variant: 'destructive',
+      })
+    }
+  }
+
   const getStatusBadge = (status: string) => {
     switch (status.toLowerCase()) {
       case 'completed':
@@ -216,225 +245,251 @@ export function TasksTable() {
   }, [currentPage, statusFilter, typeFilter])
 
   return (
-    <Card>
-      <CardHeader className="flex flex-row items-center justify-between">
-        <div>
-          <CardTitle>任务列表</CardTitle>
-          <CardDescription>管理爬虫任务</CardDescription>
-        </div>
-        <div className="flex items-center gap-2">
-          <Button
-            variant="outline"
-            size="icon"
-            onClick={fetchTasks}
-            disabled={loading}
-          >
-            <RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
-          </Button>
-          <Button onClick={() => setCreateDialogOpen(true)}>
-            <Plus className="h-4 w-4 mr-2" />
-            新建任务
-          </Button>
-        </div>
-      </CardHeader>
-      <CardContent>
-        <div className="mb-6 grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-          <div>
-            <label
-              htmlFor="status-filter"
-              className="text-sm font-medium mb-1 block"
-            >
-              任务状态
-            </label>
-            <Select value={statusFilter} onValueChange={setStatusFilter}>
-              <SelectTrigger id="status-filter">
-                <SelectValue placeholder="选择状态" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">全部</SelectItem>
-                <SelectItem value="completed">已完成</SelectItem>
-                <SelectItem value="pending">进行中</SelectItem>
-                <SelectItem value="failed">失败</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-          <div>
-            <label
-              htmlFor="type-filter"
-              className="text-sm font-medium mb-1 block"
-            >
-              任务类型
-            </label>
-            <Select value={typeFilter} onValueChange={setTypeFilter}>
-              <SelectTrigger id="type-filter">
-                <SelectValue placeholder="选择类型" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="jira">Jira工单</SelectItem>
-                <SelectItem value="kms">KMS知识库</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-          <div className="md:col-span-2 flex items-end">
-            <Button
-              variant="outline"
-              className="mr-2"
-              onClick={() => {
-                setStatusFilter('all')
-                setTypeFilter('jira')
-              }}
-            >
-              <Filter className="h-4 w-4 mr-2" />
-              重置筛选
-            </Button>
-            <Button variant="outline" onClick={fetchTasks} disabled={loading}>
-              <RefreshCw
-                className={`h-4 w-4 mr-2 ${loading ? 'animate-spin' : ''}`}
-              />
-              刷新数据
-            </Button>
-          </div>
-        </div>
+    <Tabs defaultValue="tasks">
+      <TabsList>
+        <TabsTrigger value="tasks">爬虫任务</TabsTrigger>
+        <TabsTrigger value="dify-tasks">Dify任务</TabsTrigger>
+      </TabsList>
+      <TabsContent value="tasks">
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between">
+            <div>
+              <CardTitle>任务列表</CardTitle>
+              <CardDescription>管理爬虫任务</CardDescription>
+            </div>
+            <div className="flex items-center gap-2">
+              <Button
+                variant="outline"
+                size="icon"
+                onClick={fetchTasks}
+                disabled={loading}
+              >
+                <RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
+              </Button>
+              <Button onClick={() => setCreateDialogOpen(true)}>
+                <Plus className="h-4 w-4 mr-2" />
+                新建任务
+              </Button>
+            </div>
+          </CardHeader>
+          <CardContent>
+            <div className="mb-6 grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+              <div>
+                <label
+                  htmlFor="status-filter"
+                  className="text-sm font-medium mb-1 block"
+                >
+                  任务状态
+                </label>
+                <Select value={statusFilter} onValueChange={setStatusFilter}>
+                  <SelectTrigger id="status-filter">
+                    <SelectValue placeholder="选择状态" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">全部</SelectItem>
+                    <SelectItem value="completed">已完成</SelectItem>
+                    <SelectItem value="pending">进行中</SelectItem>
+                    <SelectItem value="failed">失败</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div>
+                <label
+                  htmlFor="type-filter"
+                  className="text-sm font-medium mb-1 block"
+                >
+                  任务类型
+                </label>
+                <Select value={typeFilter} onValueChange={setTypeFilter}>
+                  <SelectTrigger id="type-filter">
+                    <SelectValue placeholder="选择类型" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="jira">Jira工单</SelectItem>
+                    <SelectItem value="kms">KMS知识库</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="md:col-span-2 flex items-end">
+                <Button
+                  variant="outline"
+                  className="mr-2"
+                  onClick={() => {
+                    setStatusFilter('all')
+                    setTypeFilter('jira')
+                  }}
+                >
+                  <Filter className="h-4 w-4 mr-2" />
+                  重置筛选
+                </Button>
+                <Button variant="outline" onClick={fetchTasks} disabled={loading}>
+                  <RefreshCw
+                    className={`h-4 w-4 mr-2 ${loading ? 'animate-spin' : ''}`}
+                  />
+                  刷新数据
+                </Button>
+              </div>
+            </div>
 
-        <div className="rounded-md border">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>任务ID</TableHead>
-                <TableHead>模式</TableHead>
-                <TableHead>状态</TableHead>
-                <TableHead>消息</TableHead>
-                <TableHead>创建时间</TableHead>
-                <TableHead>更新时间</TableHead>
-                <TableHead>操作</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {loading ? (
-                <TableRow>
-                  <TableCell colSpan={7} className="text-center py-10">
-                    <div className="flex justify-center items-center">
-                      <RefreshCw className="h-6 w-6 animate-spin mr-2" />
-                      加载中...
-                    </div>
-                  </TableCell>
-                </TableRow>
-              ) : tasks.length === 0 ? (
-                <TableRow>
-                  <TableCell colSpan={7} className="text-center py-10">
-                    暂无数据
-                  </TableCell>
-                </TableRow>
-              ) : (
-                tasks.map((task) => (
-                  <TableRow key={task.task_id}>
-                    <TableCell className="font-medium max-w-[150px] truncate">
-                      {task.task_id}
-                    </TableCell>
-                    <TableCell>{task.task_mode}</TableCell>
-                    <TableCell>{getStatusBadge(task.status)}</TableCell>
-                    <TableCell className="max-w-[200px] truncate">
-                      {task.message}
-                    </TableCell>
-                    <TableCell>{formatDate(task.created_at)}</TableCell>
-                    <TableCell>{formatDate(task.updated_at)}</TableCell>
-                    <TableCell className=" min-w-[100px]">
-                      {task.status.toLowerCase() === 'completed' && (
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          aria-placeholder='下载'
-                          onClick={() =>
-                            handleDownload(task.task_id, task.task_mode)
-                          }
-                        >
-                          <Download className="h-2 w-2" />
-                        </Button>
-                      )}
-
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <Button variant="ghost" size="icon">
-                            <MoreHorizontal className="h-4 w-4" />
-                          </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end">
-                          <DropdownMenuItem
-                            onClick={() => {
-                              setSelectedTask(task)
-                              setDeleteDialogOpen(true)
-                            }}
-                            className="text-red-600"
-                          >
-                            删除
-                          </DropdownMenuItem>
-                        </DropdownMenuContent>
-                      </DropdownMenu>
-                    </TableCell>
+            <div className="rounded-md border">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>任务ID</TableHead>
+                    <TableHead>模式</TableHead>
+                    <TableHead>状态</TableHead>
+                    <TableHead>消息</TableHead>
+                    <TableHead>创建时间</TableHead>
+                    <TableHead>更新时间</TableHead>
+                    <TableHead>操作</TableHead>
                   </TableRow>
-                ))
-              )}
-            </TableBody>
-          </Table>
-        </div>
+                </TableHeader>
+                <TableBody>
+                  {loading ? (
+                    <TableRow>
+                      <TableCell colSpan={7} className="text-center py-10">
+                        <div className="flex justify-center items-center">
+                          <RefreshCw className="h-6 w-6 animate-spin mr-2" />
+                          加载中...
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  ) : tasks.length === 0 ? (
+                    <TableRow>
+                      <TableCell colSpan={7} className="text-center py-10">
+                        暂无数据
+                      </TableCell>
+                    </TableRow>
+                  ) : (
+                    tasks.map((task) => (
+                      <TableRow key={task.task_id}>
+                        <TableCell className="font-medium max-w-[150px] truncate">
+                          {task.task_id}
+                        </TableCell>
+                        <TableCell>{task.task_mode}</TableCell>
+                        <TableCell>{getStatusBadge(task.status)}</TableCell>
+                        <TableCell className="max-w-[200px] truncate">
+                          {task.message}
+                        </TableCell>
+                        <TableCell>{formatDate(task.created_at)}</TableCell>
+                        <TableCell>{formatDate(task.updated_at)}</TableCell>
+                        <TableCell className=" min-w-[100px]">
+                          {task.status.toLowerCase() === 'completed' && (
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              aria-placeholder='下载'
+                              onClick={() =>
+                                handleDownload(task.task_id, task.task_mode)
+                              }
+                            >
+                              <Download className="h-2 w-2" />
+                            </Button>
+                          )}
 
-        <div className="mt-4 flex items-center justify-between">
-          <div className="text-sm text-nowrap text-muted-foreground">
-            共 {totalPages} 页，当前第 {currentPage} 页
-          </div>
-          <Pagination>
-            <PaginationContent>
-              <PaginationItem>
-                <PaginationPrevious
-                  onClick={() =>
-                    setCurrentPage((prev) => Math.max(prev - 1, 1))
-                  }
-                  // disabled={currentPage === 1 || loading}
-                />
-              </PaginationItem>
-              {Array.from({ length: Math.min(totalPages, 5) }, (_, i) => {
-                const pageNumber = i + 1
-                return (
-                  <PaginationItem key={pageNumber}>
-                    <PaginationLink
-                      isActive={pageNumber === currentPage}
-                      onClick={() => setCurrentPage(pageNumber)}
-                      // disabled={loading}
-                    >
-                      {pageNumber}
-                    </PaginationLink>
+                          <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                              <Button variant="ghost" size="icon">
+                                <MoreHorizontal className="h-4 w-4" />
+                              </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end">
+                              <DropdownMenuItem
+                                onClick={() => {
+                                  setSelectedTask(task)
+                                  setDeleteDialogOpen(true)
+                                }}
+                                className="text-red-600"
+                              >
+                                删除
+                              </DropdownMenuItem>
+                              <DropdownMenuItem
+                                onClick={() => {
+                                  setSelectedTaskForUpload(task)
+                                  setUploadDialogOpen(true)
+                                }}
+                              >
+                                启动 Dify 导入
+                              </DropdownMenuItem>
+                            </DropdownMenuContent>
+                          </DropdownMenu>
+                        </TableCell>
+                      </TableRow>
+                    ))
+                  )}
+                </TableBody>
+              </Table>
+            </div>
+
+            <div className="mt-4 flex items-center justify-between">
+              <div className="text-sm text-nowrap text-muted-foreground">
+                共 {totalPages} 页，当前第 {currentPage} 页
+              </div>
+              <Pagination>
+                <PaginationContent>
+                  <PaginationItem>
+                    <PaginationPrevious
+                      onClick={() =>
+                        setCurrentPage((prev) => Math.max(prev - 1, 1))
+                      }
+                      // disabled={currentPage === 1 || loading}
+                    />
                   </PaginationItem>
-                )
-              })}
-              <PaginationItem>
-                <PaginationNext
-                  onClick={() =>
-                    setCurrentPage((prev) => Math.min(prev + 1, totalPages))
-                  }
-                  // disabled={currentPage === totalPages || loading}
-                />
-              </PaginationItem>
-            </PaginationContent>
-          </Pagination>
-        </div>
-      </CardContent>
+                  {Array.from({ length: Math.min(totalPages, 5) }, (_, i) => {
+                    const pageNumber = i + 1
+                    return (
+                      <PaginationItem key={pageNumber}>
+                        <PaginationLink
+                          isActive={pageNumber === currentPage}
+                          onClick={() => setCurrentPage(pageNumber)}
+                          // disabled={loading}
+                        >
+                          {pageNumber}
+                        </PaginationLink>
+                      </PaginationItem>
+                    )
+                  })}
+                  <PaginationItem>
+                    <PaginationNext
+                      onClick={() =>
+                        setCurrentPage((prev) => Math.min(prev + 1, totalPages))
+                      }
+                      // disabled={currentPage === totalPages || loading}
+                    />
+                  </PaginationItem>
+                </PaginationContent>
+              </Pagination>
+            </div>
+          </CardContent>
 
-      <CreateTaskDialog
-        open={createDialogOpen}
-        taskMode={typeFilter}
-        onOpenChange={setCreateDialogOpen}
-        onSubmit={handleCreateTask}
-      />
+          <CreateTaskDialog
+            open={createDialogOpen}
+            taskMode={typeFilter}
+            onOpenChange={setCreateDialogOpen}
+            onSubmit={handleCreateTask}
+          />
 
-      {selectedTask && (
-        <DeleteTaskDialog
-          open={deleteDialogOpen}
-          onOpenChange={setDeleteDialogOpen}
-          taskId={selectedTask.task_id}
-          mode={selectedTask.task_mode}
-          onDelete={handleDeleteTask}
-        />
-      )}
-    </Card>
+          {selectedTask && (
+            <DeleteTaskDialog
+              open={deleteDialogOpen}
+              onOpenChange={setDeleteDialogOpen}
+              taskId={selectedTask.task_id}
+              mode={selectedTask.task_mode}
+              onDelete={handleDeleteTask}
+            />
+          )}
+
+          <UploadTaskDialog
+            open={uploadDialogOpen}
+            onOpenChange={setUploadDialogOpen}
+            crawlerTaskId={selectedTaskForUpload?.task_id || ''}
+            onUpload={handleUploadTask}
+          />
+        </Card>
+      </TabsContent>
+      <TabsContent value="dify-tasks">
+        <DifyTasksTable />
+      </TabsContent>
+    </Tabs>
   )
 }
