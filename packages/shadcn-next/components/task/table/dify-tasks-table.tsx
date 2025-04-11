@@ -35,9 +35,9 @@ import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { RefreshCw, Trash } from 'lucide-react'
 import { useToast } from '@/components/ui/use-toast'
-import { DifyTask } from './type'
+import { DifyTask } from '../type'
 import { fetchFastApi } from '@/utils/fetch/fastFetch'
-import { DeleteDifyTaskDialog } from './delete-dify-task-dialog'
+import { DeleteDifyTaskDialog } from '../dialog/delete-dify-task-dialog'
 
 export function DifyTasksTable() {
   const [tasks, setTasks] = useState<DifyTask[]>([])
@@ -46,9 +46,12 @@ export function DifyTasksTable() {
   const [totalPages, setTotalPages] = useState(1)
   const [limit] = useState(10)
   const [statusFilter, setStatusFilter] = useState<string>('all')
-  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
-  const [selectedTask, setSelectedTask] = useState<DifyTask | null>(null)
   const { toast } = useToast()
+
+  // 弹窗状态管理
+  const [deleteDifyTaskDialogOpen, setDeleteDifyTaskDialogOpen] =
+    useState(false)
+  const [selectedTask, setSelectedTask] = useState<DifyTask | null>(null)
 
   const fetchTasks = async () => {
     setLoading(true)
@@ -79,17 +82,27 @@ export function DifyTasksTable() {
     }
   }
 
-  const handleDeleteTask = async (taskId: string) => {
+  // 删除Dify任务接口
+  const handleDeleteDifyTask = async (taskId: string) => {
     try {
-      await fetchFastApi(`/scrapy/api/dify/tasks/${taskId}`, {
+      const response = await fetchFastApi(`/scrapy/api/dify/tasks/${taskId}`, {
         method: 'DELETE',
       })
+
+      if (response instanceof Error) {
+        toast({
+          title: '删除失败',
+          description: response.message,
+          variant: 'destructive',
+        })
+        return
+      }
       toast({
         title: '删除成功',
         description: '任务已成功删除',
       })
-      fetchTasks()
-      setDeleteDialogOpen(false)
+      setDeleteDifyTaskDialogOpen(false)
+      fetchTasks() // 刷新任务列表
     } catch (error) {
       console.error('Error deleting Dify task:', error)
       toast({
@@ -206,7 +219,7 @@ export function DifyTasksTable() {
                           size="icon"
                           onClick={() => {
                             setSelectedTask(task)
-                            setDeleteDialogOpen(true)
+                            setDeleteDifyTaskDialogOpen(true)
                           }}
                         >
                           <Trash className="h-4 w-4 text-red-600" />
@@ -230,7 +243,6 @@ export function DifyTasksTable() {
                     onClick={() =>
                       setCurrentPage((prev) => Math.max(prev - 1, 1))
                     }
-                    // disabled={currentPage === 1 || loading}
                   />
                 </PaginationItem>
                 {Array.from({ length: Math.min(totalPages, 5) }, (_, i) => {
@@ -240,7 +252,6 @@ export function DifyTasksTable() {
                       <PaginationLink
                         isActive={pageNumber === currentPage}
                         onClick={() => setCurrentPage(pageNumber)}
-                        // disabled={loading}
                       >
                         {pageNumber}
                       </PaginationLink>
@@ -252,7 +263,6 @@ export function DifyTasksTable() {
                     onClick={() =>
                       setCurrentPage((prev) => Math.min(prev + 1, totalPages))
                     }
-                    // disabled={currentPage === totalPages || loading}
                   />
                 </PaginationItem>
               </PaginationContent>
@@ -261,12 +271,15 @@ export function DifyTasksTable() {
         </CardContent>
       </Card>
 
-      <DeleteDifyTaskDialog
-        open={deleteDialogOpen}
-        onOpenChange={setDeleteDialogOpen}
-        taskId={selectedTask?.task_id || ''}
-        onDelete={handleDeleteTask}
-      />
+      {/* 对话框组件 */}
+      {selectedTask && (
+        <DeleteDifyTaskDialog
+          open={deleteDifyTaskDialogOpen}
+          onOpenChange={setDeleteDifyTaskDialogOpen}
+          taskId={selectedTask.task_id}
+          onDelete={handleDeleteDifyTask}
+        />
+      )}
     </>
   )
 }

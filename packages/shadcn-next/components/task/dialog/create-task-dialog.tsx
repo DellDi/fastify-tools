@@ -23,11 +23,11 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 
-import { CreateTaskRequest, CreateKmsRequest } from './type'
+import { CreateTaskRequest, CreateKmsRequest } from '../type'
 
 interface CreateTaskDialogProps {
-  open: boolean,
-  taskMode: string,
+  open: boolean
+  taskMode: string
   onOpenChange: (open: boolean) => void
   onSubmit: (task: CreateTaskRequest | CreateKmsRequest, type: string) => void
 }
@@ -100,7 +100,9 @@ export function CreateTaskDialog({
       setApiKey('')
       setModel('')
       setOptimizerType('html2md')
-      setStartUrl('http://kms.new-see.com:8090/pages/viewpage.action?pageId=27363329')
+      setStartUrl(
+        'http://kms.new-see.com:8090/pages/viewpage.action?pageId=27363329'
+      )
     } finally {
       setIsSubmitting(false)
     }
@@ -215,12 +217,12 @@ export function CreateTaskDialog({
                   <Label htmlFor="start-url" className="text-right">
                     起始URL
                   </Label>
-                  <Textarea
+                  <Input
                     id="start-url"
                     value={startUrl}
                     onChange={(e) => setStartUrl(e.target.value)}
+                    placeholder="输入起始URL"
                     className="col-span-3"
-                    rows={3}
                     required
                   />
                 </div>
@@ -230,47 +232,55 @@ export function CreateTaskDialog({
                   </Label>
                   <Select
                     value={optimizerType}
-                    onValueChange={(value) => setOptimizerType(value)}
+                    onValueChange={(value) =>
+                      setOptimizerType(
+                        value as
+                          | 'html2md'
+                          | 'xunfei'
+                          | 'baichuan'
+                          | 'compatible'
+                      )
+                    }
                   >
                     <SelectTrigger className="col-span-3" id="optimizer-type">
                       <SelectValue placeholder="选择优化器类型" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="html2md">标准提取</SelectItem>
+                      <SelectItem value="html2md">HTML转Markdown</SelectItem>
                       <SelectItem value="xunfei">讯飞</SelectItem>
                       <SelectItem value="baichuan">百川</SelectItem>
-                      <SelectItem value="compatible">兼容OpenAI</SelectItem>
+                      <SelectItem value="compatible">兼容模式</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
-                {['compatible', 'xunfei', 'baichuan'].includes(optimizerType) && (
+                {['xunfei', 'baichuan', 'compatible'].includes(
+                  optimizerType
+                ) && (
                   <>
                     <div className="grid grid-cols-4 items-center gap-4">
                       <Label htmlFor="api-url" className="text-right">
-                        API地址
+                        API URL
                       </Label>
                       <Input
                         id="api-url"
                         value={apiUrl}
                         onChange={(e) => setApiUrl(e.target.value)}
+                        placeholder="输入API URL"
                         className="col-span-3"
-                        required
                       />
                     </div>
-
                     <div className="grid grid-cols-4 items-center gap-4">
                       <Label htmlFor="api-key" className="text-right">
-                        API密钥
+                        API Key
                       </Label>
                       <Input
                         id="api-key"
                         value={apiKey}
                         onChange={(e) => setApiKey(e.target.value)}
+                        placeholder="输入API Key"
                         className="col-span-3"
-                        required
                       />
                     </div>
-
                     <div className="grid grid-cols-4 items-center gap-4">
                       <Label htmlFor="model" className="text-right">
                         模型
@@ -279,8 +289,8 @@ export function CreateTaskDialog({
                         id="model"
                         value={model}
                         onChange={(e) => setModel(e.target.value)}
+                        placeholder="输入模型名称"
                         className="col-span-3"
-                        required
                       />
                     </div>
                   </>
@@ -289,14 +299,6 @@ export function CreateTaskDialog({
             )}
           </div>
           <DialogFooter>
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => onOpenChange(false)}
-              disabled={isSubmitting}
-            >
-              取消
-            </Button>
             <Button type="submit" disabled={isSubmitting}>
               {isSubmitting ? '提交中...' : '创建'}
             </Button>
