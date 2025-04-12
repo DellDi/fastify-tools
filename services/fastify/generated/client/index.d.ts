@@ -14,6 +14,11 @@ export type PrismaPromise<T> = $Public.PrismaPromise<T>
 
 
 /**
+ * Model SeedVersion
+ * 
+ */
+export type SeedVersion = $Result.DefaultSelection<Prisma.$SeedVersionPayload>
+/**
  * Model EmailTemplate
  * 
  */
@@ -41,8 +46,8 @@ export type Subscription = $Result.DefaultSelection<Prisma.$SubscriptionPayload>
  * @example
  * ```
  * const prisma = new PrismaClient()
- * // Fetch zero or more EmailTemplates
- * const emailTemplates = await prisma.emailTemplate.findMany()
+ * // Fetch zero or more SeedVersions
+ * const seedVersions = await prisma.seedVersion.findMany()
  * ```
  *
  *
@@ -62,8 +67,8 @@ export class PrismaClient<
    * @example
    * ```
    * const prisma = new PrismaClient()
-   * // Fetch zero or more EmailTemplates
-   * const emailTemplates = await prisma.emailTemplate.findMany()
+   * // Fetch zero or more SeedVersions
+   * const seedVersions = await prisma.seedVersion.findMany()
    * ```
    *
    *
@@ -160,6 +165,16 @@ export class PrismaClient<
   }>>
 
       /**
+   * `prisma.seedVersion`: Exposes CRUD operations for the **SeedVersion** model.
+    * Example usage:
+    * ```ts
+    * // Fetch zero or more SeedVersions
+    * const seedVersions = await prisma.seedVersion.findMany()
+    * ```
+    */
+  get seedVersion(): Prisma.SeedVersionDelegate<ExtArgs, ClientOptions>;
+
+  /**
    * `prisma.emailTemplate`: Exposes CRUD operations for the **EmailTemplate** model.
     * Example usage:
     * ```ts
@@ -638,6 +653,7 @@ export namespace Prisma {
 
 
   export const ModelName: {
+    SeedVersion: 'SeedVersion',
     EmailTemplate: 'EmailTemplate',
     EmailLog: 'EmailLog',
     MagicLink: 'MagicLink',
@@ -660,10 +676,84 @@ export namespace Prisma {
       omit: GlobalOmitOptions
     }
     meta: {
-      modelProps: "emailTemplate" | "emailLog" | "magicLink" | "subscription"
+      modelProps: "seedVersion" | "emailTemplate" | "emailLog" | "magicLink" | "subscription"
       txIsolationLevel: Prisma.TransactionIsolationLevel
     }
     model: {
+      SeedVersion: {
+        payload: Prisma.$SeedVersionPayload<ExtArgs>
+        fields: Prisma.SeedVersionFieldRefs
+        operations: {
+          findUnique: {
+            args: Prisma.SeedVersionFindUniqueArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$SeedVersionPayload> | null
+          }
+          findUniqueOrThrow: {
+            args: Prisma.SeedVersionFindUniqueOrThrowArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$SeedVersionPayload>
+          }
+          findFirst: {
+            args: Prisma.SeedVersionFindFirstArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$SeedVersionPayload> | null
+          }
+          findFirstOrThrow: {
+            args: Prisma.SeedVersionFindFirstOrThrowArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$SeedVersionPayload>
+          }
+          findMany: {
+            args: Prisma.SeedVersionFindManyArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$SeedVersionPayload>[]
+          }
+          create: {
+            args: Prisma.SeedVersionCreateArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$SeedVersionPayload>
+          }
+          createMany: {
+            args: Prisma.SeedVersionCreateManyArgs<ExtArgs>
+            result: BatchPayload
+          }
+          createManyAndReturn: {
+            args: Prisma.SeedVersionCreateManyAndReturnArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$SeedVersionPayload>[]
+          }
+          delete: {
+            args: Prisma.SeedVersionDeleteArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$SeedVersionPayload>
+          }
+          update: {
+            args: Prisma.SeedVersionUpdateArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$SeedVersionPayload>
+          }
+          deleteMany: {
+            args: Prisma.SeedVersionDeleteManyArgs<ExtArgs>
+            result: BatchPayload
+          }
+          updateMany: {
+            args: Prisma.SeedVersionUpdateManyArgs<ExtArgs>
+            result: BatchPayload
+          }
+          updateManyAndReturn: {
+            args: Prisma.SeedVersionUpdateManyAndReturnArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$SeedVersionPayload>[]
+          }
+          upsert: {
+            args: Prisma.SeedVersionUpsertArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$SeedVersionPayload>
+          }
+          aggregate: {
+            args: Prisma.SeedVersionAggregateArgs<ExtArgs>
+            result: $Utils.Optional<AggregateSeedVersion>
+          }
+          groupBy: {
+            args: Prisma.SeedVersionGroupByArgs<ExtArgs>
+            result: $Utils.Optional<SeedVersionGroupByOutputType>[]
+          }
+          count: {
+            args: Prisma.SeedVersionCountArgs<ExtArgs>
+            result: $Utils.Optional<SeedVersionCountAggregateOutputType> | number
+          }
+        }
+      }
       EmailTemplate: {
         payload: Prisma.$EmailTemplatePayload<ExtArgs>
         fields: Prisma.EmailTemplateFieldRefs
@@ -1044,6 +1134,7 @@ export namespace Prisma {
     omit?: Prisma.GlobalOmitConfig
   }
   export type GlobalOmitConfig = {
+    seedVersion?: SeedVersionOmit
     emailTemplate?: EmailTemplateOmit
     emailLog?: EmailLogOmit
     magicLink?: MagicLinkOmit
@@ -1171,6 +1262,975 @@ export namespace Prisma {
   /**
    * Models
    */
+
+  /**
+   * Model SeedVersion
+   */
+
+  export type AggregateSeedVersion = {
+    _count: SeedVersionCountAggregateOutputType | null
+    _min: SeedVersionMinAggregateOutputType | null
+    _max: SeedVersionMaxAggregateOutputType | null
+  }
+
+  export type SeedVersionMinAggregateOutputType = {
+    id: string | null
+    version: string | null
+    appliedAt: Date | null
+  }
+
+  export type SeedVersionMaxAggregateOutputType = {
+    id: string | null
+    version: string | null
+    appliedAt: Date | null
+  }
+
+  export type SeedVersionCountAggregateOutputType = {
+    id: number
+    version: number
+    appliedAt: number
+    _all: number
+  }
+
+
+  export type SeedVersionMinAggregateInputType = {
+    id?: true
+    version?: true
+    appliedAt?: true
+  }
+
+  export type SeedVersionMaxAggregateInputType = {
+    id?: true
+    version?: true
+    appliedAt?: true
+  }
+
+  export type SeedVersionCountAggregateInputType = {
+    id?: true
+    version?: true
+    appliedAt?: true
+    _all?: true
+  }
+
+  export type SeedVersionAggregateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Filter which SeedVersion to aggregate.
+     */
+    where?: SeedVersionWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of SeedVersions to fetch.
+     */
+    orderBy?: SeedVersionOrderByWithRelationInput | SeedVersionOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the start position
+     */
+    cursor?: SeedVersionWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` SeedVersions from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` SeedVersions.
+     */
+    skip?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Count returned SeedVersions
+    **/
+    _count?: true | SeedVersionCountAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Select which fields to find the minimum value
+    **/
+    _min?: SeedVersionMinAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Select which fields to find the maximum value
+    **/
+    _max?: SeedVersionMaxAggregateInputType
+  }
+
+  export type GetSeedVersionAggregateType<T extends SeedVersionAggregateArgs> = {
+        [P in keyof T & keyof AggregateSeedVersion]: P extends '_count' | 'count'
+      ? T[P] extends true
+        ? number
+        : GetScalarType<T[P], AggregateSeedVersion[P]>
+      : GetScalarType<T[P], AggregateSeedVersion[P]>
+  }
+
+
+
+
+  export type SeedVersionGroupByArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    where?: SeedVersionWhereInput
+    orderBy?: SeedVersionOrderByWithAggregationInput | SeedVersionOrderByWithAggregationInput[]
+    by: SeedVersionScalarFieldEnum[] | SeedVersionScalarFieldEnum
+    having?: SeedVersionScalarWhereWithAggregatesInput
+    take?: number
+    skip?: number
+    _count?: SeedVersionCountAggregateInputType | true
+    _min?: SeedVersionMinAggregateInputType
+    _max?: SeedVersionMaxAggregateInputType
+  }
+
+  export type SeedVersionGroupByOutputType = {
+    id: string
+    version: string
+    appliedAt: Date
+    _count: SeedVersionCountAggregateOutputType | null
+    _min: SeedVersionMinAggregateOutputType | null
+    _max: SeedVersionMaxAggregateOutputType | null
+  }
+
+  type GetSeedVersionGroupByPayload<T extends SeedVersionGroupByArgs> = Prisma.PrismaPromise<
+    Array<
+      PickEnumerable<SeedVersionGroupByOutputType, T['by']> &
+        {
+          [P in ((keyof T) & (keyof SeedVersionGroupByOutputType))]: P extends '_count'
+            ? T[P] extends boolean
+              ? number
+              : GetScalarType<T[P], SeedVersionGroupByOutputType[P]>
+            : GetScalarType<T[P], SeedVersionGroupByOutputType[P]>
+        }
+      >
+    >
+
+
+  export type SeedVersionSelect<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
+    id?: boolean
+    version?: boolean
+    appliedAt?: boolean
+  }, ExtArgs["result"]["seedVersion"]>
+
+  export type SeedVersionSelectCreateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
+    id?: boolean
+    version?: boolean
+    appliedAt?: boolean
+  }, ExtArgs["result"]["seedVersion"]>
+
+  export type SeedVersionSelectUpdateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
+    id?: boolean
+    version?: boolean
+    appliedAt?: boolean
+  }, ExtArgs["result"]["seedVersion"]>
+
+  export type SeedVersionSelectScalar = {
+    id?: boolean
+    version?: boolean
+    appliedAt?: boolean
+  }
+
+  export type SeedVersionOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "version" | "appliedAt", ExtArgs["result"]["seedVersion"]>
+
+  export type $SeedVersionPayload<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    name: "SeedVersion"
+    objects: {}
+    scalars: $Extensions.GetPayloadResult<{
+      id: string
+      version: string
+      appliedAt: Date
+    }, ExtArgs["result"]["seedVersion"]>
+    composites: {}
+  }
+
+  type SeedVersionGetPayload<S extends boolean | null | undefined | SeedVersionDefaultArgs> = $Result.GetResult<Prisma.$SeedVersionPayload, S>
+
+  type SeedVersionCountArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> =
+    Omit<SeedVersionFindManyArgs, 'select' | 'include' | 'distinct' | 'omit'> & {
+      select?: SeedVersionCountAggregateInputType | true
+    }
+
+  export interface SeedVersionDelegate<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs, GlobalOmitOptions = {}> {
+    [K: symbol]: { types: Prisma.TypeMap<ExtArgs>['model']['SeedVersion'], meta: { name: 'SeedVersion' } }
+    /**
+     * Find zero or one SeedVersion that matches the filter.
+     * @param {SeedVersionFindUniqueArgs} args - Arguments to find a SeedVersion
+     * @example
+     * // Get one SeedVersion
+     * const seedVersion = await prisma.seedVersion.findUnique({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findUnique<T extends SeedVersionFindUniqueArgs>(args: SelectSubset<T, SeedVersionFindUniqueArgs<ExtArgs>>): Prisma__SeedVersionClient<$Result.GetResult<Prisma.$SeedVersionPayload<ExtArgs>, T, "findUnique", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find one SeedVersion that matches the filter or throw an error with `error.code='P2025'`
+     * if no matches were found.
+     * @param {SeedVersionFindUniqueOrThrowArgs} args - Arguments to find a SeedVersion
+     * @example
+     * // Get one SeedVersion
+     * const seedVersion = await prisma.seedVersion.findUniqueOrThrow({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findUniqueOrThrow<T extends SeedVersionFindUniqueOrThrowArgs>(args: SelectSubset<T, SeedVersionFindUniqueOrThrowArgs<ExtArgs>>): Prisma__SeedVersionClient<$Result.GetResult<Prisma.$SeedVersionPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find the first SeedVersion that matches the filter.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {SeedVersionFindFirstArgs} args - Arguments to find a SeedVersion
+     * @example
+     * // Get one SeedVersion
+     * const seedVersion = await prisma.seedVersion.findFirst({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findFirst<T extends SeedVersionFindFirstArgs>(args?: SelectSubset<T, SeedVersionFindFirstArgs<ExtArgs>>): Prisma__SeedVersionClient<$Result.GetResult<Prisma.$SeedVersionPayload<ExtArgs>, T, "findFirst", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find the first SeedVersion that matches the filter or
+     * throw `PrismaKnownClientError` with `P2025` code if no matches were found.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {SeedVersionFindFirstOrThrowArgs} args - Arguments to find a SeedVersion
+     * @example
+     * // Get one SeedVersion
+     * const seedVersion = await prisma.seedVersion.findFirstOrThrow({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findFirstOrThrow<T extends SeedVersionFindFirstOrThrowArgs>(args?: SelectSubset<T, SeedVersionFindFirstOrThrowArgs<ExtArgs>>): Prisma__SeedVersionClient<$Result.GetResult<Prisma.$SeedVersionPayload<ExtArgs>, T, "findFirstOrThrow", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find zero or more SeedVersions that matches the filter.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {SeedVersionFindManyArgs} args - Arguments to filter and select certain fields only.
+     * @example
+     * // Get all SeedVersions
+     * const seedVersions = await prisma.seedVersion.findMany()
+     * 
+     * // Get first 10 SeedVersions
+     * const seedVersions = await prisma.seedVersion.findMany({ take: 10 })
+     * 
+     * // Only select the `id`
+     * const seedVersionWithIdOnly = await prisma.seedVersion.findMany({ select: { id: true } })
+     * 
+     */
+    findMany<T extends SeedVersionFindManyArgs>(args?: SelectSubset<T, SeedVersionFindManyArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$SeedVersionPayload<ExtArgs>, T, "findMany", GlobalOmitOptions>>
+
+    /**
+     * Create a SeedVersion.
+     * @param {SeedVersionCreateArgs} args - Arguments to create a SeedVersion.
+     * @example
+     * // Create one SeedVersion
+     * const SeedVersion = await prisma.seedVersion.create({
+     *   data: {
+     *     // ... data to create a SeedVersion
+     *   }
+     * })
+     * 
+     */
+    create<T extends SeedVersionCreateArgs>(args: SelectSubset<T, SeedVersionCreateArgs<ExtArgs>>): Prisma__SeedVersionClient<$Result.GetResult<Prisma.$SeedVersionPayload<ExtArgs>, T, "create", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Create many SeedVersions.
+     * @param {SeedVersionCreateManyArgs} args - Arguments to create many SeedVersions.
+     * @example
+     * // Create many SeedVersions
+     * const seedVersion = await prisma.seedVersion.createMany({
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     *     
+     */
+    createMany<T extends SeedVersionCreateManyArgs>(args?: SelectSubset<T, SeedVersionCreateManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
+
+    /**
+     * Create many SeedVersions and returns the data saved in the database.
+     * @param {SeedVersionCreateManyAndReturnArgs} args - Arguments to create many SeedVersions.
+     * @example
+     * // Create many SeedVersions
+     * const seedVersion = await prisma.seedVersion.createManyAndReturn({
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     * 
+     * // Create many SeedVersions and only return the `id`
+     * const seedVersionWithIdOnly = await prisma.seedVersion.createManyAndReturn({
+     *   select: { id: true },
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * 
+     */
+    createManyAndReturn<T extends SeedVersionCreateManyAndReturnArgs>(args?: SelectSubset<T, SeedVersionCreateManyAndReturnArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$SeedVersionPayload<ExtArgs>, T, "createManyAndReturn", GlobalOmitOptions>>
+
+    /**
+     * Delete a SeedVersion.
+     * @param {SeedVersionDeleteArgs} args - Arguments to delete one SeedVersion.
+     * @example
+     * // Delete one SeedVersion
+     * const SeedVersion = await prisma.seedVersion.delete({
+     *   where: {
+     *     // ... filter to delete one SeedVersion
+     *   }
+     * })
+     * 
+     */
+    delete<T extends SeedVersionDeleteArgs>(args: SelectSubset<T, SeedVersionDeleteArgs<ExtArgs>>): Prisma__SeedVersionClient<$Result.GetResult<Prisma.$SeedVersionPayload<ExtArgs>, T, "delete", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Update one SeedVersion.
+     * @param {SeedVersionUpdateArgs} args - Arguments to update one SeedVersion.
+     * @example
+     * // Update one SeedVersion
+     * const seedVersion = await prisma.seedVersion.update({
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: {
+     *     // ... provide data here
+     *   }
+     * })
+     * 
+     */
+    update<T extends SeedVersionUpdateArgs>(args: SelectSubset<T, SeedVersionUpdateArgs<ExtArgs>>): Prisma__SeedVersionClient<$Result.GetResult<Prisma.$SeedVersionPayload<ExtArgs>, T, "update", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Delete zero or more SeedVersions.
+     * @param {SeedVersionDeleteManyArgs} args - Arguments to filter SeedVersions to delete.
+     * @example
+     * // Delete a few SeedVersions
+     * const { count } = await prisma.seedVersion.deleteMany({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     * 
+     */
+    deleteMany<T extends SeedVersionDeleteManyArgs>(args?: SelectSubset<T, SeedVersionDeleteManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
+
+    /**
+     * Update zero or more SeedVersions.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {SeedVersionUpdateManyArgs} args - Arguments to update one or more rows.
+     * @example
+     * // Update many SeedVersions
+     * const seedVersion = await prisma.seedVersion.updateMany({
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: {
+     *     // ... provide data here
+     *   }
+     * })
+     * 
+     */
+    updateMany<T extends SeedVersionUpdateManyArgs>(args: SelectSubset<T, SeedVersionUpdateManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
+
+    /**
+     * Update zero or more SeedVersions and returns the data updated in the database.
+     * @param {SeedVersionUpdateManyAndReturnArgs} args - Arguments to update many SeedVersions.
+     * @example
+     * // Update many SeedVersions
+     * const seedVersion = await prisma.seedVersion.updateManyAndReturn({
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     * 
+     * // Update zero or more SeedVersions and only return the `id`
+     * const seedVersionWithIdOnly = await prisma.seedVersion.updateManyAndReturn({
+     *   select: { id: true },
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * 
+     */
+    updateManyAndReturn<T extends SeedVersionUpdateManyAndReturnArgs>(args: SelectSubset<T, SeedVersionUpdateManyAndReturnArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$SeedVersionPayload<ExtArgs>, T, "updateManyAndReturn", GlobalOmitOptions>>
+
+    /**
+     * Create or update one SeedVersion.
+     * @param {SeedVersionUpsertArgs} args - Arguments to update or create a SeedVersion.
+     * @example
+     * // Update or create a SeedVersion
+     * const seedVersion = await prisma.seedVersion.upsert({
+     *   create: {
+     *     // ... data to create a SeedVersion
+     *   },
+     *   update: {
+     *     // ... in case it already exists, update
+     *   },
+     *   where: {
+     *     // ... the filter for the SeedVersion we want to update
+     *   }
+     * })
+     */
+    upsert<T extends SeedVersionUpsertArgs>(args: SelectSubset<T, SeedVersionUpsertArgs<ExtArgs>>): Prisma__SeedVersionClient<$Result.GetResult<Prisma.$SeedVersionPayload<ExtArgs>, T, "upsert", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+
+    /**
+     * Count the number of SeedVersions.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {SeedVersionCountArgs} args - Arguments to filter SeedVersions to count.
+     * @example
+     * // Count the number of SeedVersions
+     * const count = await prisma.seedVersion.count({
+     *   where: {
+     *     // ... the filter for the SeedVersions we want to count
+     *   }
+     * })
+    **/
+    count<T extends SeedVersionCountArgs>(
+      args?: Subset<T, SeedVersionCountArgs>,
+    ): Prisma.PrismaPromise<
+      T extends $Utils.Record<'select', any>
+        ? T['select'] extends true
+          ? number
+          : GetScalarType<T['select'], SeedVersionCountAggregateOutputType>
+        : number
+    >
+
+    /**
+     * Allows you to perform aggregations operations on a SeedVersion.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {SeedVersionAggregateArgs} args - Select which aggregations you would like to apply and on what fields.
+     * @example
+     * // Ordered by age ascending
+     * // Where email contains prisma.io
+     * // Limited to the 10 users
+     * const aggregations = await prisma.user.aggregate({
+     *   _avg: {
+     *     age: true,
+     *   },
+     *   where: {
+     *     email: {
+     *       contains: "prisma.io",
+     *     },
+     *   },
+     *   orderBy: {
+     *     age: "asc",
+     *   },
+     *   take: 10,
+     * })
+    **/
+    aggregate<T extends SeedVersionAggregateArgs>(args: Subset<T, SeedVersionAggregateArgs>): Prisma.PrismaPromise<GetSeedVersionAggregateType<T>>
+
+    /**
+     * Group by SeedVersion.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {SeedVersionGroupByArgs} args - Group by arguments.
+     * @example
+     * // Group by city, order by createdAt, get count
+     * const result = await prisma.user.groupBy({
+     *   by: ['city', 'createdAt'],
+     *   orderBy: {
+     *     createdAt: true
+     *   },
+     *   _count: {
+     *     _all: true
+     *   },
+     * })
+     * 
+    **/
+    groupBy<
+      T extends SeedVersionGroupByArgs,
+      HasSelectOrTake extends Or<
+        Extends<'skip', Keys<T>>,
+        Extends<'take', Keys<T>>
+      >,
+      OrderByArg extends True extends HasSelectOrTake
+        ? { orderBy: SeedVersionGroupByArgs['orderBy'] }
+        : { orderBy?: SeedVersionGroupByArgs['orderBy'] },
+      OrderFields extends ExcludeUnderscoreKeys<Keys<MaybeTupleToUnion<T['orderBy']>>>,
+      ByFields extends MaybeTupleToUnion<T['by']>,
+      ByValid extends Has<ByFields, OrderFields>,
+      HavingFields extends GetHavingFields<T['having']>,
+      HavingValid extends Has<ByFields, HavingFields>,
+      ByEmpty extends T['by'] extends never[] ? True : False,
+      InputErrors extends ByEmpty extends True
+      ? `Error: "by" must not be empty.`
+      : HavingValid extends False
+      ? {
+          [P in HavingFields]: P extends ByFields
+            ? never
+            : P extends string
+            ? `Error: Field "${P}" used in "having" needs to be provided in "by".`
+            : [
+                Error,
+                'Field ',
+                P,
+                ` in "having" needs to be provided in "by"`,
+              ]
+        }[HavingFields]
+      : 'take' extends Keys<T>
+      ? 'orderBy' extends Keys<T>
+        ? ByValid extends True
+          ? {}
+          : {
+              [P in OrderFields]: P extends ByFields
+                ? never
+                : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
+            }[OrderFields]
+        : 'Error: If you provide "take", you also need to provide "orderBy"'
+      : 'skip' extends Keys<T>
+      ? 'orderBy' extends Keys<T>
+        ? ByValid extends True
+          ? {}
+          : {
+              [P in OrderFields]: P extends ByFields
+                ? never
+                : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
+            }[OrderFields]
+        : 'Error: If you provide "skip", you also need to provide "orderBy"'
+      : ByValid extends True
+      ? {}
+      : {
+          [P in OrderFields]: P extends ByFields
+            ? never
+            : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
+        }[OrderFields]
+    >(args: SubsetIntersection<T, SeedVersionGroupByArgs, OrderByArg> & InputErrors): {} extends InputErrors ? GetSeedVersionGroupByPayload<T> : Prisma.PrismaPromise<InputErrors>
+  /**
+   * Fields of the SeedVersion model
+   */
+  readonly fields: SeedVersionFieldRefs;
+  }
+
+  /**
+   * The delegate class that acts as a "Promise-like" for SeedVersion.
+   * Why is this prefixed with `Prisma__`?
+   * Because we want to prevent naming conflicts as mentioned in
+   * https://github.com/prisma/prisma-client-js/issues/707
+   */
+  export interface Prisma__SeedVersionClient<T, Null = never, ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs, GlobalOmitOptions = {}> extends Prisma.PrismaPromise<T> {
+    readonly [Symbol.toStringTag]: "PrismaPromise"
+    /**
+     * Attaches callbacks for the resolution and/or rejection of the Promise.
+     * @param onfulfilled The callback to execute when the Promise is resolved.
+     * @param onrejected The callback to execute when the Promise is rejected.
+     * @returns A Promise for the completion of which ever callback is executed.
+     */
+    then<TResult1 = T, TResult2 = never>(onfulfilled?: ((value: T) => TResult1 | PromiseLike<TResult1>) | undefined | null, onrejected?: ((reason: any) => TResult2 | PromiseLike<TResult2>) | undefined | null): $Utils.JsPromise<TResult1 | TResult2>
+    /**
+     * Attaches a callback for only the rejection of the Promise.
+     * @param onrejected The callback to execute when the Promise is rejected.
+     * @returns A Promise for the completion of the callback.
+     */
+    catch<TResult = never>(onrejected?: ((reason: any) => TResult | PromiseLike<TResult>) | undefined | null): $Utils.JsPromise<T | TResult>
+    /**
+     * Attaches a callback that is invoked when the Promise is settled (fulfilled or rejected). The
+     * resolved value cannot be modified from the callback.
+     * @param onfinally The callback to execute when the Promise is settled (fulfilled or rejected).
+     * @returns A Promise for the completion of the callback.
+     */
+    finally(onfinally?: (() => void) | undefined | null): $Utils.JsPromise<T>
+  }
+
+
+
+
+  /**
+   * Fields of the SeedVersion model
+   */
+  interface SeedVersionFieldRefs {
+    readonly id: FieldRef<"SeedVersion", 'String'>
+    readonly version: FieldRef<"SeedVersion", 'String'>
+    readonly appliedAt: FieldRef<"SeedVersion", 'DateTime'>
+  }
+    
+
+  // Custom InputTypes
+  /**
+   * SeedVersion findUnique
+   */
+  export type SeedVersionFindUniqueArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the SeedVersion
+     */
+    select?: SeedVersionSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the SeedVersion
+     */
+    omit?: SeedVersionOmit<ExtArgs> | null
+    /**
+     * Filter, which SeedVersion to fetch.
+     */
+    where: SeedVersionWhereUniqueInput
+  }
+
+  /**
+   * SeedVersion findUniqueOrThrow
+   */
+  export type SeedVersionFindUniqueOrThrowArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the SeedVersion
+     */
+    select?: SeedVersionSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the SeedVersion
+     */
+    omit?: SeedVersionOmit<ExtArgs> | null
+    /**
+     * Filter, which SeedVersion to fetch.
+     */
+    where: SeedVersionWhereUniqueInput
+  }
+
+  /**
+   * SeedVersion findFirst
+   */
+  export type SeedVersionFindFirstArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the SeedVersion
+     */
+    select?: SeedVersionSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the SeedVersion
+     */
+    omit?: SeedVersionOmit<ExtArgs> | null
+    /**
+     * Filter, which SeedVersion to fetch.
+     */
+    where?: SeedVersionWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of SeedVersions to fetch.
+     */
+    orderBy?: SeedVersionOrderByWithRelationInput | SeedVersionOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the position for searching for SeedVersions.
+     */
+    cursor?: SeedVersionWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` SeedVersions from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` SeedVersions.
+     */
+    skip?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
+     * 
+     * Filter by unique combinations of SeedVersions.
+     */
+    distinct?: SeedVersionScalarFieldEnum | SeedVersionScalarFieldEnum[]
+  }
+
+  /**
+   * SeedVersion findFirstOrThrow
+   */
+  export type SeedVersionFindFirstOrThrowArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the SeedVersion
+     */
+    select?: SeedVersionSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the SeedVersion
+     */
+    omit?: SeedVersionOmit<ExtArgs> | null
+    /**
+     * Filter, which SeedVersion to fetch.
+     */
+    where?: SeedVersionWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of SeedVersions to fetch.
+     */
+    orderBy?: SeedVersionOrderByWithRelationInput | SeedVersionOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the position for searching for SeedVersions.
+     */
+    cursor?: SeedVersionWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` SeedVersions from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` SeedVersions.
+     */
+    skip?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
+     * 
+     * Filter by unique combinations of SeedVersions.
+     */
+    distinct?: SeedVersionScalarFieldEnum | SeedVersionScalarFieldEnum[]
+  }
+
+  /**
+   * SeedVersion findMany
+   */
+  export type SeedVersionFindManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the SeedVersion
+     */
+    select?: SeedVersionSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the SeedVersion
+     */
+    omit?: SeedVersionOmit<ExtArgs> | null
+    /**
+     * Filter, which SeedVersions to fetch.
+     */
+    where?: SeedVersionWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of SeedVersions to fetch.
+     */
+    orderBy?: SeedVersionOrderByWithRelationInput | SeedVersionOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the position for listing SeedVersions.
+     */
+    cursor?: SeedVersionWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` SeedVersions from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` SeedVersions.
+     */
+    skip?: number
+    distinct?: SeedVersionScalarFieldEnum | SeedVersionScalarFieldEnum[]
+  }
+
+  /**
+   * SeedVersion create
+   */
+  export type SeedVersionCreateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the SeedVersion
+     */
+    select?: SeedVersionSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the SeedVersion
+     */
+    omit?: SeedVersionOmit<ExtArgs> | null
+    /**
+     * The data needed to create a SeedVersion.
+     */
+    data: XOR<SeedVersionCreateInput, SeedVersionUncheckedCreateInput>
+  }
+
+  /**
+   * SeedVersion createMany
+   */
+  export type SeedVersionCreateManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * The data used to create many SeedVersions.
+     */
+    data: SeedVersionCreateManyInput | SeedVersionCreateManyInput[]
+    skipDuplicates?: boolean
+  }
+
+  /**
+   * SeedVersion createManyAndReturn
+   */
+  export type SeedVersionCreateManyAndReturnArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the SeedVersion
+     */
+    select?: SeedVersionSelectCreateManyAndReturn<ExtArgs> | null
+    /**
+     * Omit specific fields from the SeedVersion
+     */
+    omit?: SeedVersionOmit<ExtArgs> | null
+    /**
+     * The data used to create many SeedVersions.
+     */
+    data: SeedVersionCreateManyInput | SeedVersionCreateManyInput[]
+    skipDuplicates?: boolean
+  }
+
+  /**
+   * SeedVersion update
+   */
+  export type SeedVersionUpdateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the SeedVersion
+     */
+    select?: SeedVersionSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the SeedVersion
+     */
+    omit?: SeedVersionOmit<ExtArgs> | null
+    /**
+     * The data needed to update a SeedVersion.
+     */
+    data: XOR<SeedVersionUpdateInput, SeedVersionUncheckedUpdateInput>
+    /**
+     * Choose, which SeedVersion to update.
+     */
+    where: SeedVersionWhereUniqueInput
+  }
+
+  /**
+   * SeedVersion updateMany
+   */
+  export type SeedVersionUpdateManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * The data used to update SeedVersions.
+     */
+    data: XOR<SeedVersionUpdateManyMutationInput, SeedVersionUncheckedUpdateManyInput>
+    /**
+     * Filter which SeedVersions to update
+     */
+    where?: SeedVersionWhereInput
+    /**
+     * Limit how many SeedVersions to update.
+     */
+    limit?: number
+  }
+
+  /**
+   * SeedVersion updateManyAndReturn
+   */
+  export type SeedVersionUpdateManyAndReturnArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the SeedVersion
+     */
+    select?: SeedVersionSelectUpdateManyAndReturn<ExtArgs> | null
+    /**
+     * Omit specific fields from the SeedVersion
+     */
+    omit?: SeedVersionOmit<ExtArgs> | null
+    /**
+     * The data used to update SeedVersions.
+     */
+    data: XOR<SeedVersionUpdateManyMutationInput, SeedVersionUncheckedUpdateManyInput>
+    /**
+     * Filter which SeedVersions to update
+     */
+    where?: SeedVersionWhereInput
+    /**
+     * Limit how many SeedVersions to update.
+     */
+    limit?: number
+  }
+
+  /**
+   * SeedVersion upsert
+   */
+  export type SeedVersionUpsertArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the SeedVersion
+     */
+    select?: SeedVersionSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the SeedVersion
+     */
+    omit?: SeedVersionOmit<ExtArgs> | null
+    /**
+     * The filter to search for the SeedVersion to update in case it exists.
+     */
+    where: SeedVersionWhereUniqueInput
+    /**
+     * In case the SeedVersion found by the `where` argument doesn't exist, create a new SeedVersion with this data.
+     */
+    create: XOR<SeedVersionCreateInput, SeedVersionUncheckedCreateInput>
+    /**
+     * In case the SeedVersion was found with the provided `where` argument, update it with this data.
+     */
+    update: XOR<SeedVersionUpdateInput, SeedVersionUncheckedUpdateInput>
+  }
+
+  /**
+   * SeedVersion delete
+   */
+  export type SeedVersionDeleteArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the SeedVersion
+     */
+    select?: SeedVersionSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the SeedVersion
+     */
+    omit?: SeedVersionOmit<ExtArgs> | null
+    /**
+     * Filter which SeedVersion to delete.
+     */
+    where: SeedVersionWhereUniqueInput
+  }
+
+  /**
+   * SeedVersion deleteMany
+   */
+  export type SeedVersionDeleteManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Filter which SeedVersions to delete
+     */
+    where?: SeedVersionWhereInput
+    /**
+     * Limit how many SeedVersions to delete.
+     */
+    limit?: number
+  }
+
+  /**
+   * SeedVersion without action
+   */
+  export type SeedVersionDefaultArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the SeedVersion
+     */
+    select?: SeedVersionSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the SeedVersion
+     */
+    omit?: SeedVersionOmit<ExtArgs> | null
+  }
+
 
   /**
    * Model EmailTemplate
@@ -5396,6 +6456,15 @@ export namespace Prisma {
   export type TransactionIsolationLevel = (typeof TransactionIsolationLevel)[keyof typeof TransactionIsolationLevel]
 
 
+  export const SeedVersionScalarFieldEnum: {
+    id: 'id',
+    version: 'version',
+    appliedAt: 'appliedAt'
+  };
+
+  export type SeedVersionScalarFieldEnum = (typeof SeedVersionScalarFieldEnum)[keyof typeof SeedVersionScalarFieldEnum]
+
+
   export const EmailTemplateScalarFieldEnum: {
     id: 'id',
     name: 'name',
@@ -5509,20 +6578,6 @@ export namespace Prisma {
 
 
   /**
-   * Reference to a field of type 'Json'
-   */
-  export type JsonFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'Json'>
-    
-
-
-  /**
-   * Reference to a field of type 'QueryMode'
-   */
-  export type EnumQueryModeFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'QueryMode'>
-    
-
-
-  /**
    * Reference to a field of type 'DateTime'
    */
   export type DateTimeFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'DateTime'>
@@ -5533,6 +6588,20 @@ export namespace Prisma {
    * Reference to a field of type 'DateTime[]'
    */
   export type ListDateTimeFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'DateTime[]'>
+    
+
+
+  /**
+   * Reference to a field of type 'Json'
+   */
+  export type JsonFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'Json'>
+    
+
+
+  /**
+   * Reference to a field of type 'QueryMode'
+   */
+  export type EnumQueryModeFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'QueryMode'>
     
 
 
@@ -5552,6 +6621,48 @@ export namespace Prisma {
    * Deep Input Types
    */
 
+
+  export type SeedVersionWhereInput = {
+    AND?: SeedVersionWhereInput | SeedVersionWhereInput[]
+    OR?: SeedVersionWhereInput[]
+    NOT?: SeedVersionWhereInput | SeedVersionWhereInput[]
+    id?: StringFilter<"SeedVersion"> | string
+    version?: StringFilter<"SeedVersion"> | string
+    appliedAt?: DateTimeFilter<"SeedVersion"> | Date | string
+  }
+
+  export type SeedVersionOrderByWithRelationInput = {
+    id?: SortOrder
+    version?: SortOrder
+    appliedAt?: SortOrder
+  }
+
+  export type SeedVersionWhereUniqueInput = Prisma.AtLeast<{
+    id?: string
+    AND?: SeedVersionWhereInput | SeedVersionWhereInput[]
+    OR?: SeedVersionWhereInput[]
+    NOT?: SeedVersionWhereInput | SeedVersionWhereInput[]
+    version?: StringFilter<"SeedVersion"> | string
+    appliedAt?: DateTimeFilter<"SeedVersion"> | Date | string
+  }, "id">
+
+  export type SeedVersionOrderByWithAggregationInput = {
+    id?: SortOrder
+    version?: SortOrder
+    appliedAt?: SortOrder
+    _count?: SeedVersionCountOrderByAggregateInput
+    _max?: SeedVersionMaxOrderByAggregateInput
+    _min?: SeedVersionMinOrderByAggregateInput
+  }
+
+  export type SeedVersionScalarWhereWithAggregatesInput = {
+    AND?: SeedVersionScalarWhereWithAggregatesInput | SeedVersionScalarWhereWithAggregatesInput[]
+    OR?: SeedVersionScalarWhereWithAggregatesInput[]
+    NOT?: SeedVersionScalarWhereWithAggregatesInput | SeedVersionScalarWhereWithAggregatesInput[]
+    id?: StringWithAggregatesFilter<"SeedVersion"> | string
+    version?: StringWithAggregatesFilter<"SeedVersion"> | string
+    appliedAt?: DateTimeWithAggregatesFilter<"SeedVersion"> | Date | string
+  }
 
   export type EmailTemplateWhereInput = {
     AND?: EmailTemplateWhereInput | EmailTemplateWhereInput[]
@@ -5805,6 +6916,48 @@ export namespace Prisma {
     preferences?: JsonNullableWithAggregatesFilter<"Subscription">
     createdAt?: DateTimeWithAggregatesFilter<"Subscription"> | Date | string
     updatedAt?: DateTimeWithAggregatesFilter<"Subscription"> | Date | string
+  }
+
+  export type SeedVersionCreateInput = {
+    id: string
+    version: string
+    appliedAt?: Date | string
+  }
+
+  export type SeedVersionUncheckedCreateInput = {
+    id: string
+    version: string
+    appliedAt?: Date | string
+  }
+
+  export type SeedVersionUpdateInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    version?: StringFieldUpdateOperationsInput | string
+    appliedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type SeedVersionUncheckedUpdateInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    version?: StringFieldUpdateOperationsInput | string
+    appliedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type SeedVersionCreateManyInput = {
+    id: string
+    version: string
+    appliedAt?: Date | string
+  }
+
+  export type SeedVersionUpdateManyMutationInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    version?: StringFieldUpdateOperationsInput | string
+    appliedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type SeedVersionUncheckedUpdateManyInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    version?: StringFieldUpdateOperationsInput | string
+    appliedAt?: DateTimeFieldUpdateOperationsInput | Date | string
   }
 
   export type EmailTemplateCreateInput = {
@@ -6090,18 +7243,6 @@ export namespace Prisma {
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
   }
 
-  export type UuidFilter<$PrismaModel = never> = {
-    equals?: string | StringFieldRefInput<$PrismaModel>
-    in?: string[] | ListStringFieldRefInput<$PrismaModel>
-    notIn?: string[] | ListStringFieldRefInput<$PrismaModel>
-    lt?: string | StringFieldRefInput<$PrismaModel>
-    lte?: string | StringFieldRefInput<$PrismaModel>
-    gt?: string | StringFieldRefInput<$PrismaModel>
-    gte?: string | StringFieldRefInput<$PrismaModel>
-    mode?: QueryMode
-    not?: NestedUuidFilter<$PrismaModel> | string
-  }
-
   export type StringFilter<$PrismaModel = never> = {
     equals?: string | StringFieldRefInput<$PrismaModel>
     in?: string[] | ListStringFieldRefInput<$PrismaModel>
@@ -6115,6 +7256,79 @@ export namespace Prisma {
     endsWith?: string | StringFieldRefInput<$PrismaModel>
     mode?: QueryMode
     not?: NestedStringFilter<$PrismaModel> | string
+  }
+
+  export type DateTimeFilter<$PrismaModel = never> = {
+    equals?: Date | string | DateTimeFieldRefInput<$PrismaModel>
+    in?: Date[] | string[] | ListDateTimeFieldRefInput<$PrismaModel>
+    notIn?: Date[] | string[] | ListDateTimeFieldRefInput<$PrismaModel>
+    lt?: Date | string | DateTimeFieldRefInput<$PrismaModel>
+    lte?: Date | string | DateTimeFieldRefInput<$PrismaModel>
+    gt?: Date | string | DateTimeFieldRefInput<$PrismaModel>
+    gte?: Date | string | DateTimeFieldRefInput<$PrismaModel>
+    not?: NestedDateTimeFilter<$PrismaModel> | Date | string
+  }
+
+  export type SeedVersionCountOrderByAggregateInput = {
+    id?: SortOrder
+    version?: SortOrder
+    appliedAt?: SortOrder
+  }
+
+  export type SeedVersionMaxOrderByAggregateInput = {
+    id?: SortOrder
+    version?: SortOrder
+    appliedAt?: SortOrder
+  }
+
+  export type SeedVersionMinOrderByAggregateInput = {
+    id?: SortOrder
+    version?: SortOrder
+    appliedAt?: SortOrder
+  }
+
+  export type StringWithAggregatesFilter<$PrismaModel = never> = {
+    equals?: string | StringFieldRefInput<$PrismaModel>
+    in?: string[] | ListStringFieldRefInput<$PrismaModel>
+    notIn?: string[] | ListStringFieldRefInput<$PrismaModel>
+    lt?: string | StringFieldRefInput<$PrismaModel>
+    lte?: string | StringFieldRefInput<$PrismaModel>
+    gt?: string | StringFieldRefInput<$PrismaModel>
+    gte?: string | StringFieldRefInput<$PrismaModel>
+    contains?: string | StringFieldRefInput<$PrismaModel>
+    startsWith?: string | StringFieldRefInput<$PrismaModel>
+    endsWith?: string | StringFieldRefInput<$PrismaModel>
+    mode?: QueryMode
+    not?: NestedStringWithAggregatesFilter<$PrismaModel> | string
+    _count?: NestedIntFilter<$PrismaModel>
+    _min?: NestedStringFilter<$PrismaModel>
+    _max?: NestedStringFilter<$PrismaModel>
+  }
+
+  export type DateTimeWithAggregatesFilter<$PrismaModel = never> = {
+    equals?: Date | string | DateTimeFieldRefInput<$PrismaModel>
+    in?: Date[] | string[] | ListDateTimeFieldRefInput<$PrismaModel>
+    notIn?: Date[] | string[] | ListDateTimeFieldRefInput<$PrismaModel>
+    lt?: Date | string | DateTimeFieldRefInput<$PrismaModel>
+    lte?: Date | string | DateTimeFieldRefInput<$PrismaModel>
+    gt?: Date | string | DateTimeFieldRefInput<$PrismaModel>
+    gte?: Date | string | DateTimeFieldRefInput<$PrismaModel>
+    not?: NestedDateTimeWithAggregatesFilter<$PrismaModel> | Date | string
+    _count?: NestedIntFilter<$PrismaModel>
+    _min?: NestedDateTimeFilter<$PrismaModel>
+    _max?: NestedDateTimeFilter<$PrismaModel>
+  }
+
+  export type UuidFilter<$PrismaModel = never> = {
+    equals?: string | StringFieldRefInput<$PrismaModel>
+    in?: string[] | ListStringFieldRefInput<$PrismaModel>
+    notIn?: string[] | ListStringFieldRefInput<$PrismaModel>
+    lt?: string | StringFieldRefInput<$PrismaModel>
+    lte?: string | StringFieldRefInput<$PrismaModel>
+    gt?: string | StringFieldRefInput<$PrismaModel>
+    gte?: string | StringFieldRefInput<$PrismaModel>
+    mode?: QueryMode
+    not?: NestedUuidFilter<$PrismaModel> | string
   }
   export type JsonNullableFilter<$PrismaModel = never> =
     | PatchUndefined<
@@ -6138,17 +7352,6 @@ export namespace Prisma {
     gt?: InputJsonValue | JsonFieldRefInput<$PrismaModel>
     gte?: InputJsonValue | JsonFieldRefInput<$PrismaModel>
     not?: InputJsonValue | JsonFieldRefInput<$PrismaModel> | JsonNullValueFilter
-  }
-
-  export type DateTimeFilter<$PrismaModel = never> = {
-    equals?: Date | string | DateTimeFieldRefInput<$PrismaModel>
-    in?: Date[] | string[] | ListDateTimeFieldRefInput<$PrismaModel>
-    notIn?: Date[] | string[] | ListDateTimeFieldRefInput<$PrismaModel>
-    lt?: Date | string | DateTimeFieldRefInput<$PrismaModel>
-    lte?: Date | string | DateTimeFieldRefInput<$PrismaModel>
-    gt?: Date | string | DateTimeFieldRefInput<$PrismaModel>
-    gte?: Date | string | DateTimeFieldRefInput<$PrismaModel>
-    not?: NestedDateTimeFilter<$PrismaModel> | Date | string
   }
 
   export type EmailLogListRelationFilter = {
@@ -6208,24 +7411,6 @@ export namespace Prisma {
     _min?: NestedStringFilter<$PrismaModel>
     _max?: NestedStringFilter<$PrismaModel>
   }
-
-  export type StringWithAggregatesFilter<$PrismaModel = never> = {
-    equals?: string | StringFieldRefInput<$PrismaModel>
-    in?: string[] | ListStringFieldRefInput<$PrismaModel>
-    notIn?: string[] | ListStringFieldRefInput<$PrismaModel>
-    lt?: string | StringFieldRefInput<$PrismaModel>
-    lte?: string | StringFieldRefInput<$PrismaModel>
-    gt?: string | StringFieldRefInput<$PrismaModel>
-    gte?: string | StringFieldRefInput<$PrismaModel>
-    contains?: string | StringFieldRefInput<$PrismaModel>
-    startsWith?: string | StringFieldRefInput<$PrismaModel>
-    endsWith?: string | StringFieldRefInput<$PrismaModel>
-    mode?: QueryMode
-    not?: NestedStringWithAggregatesFilter<$PrismaModel> | string
-    _count?: NestedIntFilter<$PrismaModel>
-    _min?: NestedStringFilter<$PrismaModel>
-    _max?: NestedStringFilter<$PrismaModel>
-  }
   export type JsonNullableWithAggregatesFilter<$PrismaModel = never> =
     | PatchUndefined<
         Either<Required<JsonNullableWithAggregatesFilterBase<$PrismaModel>>, Exclude<keyof Required<JsonNullableWithAggregatesFilterBase<$PrismaModel>>, 'path'>>,
@@ -6251,20 +7436,6 @@ export namespace Prisma {
     _count?: NestedIntNullableFilter<$PrismaModel>
     _min?: NestedJsonNullableFilter<$PrismaModel>
     _max?: NestedJsonNullableFilter<$PrismaModel>
-  }
-
-  export type DateTimeWithAggregatesFilter<$PrismaModel = never> = {
-    equals?: Date | string | DateTimeFieldRefInput<$PrismaModel>
-    in?: Date[] | string[] | ListDateTimeFieldRefInput<$PrismaModel>
-    notIn?: Date[] | string[] | ListDateTimeFieldRefInput<$PrismaModel>
-    lt?: Date | string | DateTimeFieldRefInput<$PrismaModel>
-    lte?: Date | string | DateTimeFieldRefInput<$PrismaModel>
-    gt?: Date | string | DateTimeFieldRefInput<$PrismaModel>
-    gte?: Date | string | DateTimeFieldRefInput<$PrismaModel>
-    not?: NestedDateTimeWithAggregatesFilter<$PrismaModel> | Date | string
-    _count?: NestedIntFilter<$PrismaModel>
-    _min?: NestedDateTimeFilter<$PrismaModel>
-    _max?: NestedDateTimeFilter<$PrismaModel>
   }
 
   export type StringNullableFilter<$PrismaModel = never> = {
@@ -6416,6 +7587,14 @@ export namespace Prisma {
     updatedAt?: SortOrder
   }
 
+  export type StringFieldUpdateOperationsInput = {
+    set?: string
+  }
+
+  export type DateTimeFieldUpdateOperationsInput = {
+    set?: Date | string
+  }
+
   export type EmailLogCreateNestedManyWithoutTemplateInput = {
     create?: XOR<EmailLogCreateWithoutTemplateInput, EmailLogUncheckedCreateWithoutTemplateInput> | EmailLogCreateWithoutTemplateInput[] | EmailLogUncheckedCreateWithoutTemplateInput[]
     connectOrCreate?: EmailLogCreateOrConnectWithoutTemplateInput | EmailLogCreateOrConnectWithoutTemplateInput[]
@@ -6428,14 +7607,6 @@ export namespace Prisma {
     connectOrCreate?: EmailLogCreateOrConnectWithoutTemplateInput | EmailLogCreateOrConnectWithoutTemplateInput[]
     createMany?: EmailLogCreateManyTemplateInputEnvelope
     connect?: EmailLogWhereUniqueInput | EmailLogWhereUniqueInput[]
-  }
-
-  export type StringFieldUpdateOperationsInput = {
-    set?: string
-  }
-
-  export type DateTimeFieldUpdateOperationsInput = {
-    set?: Date | string
   }
 
   export type EmailLogUpdateManyWithoutTemplateNestedInput = {
@@ -6488,17 +7659,6 @@ export namespace Prisma {
     update?: XOR<XOR<EmailTemplateUpdateToOneWithWhereWithoutEmailLogsInput, EmailTemplateUpdateWithoutEmailLogsInput>, EmailTemplateUncheckedUpdateWithoutEmailLogsInput>
   }
 
-  export type NestedUuidFilter<$PrismaModel = never> = {
-    equals?: string | StringFieldRefInput<$PrismaModel>
-    in?: string[] | ListStringFieldRefInput<$PrismaModel>
-    notIn?: string[] | ListStringFieldRefInput<$PrismaModel>
-    lt?: string | StringFieldRefInput<$PrismaModel>
-    lte?: string | StringFieldRefInput<$PrismaModel>
-    gt?: string | StringFieldRefInput<$PrismaModel>
-    gte?: string | StringFieldRefInput<$PrismaModel>
-    not?: NestedUuidFilter<$PrismaModel> | string
-  }
-
   export type NestedStringFilter<$PrismaModel = never> = {
     equals?: string | StringFieldRefInput<$PrismaModel>
     in?: string[] | ListStringFieldRefInput<$PrismaModel>
@@ -6524,7 +7684,7 @@ export namespace Prisma {
     not?: NestedDateTimeFilter<$PrismaModel> | Date | string
   }
 
-  export type NestedUuidWithAggregatesFilter<$PrismaModel = never> = {
+  export type NestedStringWithAggregatesFilter<$PrismaModel = never> = {
     equals?: string | StringFieldRefInput<$PrismaModel>
     in?: string[] | ListStringFieldRefInput<$PrismaModel>
     notIn?: string[] | ListStringFieldRefInput<$PrismaModel>
@@ -6532,7 +7692,10 @@ export namespace Prisma {
     lte?: string | StringFieldRefInput<$PrismaModel>
     gt?: string | StringFieldRefInput<$PrismaModel>
     gte?: string | StringFieldRefInput<$PrismaModel>
-    not?: NestedUuidWithAggregatesFilter<$PrismaModel> | string
+    contains?: string | StringFieldRefInput<$PrismaModel>
+    startsWith?: string | StringFieldRefInput<$PrismaModel>
+    endsWith?: string | StringFieldRefInput<$PrismaModel>
+    not?: NestedStringWithAggregatesFilter<$PrismaModel> | string
     _count?: NestedIntFilter<$PrismaModel>
     _min?: NestedStringFilter<$PrismaModel>
     _max?: NestedStringFilter<$PrismaModel>
@@ -6549,7 +7712,21 @@ export namespace Prisma {
     not?: NestedIntFilter<$PrismaModel> | number
   }
 
-  export type NestedStringWithAggregatesFilter<$PrismaModel = never> = {
+  export type NestedDateTimeWithAggregatesFilter<$PrismaModel = never> = {
+    equals?: Date | string | DateTimeFieldRefInput<$PrismaModel>
+    in?: Date[] | string[] | ListDateTimeFieldRefInput<$PrismaModel>
+    notIn?: Date[] | string[] | ListDateTimeFieldRefInput<$PrismaModel>
+    lt?: Date | string | DateTimeFieldRefInput<$PrismaModel>
+    lte?: Date | string | DateTimeFieldRefInput<$PrismaModel>
+    gt?: Date | string | DateTimeFieldRefInput<$PrismaModel>
+    gte?: Date | string | DateTimeFieldRefInput<$PrismaModel>
+    not?: NestedDateTimeWithAggregatesFilter<$PrismaModel> | Date | string
+    _count?: NestedIntFilter<$PrismaModel>
+    _min?: NestedDateTimeFilter<$PrismaModel>
+    _max?: NestedDateTimeFilter<$PrismaModel>
+  }
+
+  export type NestedUuidFilter<$PrismaModel = never> = {
     equals?: string | StringFieldRefInput<$PrismaModel>
     in?: string[] | ListStringFieldRefInput<$PrismaModel>
     notIn?: string[] | ListStringFieldRefInput<$PrismaModel>
@@ -6557,10 +7734,18 @@ export namespace Prisma {
     lte?: string | StringFieldRefInput<$PrismaModel>
     gt?: string | StringFieldRefInput<$PrismaModel>
     gte?: string | StringFieldRefInput<$PrismaModel>
-    contains?: string | StringFieldRefInput<$PrismaModel>
-    startsWith?: string | StringFieldRefInput<$PrismaModel>
-    endsWith?: string | StringFieldRefInput<$PrismaModel>
-    not?: NestedStringWithAggregatesFilter<$PrismaModel> | string
+    not?: NestedUuidFilter<$PrismaModel> | string
+  }
+
+  export type NestedUuidWithAggregatesFilter<$PrismaModel = never> = {
+    equals?: string | StringFieldRefInput<$PrismaModel>
+    in?: string[] | ListStringFieldRefInput<$PrismaModel>
+    notIn?: string[] | ListStringFieldRefInput<$PrismaModel>
+    lt?: string | StringFieldRefInput<$PrismaModel>
+    lte?: string | StringFieldRefInput<$PrismaModel>
+    gt?: string | StringFieldRefInput<$PrismaModel>
+    gte?: string | StringFieldRefInput<$PrismaModel>
+    not?: NestedUuidWithAggregatesFilter<$PrismaModel> | string
     _count?: NestedIntFilter<$PrismaModel>
     _min?: NestedStringFilter<$PrismaModel>
     _max?: NestedStringFilter<$PrismaModel>
@@ -6598,20 +7783,6 @@ export namespace Prisma {
     gt?: InputJsonValue | JsonFieldRefInput<$PrismaModel>
     gte?: InputJsonValue | JsonFieldRefInput<$PrismaModel>
     not?: InputJsonValue | JsonFieldRefInput<$PrismaModel> | JsonNullValueFilter
-  }
-
-  export type NestedDateTimeWithAggregatesFilter<$PrismaModel = never> = {
-    equals?: Date | string | DateTimeFieldRefInput<$PrismaModel>
-    in?: Date[] | string[] | ListDateTimeFieldRefInput<$PrismaModel>
-    notIn?: Date[] | string[] | ListDateTimeFieldRefInput<$PrismaModel>
-    lt?: Date | string | DateTimeFieldRefInput<$PrismaModel>
-    lte?: Date | string | DateTimeFieldRefInput<$PrismaModel>
-    gt?: Date | string | DateTimeFieldRefInput<$PrismaModel>
-    gte?: Date | string | DateTimeFieldRefInput<$PrismaModel>
-    not?: NestedDateTimeWithAggregatesFilter<$PrismaModel> | Date | string
-    _count?: NestedIntFilter<$PrismaModel>
-    _min?: NestedDateTimeFilter<$PrismaModel>
-    _max?: NestedDateTimeFilter<$PrismaModel>
   }
 
   export type NestedStringNullableFilter<$PrismaModel = never> = {

@@ -1,5 +1,5 @@
 import { prisma } from '../prisma'
-import type { HomeSection } from '@prisma/client'
+import type { HomeSection } from '../../generated/client'
 
 // 导出 Prisma 生成的类型，便于在其他地方使用
 export type Section = HomeSection

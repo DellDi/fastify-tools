@@ -117,6 +117,12 @@ exports.Prisma.TransactionIsolationLevel = makeStrictEnum({
   Serializable: 'Serializable'
 });
 
+exports.Prisma.SeedVersionScalarFieldEnum = {
+  id: 'id',
+  version: 'version',
+  appliedAt: 'appliedAt'
+};
+
 exports.Prisma.EmailTemplateScalarFieldEnum = {
   id: 'id',
   name: 'name',
@@ -185,6 +191,7 @@ exports.Prisma.NullsOrder = {
 
 
 exports.Prisma.ModelName = {
+  SeedVersion: 'SeedVersion',
   EmailTemplate: 'EmailTemplate',
   EmailLog: 'EmailLog',
   MagicLink: 'MagicLink',

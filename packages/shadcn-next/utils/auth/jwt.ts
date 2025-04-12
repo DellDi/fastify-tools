@@ -1,7 +1,7 @@
 'use server'
 
 import jsonwebtoken from 'jsonwebtoken'
-import type { User } from '@prisma/client'
+import type { User } from '../../generated/client/index.js'
 import { LRUCache } from 'lru-cache'
 
 const JWT_SECRET = process.env.JWT_SECRET || 'your-jwt-secret'

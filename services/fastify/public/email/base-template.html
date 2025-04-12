@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 0;
+      padding: 0;
+      background-color: #f8f9fa;
+      color: #333;
+    }
+    .container {
+      width: 100%;
+      max-width: 600px;
+      margin: 30px auto;
+      padding: 20px;
+      background-color: #fff;
+      border-radius: 8px;
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    }
+    .header {
+      text-align: center;
+      padding: 20px 0;
+      background-color: #007bff;
+      color: #fff;
+      border-radius: 8px 8px 0 0;
+    }
+    .header h1 {
+      margin: 0;
+      font-size: 28px;
+    }
+    .content {
+      padding: 20px;
+      font-size: 16px;
+      line-height: 1.6;
+    }
+    .button {
+      display: block;
+      width: 100%;
+      max-width: 220px;
+      margin: 20px auto;
+      padding: 12px;
+      background-color: #007bff;
+      color: #fff;
+      text-align: center;
+      text-decoration: none;
+      border-radius: 4px;
+      font-size: 16px;
+    }
+    .button:hover {
+      background-color: #0056b3;
+    }
+    .footer {
+      text-align: center;
+      padding: 15px 0;
+      background-color: #f1f1f1;
+      border-radius: 0 0 8px 8px;
+      font-size: 14px;
+      color: #666;
+    }
+    .footer a {
+      color: #007bff;
+      text-decoration: none;
+    }
+    .footer a:hover {
+      text-decoration: underline;
+    }
+    .highlight {
+      color: #007bff;
+      font-weight: bold;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="container">
+    <!-- Header Section -->
+    <div class="header">
+      <h1>欢迎加入我们的服务！</h1>
+    </div>
+
+    <!-- Content Section -->
+    <div class="content">
+      <p>亲爱的 {{ .Email }}，</p>
+      <p>感谢你注册我们的平台！为了确保你的帐户安全，请确认你的电子邮件地址。</p>
+      <p>点击下面的链接完成邮箱验证：</p>
+      <a href="{{ .ConfirmationURL }}" class="button">确认邮箱地址</a>
+      <p>如果你没有注册该账号，或者没有发起此请求，请忽略此邮件。</p>
+
+      <p>祝您使用愉快！</p>
+      <p>如果有任何问题，欢迎随时联系 <a href="mailto:support@yourcompany.com">support@yourcompany.com</a>。</p>
+    </div>
+
+    <!-- Footer Section -->
+    <div class="footer">
+      <p>本邮件由 <span class="highlight">您的公司</span> 发送。</p>
+      <p>访问我们的网站：<a href="{{ .SiteURL }}">{{ .SiteURL }}</a></p>
+    </div>
+  </div>
+
+</body>
+</html>

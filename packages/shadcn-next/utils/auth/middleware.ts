@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
 import { prisma } from '../../lib/prisma'
 import { jwt } from '../../utils/auth/jwt'
-import { type Menu, type Permission, type Role, type User } from '@prisma/client'
+import { type Menu, type Permission, type Role, type User } from '../../generated/client/index.js'
 
 type FullUser = User & {
   userRole?: Role & {

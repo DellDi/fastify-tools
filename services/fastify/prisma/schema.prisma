@@ -11,6 +11,15 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+// 种子版本控制表
+model SeedVersion {
+  id        String   @id
+  version   String
+  appliedAt DateTime @default(now()) @map("applied_at") @db.Timestamptz
+
+  @@map("seed_versions")
+}
+
 // 邮件模板模型
 model EmailTemplate {
   id        String     @id @default(uuid()) @db.Uuid

@@ -9,6 +9,9 @@
   "imports": {
     "#/*": "./src/*"
   },
+  "prisma": {
+    "seed": "tsx prisma/seed.ts"
+  },
   "directories": {
     "test": "test"
   },
@@ -63,6 +66,7 @@
     "@types/nodemailer": "^6.4.17",
     "c8": "^10.1.3",
     "fastify-tsconfig": "^3.0.0",
-    "prisma": "^6.6.0"
+    "prisma": "^6.6.0",
+    "tsx": "^4.19.3"
   }
 }

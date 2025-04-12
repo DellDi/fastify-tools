@@ -2,7 +2,7 @@
 // 使用 globalThis 作为全局缓存，避免在开发环境下热重载时创建多个实例
 // https://www.prisma.io/docs/orm/more/help-and-troubleshooting/help-articles/nextjs-prisma-client-dev-practices
 
-import { PrismaClient } from '@prisma/client'
+import { PrismaClient } from '../types/prisma'
 
 // 全局类型定义，用于存储 PrismaClient 实例
 const globalForPrisma = globalThis as unknown as {

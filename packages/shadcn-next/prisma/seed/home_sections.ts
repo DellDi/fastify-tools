@@ -1,4 +1,4 @@
-import { PrismaClient } from '@prisma/client';
+import { PrismaClient } from '../../generated/client/index.js';
 const prisma = new PrismaClient();
 
 export async function seedHomeSections() {
@@ -15,7 +15,7 @@ export async function seedHomeSections() {
       title: 'RAG与爬虫',
       description: '解决获取新视窗数据格式文档的规范化的相关难题，支持RAG知识获取、dify对接',
       linkText: '进入爬虫中心',
-      linkHref: '/login',
+      linkHref: '/aigc/task',
       gradient: 'from-yellow-400 to-orange-500',
       status: '在用'
     },

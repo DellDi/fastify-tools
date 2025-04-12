@@ -191,7 +191,7 @@ importers:
         specifier: ^3.4.14
         version: 3.4.15(ts-node@10.9.2(@types/node@20.17.30)(typescript@5.8.3))
       tsx:
-        specifier: ^4.7.1
+        specifier: ^4.19.3
         version: 4.19.3
 
   services/fastify:
@@ -296,6 +296,9 @@ importers:
       prisma:
         specifier: ^6.6.0
         version: 6.6.0(typescript@5.8.3)
+      tsx:
+        specifier: ^4.19.3
+        version: 4.19.3
 
   services/tools:
     dependencies:

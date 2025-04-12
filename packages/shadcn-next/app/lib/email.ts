@@ -2,8 +2,6 @@
 
 import crypto from 'crypto'
 
-
-
 export async function sendVerificationEmail(authUser: {
   user: { id: string; email: string }
 }, to: string, code: string) {

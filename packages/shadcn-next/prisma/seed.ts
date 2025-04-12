@@ -1,7 +1,7 @@
-import { PrismaClient } from '@prisma/client';
-import { seedHomeSections } from './seed/home_sections.js';
-import { seedAuthInit } from './seed/auth_init.js';
-import { runVersionedSeed } from './seed/version-manager.js';
+import { PrismaClient } from '../generated/client';
+import { seedHomeSections } from './seed/home_sections';
+import { seedAuthInit } from './seed/auth_init';
+import { runVersionedSeed } from './seed/version-manager';
 
 const prisma = new PrismaClient();
 
