@@ -5,10 +5,7 @@
   "version": "1.0.0",
   "description": "This project was bootstrapped with Fastify-CLI.",
   "type": "module",
-  "main": "api/index.ts",
-  "imports": {
-    "#/*": "./src/*"
-  },
+  "main": "api/index.js",
   "prisma": {
     "seed": "tsx prisma/seed.ts"
   },

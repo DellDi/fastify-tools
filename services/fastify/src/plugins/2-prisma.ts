@@ -1,6 +1,5 @@
 import fp from 'fastify-plugin';
-import { PrismaClient } from '@/types/prisma.js';
-
+import { PrismaClient } from '../types/prisma.js';
 /**
  * Prisma 客户端插件
  * 

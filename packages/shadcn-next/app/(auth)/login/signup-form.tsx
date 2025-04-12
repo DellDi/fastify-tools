@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form'
 import { useRouter } from 'next/navigation'
+import { errorMessagesCodeMap } from '@/app/lib/auth/register'
 
 const signUpSchema = z.object({
   username: z.string().min(3, { message: '用户名至少需要3个字符' }),
@@ -56,7 +57,11 @@ export function SignUpForm({ onSignUpAction, onSignUpErrorAction }: SignUpFormPr
         throw new Error(result.error || '注册失败')
       }
     } catch (error) {
-      onSignUpErrorAction(error instanceof Error ? error.message : '注册失败，请稍后再试。')
+      if (error instanceof Error) { 
+        onSignUpErrorAction(errorMessagesCodeMap[error.message as keyof typeof errorMessagesCodeMap].message)
+      } else {
+        onSignUpErrorAction('注册失败，请稍后再试。')
+      }
     } finally {
       setIsLoading(false)
     }

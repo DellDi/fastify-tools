@@ -13,6 +13,12 @@ const cache = new LRUCache({
 })
 
 export const jwt = {
+    sign: (payload: any) => {
+        return jsonwebtoken.sign(payload, JWT_SECRET)
+    },
+    verify: (token: string) => {
+        return jsonwebtoken.verify(token, JWT_SECRET)
+    },
     encrypt: (password: string) => {
         return jsonwebtoken.sign({ password }, JWT_SECRET)
     },

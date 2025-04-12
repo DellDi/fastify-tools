@@ -23,10 +23,6 @@ const schema = Type.Object({
   SMTP_USER: Type.String(),
   SMTP_PASS: Type.String(),
   SMTP_SECURE: Type.Boolean({ default: false }),
-
-  // 应用配置
-  MAGIC_LINK_BASE_URL: Type.String(),
-  MAGIC_LINK_EXPIRY: Type.Number({ default: 30 }), // minutes
 })
 
 
