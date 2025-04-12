@@ -161,11 +161,6 @@ export function TasksTable() {
         }
       )
 
-      // 打印所有响应头，以便调试
-      response.headers.forEach((value: string, key: string) => {
-        console.log('🚀 ~ response.headers.forEach ~ value:', key, value)
-      })
-
       // 获取文件名
       const contentDisposition = response.headers.get('content-disposition')
       let filename = 'download.zip'

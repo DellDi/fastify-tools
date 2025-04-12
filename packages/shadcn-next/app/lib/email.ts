@@ -1,4 +1,7 @@
+'use server'
+
 import crypto from 'crypto'
+
 
 
 export async function sendVerificationEmail(authUser: {
@@ -10,7 +13,6 @@ export async function sendVerificationEmail(authUser: {
   const verificationCode = crypto.randomBytes(3).toString('hex').toUpperCase()
   const expiresAt = new Date(Date.now() + 15 * 60 * 1000) // 15 minutes from now
 
-  const supabase = await createServerBaseClient()
 
   // 插入验证码
   const { error: insertError } = await supabase

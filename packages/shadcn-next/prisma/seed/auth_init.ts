@@ -13,11 +13,11 @@ export async function seedAuthInit() {
     { name: 'file:bigLoad', description: '上传大文件', groupName: 'file' },
     { name: 'jira:view', description: '查看Jira', groupName: 'jira' },
     { name: 'jira:create', description: '创建Jira', groupName: 'jira' },
-    { name: 'aigc:chat', description: '使用Chat工具', groupName: 'aigc' },
-    { name: 'aigc:model', description: '调优模型', groupName: 'aigc' },
-    { name: 'aigc:task', description: '任务管理', groupName: 'aigc' },
-    { name: 'aigc:task:download', description: '任务下载', groupName: 'aigc' },
-    { name: 'aigc:task:delete', description: '任务删除', groupName: 'aigc' },
+    { name: 'chat:view', description: '使用Chat工具', groupName: 'chat' },
+    { name: 'model:view', description: '调优模型', groupName: 'model' },
+    { name: 'task:view', description: '任务管理', groupName: 'task' },
+    { name: 'task:download', description: '任务下载', groupName: 'task' },
+    { name: 'task:delete', description: '任务删除', groupName: 'task' },
     { name: 'settings:view', description: '查看设置', groupName: 'settings' },
     { name: 'role:view', description: '查看角色', groupName: 'role' },
     { name: 'role:create', description: '创建角色', groupName: 'role' },
@@ -47,14 +47,13 @@ export async function seedAuthInit() {
     { parentName: '文件系统', name: '文件管理', url: '/file/manage', icon: 'Rabbit', description: '我们最快的通用模型。' },
     { parentName: '文件系统', name: '文件上传', url: '/file/upload', icon: 'Bird', description: '高效的性能和速度。' },
     { parentName: '文件系统', name: '大文件上传', url: '/file/bigLoad', icon: 'Turtle', description: '最强大的复杂计算模型。' },
-    { parentName: 'jira中心', name: '个人看板', url: '/jira/personal' },
-    { parentName: 'jira中心', name: '创建工单', url: '/jira/create' },
-    { parentName: 'AIGC', name: 'Chat工具', url: '/aigc/chat' },
-    { parentName: 'AIGC', name: '模型调优', url: '/aigc/model' },
-    { parentName: 'AIGC', name: '爬虫管理', url: '/aigc/crawler' },
-    { parentName: 'AIGC', name: 'DIFY上传', url: '/aigc/dify' },
-    { parentName: '设置', name: '账户', url: '/settings' },
-    { parentName: '设置', name: '角色', url: '/role' }
+    { parentName: 'jira中心', name: '个人看板', url: '/jira/personal', icon: 'BookOpen', description: '个人看板' },
+    { parentName: 'jira中心', name: '创建工单', url: '/jira/create', icon: 'BookOpen', description: '创建工单' },
+    { parentName: 'AIGC', name: 'Chat工具', url: '/aigc/chat', icon: 'SquareTerminal', description: 'Chat工具' },
+    { parentName: 'AIGC', name: '模型调优', url: '/aigc/model', icon: 'Code2', description: '模型调优' },
+    { parentName: 'AIGC', name: '爬虫管理', url: '/aigc/task', icon: 'Code2', description: '爬虫管理' },
+    { parentName: '设置', name: '账户', url: '/settings', icon: 'SquareTerminal', description: '账户' },
+    { parentName: '设置', name: '角色', url: '/role', icon: 'SquareTerminal', description: '角色' }
   ]
 
   // 创建根菜单

@@ -1,7 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import jwt from 'jsonwebtoken';
-import { generateAccessToken, generateRefreshToken, getRefreshTokenFromCookies, setRefreshTokenToCookies } from '@/lib/auth';
-import { User } from '@/types/user';
+import { jwt } from '@/utils/auth/jwt';
 
 const REFRESH_TOKEN_SECRET = process.env.REFRESH_TOKEN_SECRET || 'your_refresh_token_secret';
 

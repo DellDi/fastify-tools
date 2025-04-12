@@ -11,7 +11,7 @@ export async function getAllSections(): Promise<Section[]> {
   try {
     const sections = await prisma.homeSection.findMany({
       where: { status: '在用' },
-      orderBy: { createdAt: 'desc' }
+      orderBy: { createdAt: 'asc' }
     })
     return sections
   } catch (error) {

@@ -14,12 +14,5 @@ export async function POST(request: NextRequest) {
     NextResponse.redirect(url)
     return NextResponse.json({ message: '登出成功' })
   }
-  // response.cookies.set('auth_token', '', {
-  //   httpOnly: true,
-  //   secure: process.env.NODE_ENV === 'production',
-  //   sameSite: 'strict',
-  //   expires: new Date(0),
-  //   path: '/',
-  // })
 }
 

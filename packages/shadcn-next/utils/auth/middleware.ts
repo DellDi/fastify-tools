@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
 import { prisma } from '../../lib/prisma'
-import { verify } from 'jsonwebtoken'
+import { jwt } from '../../utils/auth/jwt'
 import { type Menu, type Permission, type Role, type User } from '@prisma/client'
 
 type FullUser = User & {
@@ -29,7 +29,7 @@ export async function verifyAuth(request: NextRequest) {
   }
 
   try {
-    const decoded = verify(token, process.env.JWT_SECRET || '') as {
+    const decoded = jwt.verifyToken(token) as {
       id: string
       email: string
       role: string

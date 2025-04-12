@@ -1,11 +1,9 @@
 import { NextResponse } from 'next/server'
 
-
 export async function POST(request: Request) {
   const { username, email, password } = await request.json()
   try {
-    // 使用 Supabase 注册用户
-    const supabase = await createServerBaseClient()
+    
 
     const { data: userInfo, error: authError } = await supabase.auth.signUp({
       email,

@@ -1,11 +1,9 @@
 'use server'
 import { NextResponse } from 'next/server'
-
 import { initUserStore } from '@/app/lib/user'
 
 export async function POST(request: Request) {
   const { email, password } = await request.json()
-  const supabase = await createServerBaseClient()
 
   try {
     const { data, error } = await supabase.auth.signInWithPassword({
@@ -28,11 +26,6 @@ export async function POST(request: Request) {
     //   process.env.SUPABASE_JWT_SECRET!,
     //   { expiresIn: '1d' }
     // )
-
-    // 记录登录，先别记录，影响业务整体注册流程的判断
-    // await supabase
-    // .from('login_logs')
-    // .insert({ user_id: data.user.id, login_time: new Date().toISOString() })
 
     await initUserStore()
 

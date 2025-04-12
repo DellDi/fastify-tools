@@ -1,6 +1,5 @@
 // 基于supabase的user store, 内部存储关于user的相关状态
 import { create } from 'zustand'
-import { type User } from '@supabase/supabase-js'
 
 interface UserStore {
   user: User | null
