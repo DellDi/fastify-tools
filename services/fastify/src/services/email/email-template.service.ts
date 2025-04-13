@@ -1,5 +1,5 @@
 import { FastifyInstance } from 'fastify';
-import { EmailTemplate, Prisma } from '../../generated/client/index.js'
+import { EmailTemplate, Prisma } from '../../../generated/client/index.js'
 /**
  * 邮件模板服务
  * 提供邮件模板的增删改查功能

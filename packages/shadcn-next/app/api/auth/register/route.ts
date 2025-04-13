@@ -1,15 +1,16 @@
 import { registerUser } from '@/app/lib/auth/register'
 import { NextResponse } from 'next/server'
-import { errorMessagesCodeMap } from '@/app/lib/auth/register'
+import { errorMessagesCodeMap } from '@/types/email'
 
 export async function POST(request: Request) {
-  const { username, email, password } = await request.json()
+  // 默认颁发初始化密码
+  const { username, email, phoneNumber } = await request.json()
   try {
-    const user = await registerUser({ username, email, password })
+    const user = await registerUser({ username, email, phoneNumber })
     return NextResponse.json({ data: { user }, message: '注册成功，请查收验证邮件，进行邮箱验证' })
   } catch (error) {
-    console.error('Registration error:', error)
-    if (error instanceof Error) { 
+    console.log("🚀 ~ POST ~ error:", error)
+    if (error instanceof Error) {
       return NextResponse.json({
         message: errorMessagesCodeMap[error.message as keyof typeof errorMessagesCodeMap].message,
         code: errorMessagesCodeMap[error.message as keyof typeof errorMessagesCodeMap].code,

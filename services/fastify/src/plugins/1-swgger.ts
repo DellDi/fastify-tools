@@ -13,7 +13,7 @@ export default fp(async (fastify) => {
   // 注册 swagger
   await fastify.register(swagger, {
     openapi: {
-      openapi: '3.0.0',
+      openapi: '3.1.0',
       info: {
         title: 'Dell DI 的API文档',
         description: 'Dell DI the Fastify swagger API',
@@ -46,7 +46,7 @@ export default fp(async (fastify) => {
   await fastify.register(swaggerUi, {
     routePrefix: customApiDocsPath,
     uiConfig: {
-      docExpansion: 'full',
+      docExpansion: 'list',
       deepLinking: true,
       // 指定自定义的 JSON URL 路径
       url: `/${customJsonPath}`

@@ -1,8 +1,8 @@
 import { FastifyPluginAsync } from 'fastify';
 import { Type } from '@sinclair/typebox';
 import { Prisma } from '../../../generated/client/index.js';
-import { EmailTemplateService } from '../../services/email-template.service.js';
-import { EmailSendService } from '../../services/email-send.service.js';
+import { EmailTemplateService } from '../../services/email/email-template.service.js';
+import { EmailSendService } from '../../services/email/email-send.service.js';
 
 const emailTemplateRoutes: FastifyPluginAsync = async (fastify): Promise<void> => {
   const emailTemplateService = new EmailTemplateService(fastify);
@@ -11,6 +11,7 @@ const emailTemplateRoutes: FastifyPluginAsync = async (fastify): Promise<void> =
   // 获取所有邮件模板
   fastify.get('/', {
     schema: {
+      tags: ['email'],
       response: {
         200: Type.Array(
           Type.Object({
@@ -33,6 +34,7 @@ const emailTemplateRoutes: FastifyPluginAsync = async (fastify): Promise<void> =
   // 获取单个邮件模板
   fastify.get('/:id', {
     schema: {
+      tags: ['email'],
       params: Type.Object({
         id: Type.String(),
       }),
@@ -66,6 +68,7 @@ const emailTemplateRoutes: FastifyPluginAsync = async (fastify): Promise<void> =
   // 创建邮件模板
   fastify.post('/', {
     schema: {
+      tags: ['email'],
       body: Type.Object({
         name: Type.String(),
         subject: Type.String(),
@@ -94,6 +97,7 @@ const emailTemplateRoutes: FastifyPluginAsync = async (fastify): Promise<void> =
   // 更新邮件模板
   fastify.put('/:id', {
     schema: {
+      tags: ['email'],
       params: Type.Object({
         id: Type.String(),
       }),
@@ -140,6 +144,7 @@ const emailTemplateRoutes: FastifyPluginAsync = async (fastify): Promise<void> =
   // 删除邮件模板
   fastify.delete('/:id', {
     schema: {
+      tags: ['email'],
       params: Type.Object({
         id: Type.String(),
       }),
@@ -177,6 +182,7 @@ const emailTemplateRoutes: FastifyPluginAsync = async (fastify): Promise<void> =
   // 发送邮件
   fastify.post('/send', {
     schema: {
+      tags: ['email'],
       body: Type.Object({
         email: Type.String({ format: 'email' }),
         templateName: Type.Optional(Type.String({ default: 'register-confirmation' })),
@@ -191,7 +197,6 @@ const emailTemplateRoutes: FastifyPluginAsync = async (fastify): Promise<void> =
             variables: Type.Optional(Type.Any()),
             status: Type.String(),
             createdAt: Type.String({ format: 'date-time' }),
-            updatedAt: Type.String({ format: 'date-time' }),
           }),
           message: Type.String(),
         }),

@@ -2,6 +2,8 @@
 
 import { useState } from 'react'
 import { motion } from 'framer-motion'
+import { Input } from '@/components/ui/input'
+
 
 export default function NumberGuessingGame() {
   const [targetNumber] = useState(() => Math.floor(Math.random() * 100) + 1)
@@ -41,7 +43,7 @@ export default function NumberGuessingGame() {
   return (
     <div className="text-center">
       <p className="text-gray-600 mb-4">猜一个 1 到 100 之间的数字</p>
-      <input
+      <Input
         type="number"
         value={guess}
         onChange={(e) => setGuess(e.target.value)}
@@ -53,7 +55,7 @@ export default function NumberGuessingGame() {
         whileHover={{ scale: 1.05 }}
         whileTap={{ scale: 0.95 }}
         onClick={gameOver ? resetGame : handleGuess}
-        className="bg-indigo-500 text-white px-4 py-2 rounded-md hover:bg-indigo-600 transition duration-300 w-full"
+        className="bg-indigo-500 px-4 py-2 rounded-md hover:bg-indigo-600 transition duration-300 w-full"
       >
         {gameOver ? '重新开始' : '猜！'}
       </motion.button>

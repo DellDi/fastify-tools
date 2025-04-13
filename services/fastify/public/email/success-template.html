@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>注册成功 | 您的账户已创建</title>
+    <style>
+      body {
+        font-family: 'Helvetica Neue', Arial, sans-serif;
+        line-height: 1.6;
+        color: #333;
+        margin: 0;
+        padding: 0;
+      }
+      .container {
+        max-width: 600px;
+        margin: 0 auto;
+        padding: 20px;
+      }
+      .header {
+        text-align: center;
+        padding: 20px 0;
+      }
+      .logo {
+        max-width: 150px;
+      }
+      .card {
+        background: #fff;
+        border-radius: 8px;
+        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        padding: 30px;
+        margin: 20px 0;
+      }
+      .title {
+        color: #2563eb;
+        font-size: 24px;
+        margin-bottom: 20px;
+      }
+      .info-box {
+        background: #f8fafc;
+        border-left: 4px solid #2563eb;
+        padding: 15px;
+        margin: 15px 0;
+      }
+      .info-label {
+        font-weight: 600;
+        color: #64748b;
+      }
+      .info-value {
+        margin-top: 5px;
+      }
+      .button {
+        display: inline-block;
+        background: #2563eb;
+        color: white;
+        text-decoration: none;
+        padding: 12px 24px;
+        border-radius: 6px;
+        font-weight: 500;
+        margin: 20px 0;
+      }
+      .footer {
+        text-align: center;
+        color: #64748b;
+        font-size: 14px;
+        margin-top: 30px;
+      }
+      .warning {
+        color: #dc2626;
+        font-weight: 600;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <div class="header">
+        <!-- 替换为你的logo -->
+        <img src="{{ logoUrl }}" alt="Logo" class="logo" />
+      </div>
+
+      <div class="card">
+        <h1 class="title">注册成功！</h1>
+        <p>感谢您注册我们的服务。以下是您的账户信息：</p>
+
+        <div class="info-box">
+          <div>
+            <div class="info-label">用户名</div>
+            <div class="info-value">{{ username }}</div>
+          </div>
+          <div style="margin-top: 15px">
+            <div class="info-label">邮箱</div>
+            <div class="info-value">{{ email }}</div>
+          </div>
+          <div style="margin-top: 15px">
+            <div class="info-label">初始密码</div>
+            <div class="info-value">{{ password }}</div>
+          </div>
+        </div>
+
+        <p class="warning">请务必在首次登录后修改您的密码！</p>
+
+        <p>您现在可以登录账户开始使用我们的服务：</p>
+        <a href="{{ loginUrl }}" class="button">立即登录</a>
+
+        <p>如果您有任何问题，请随时联系我。</p>
+      </div>
+
+      <div class="footer">
+        <p>© 2025 delldi 保留所有权利。</p>
+        <p>这是一封自动发送的邮件，请勿直接回复。</p>
+      </div>
+    </div>
+  </body>
+</html>

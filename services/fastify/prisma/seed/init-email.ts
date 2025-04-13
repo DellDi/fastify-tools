@@ -25,5 +25,24 @@ export async function seedEmail() {
         }
     })
 
+    await prisma.emailTemplate.upsert({
+        where: { id: randomUUID() },
+        update: {},
+        create: {
+            name: 'register-success',
+            subject: '邮件注册成功',
+            body: fs.readFileSync(path.join(__dirname, '../../public/email/success-template.html'), 'utf8'),
+            variables: {
+                logoUrl: 'string',
+                username: 'string',
+                email: 'string',
+                password: 'string',
+                loginUrl: 'string'
+            },
+            createdAt: new Date(),
+            updatedAt: new Date()
+        }
+    })
+
     console.log('Email templates seeded successfully')
 }

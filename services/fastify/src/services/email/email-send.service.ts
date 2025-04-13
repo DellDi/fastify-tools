@@ -8,10 +8,9 @@ import nodemailer from 'nodemailer';
  */
 export class EmailSendService {
     private transporter: nodemailer.Transporter;
-    
+
     constructor(private fastify: FastifyInstance) {
         const { SMTP_HOST = 'localhost', SMTP_PORT = 587, SMTP_USER = '', SMTP_PASS = '', SMTP_SECURE = 'false' } = process.env;
-        
         // 创建 SMTP 传输器
         this.transporter = nodemailer.createTransport({
             host: SMTP_HOST,
@@ -54,22 +53,22 @@ export class EmailSendService {
         const template = await this.fastify.prisma.emailTemplate.findFirst({
             where: { name: templateName },
         });
-        
+
         if (!template) {
             throw new Error(`邮件模板 "${templateName}" 未找到`);
         }
-        
+
         // 替换模板变量
         let subject = template.subject;
         let html = template.body;
-        
+
         // 替换所有变量
         Object.entries(variables).forEach(([key, value]) => {
             const regex = new RegExp(`{{\\s*${key}\\s*}}`, 'g');
             subject = subject.replace(regex, String(value));
             html = html.replace(regex, String(value));
         });
-        
+
         // 发送邮件
         await this.sendEmail(email, subject, html);
 

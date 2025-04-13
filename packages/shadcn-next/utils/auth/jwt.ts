@@ -1,4 +1,3 @@
-'use server'
 
 import jsonwebtoken from 'jsonwebtoken'
 import type { User } from '../../generated/client/index.js'

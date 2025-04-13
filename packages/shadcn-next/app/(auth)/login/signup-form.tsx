@@ -8,7 +8,8 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form'
 import { useRouter } from 'next/navigation'
-import { errorMessagesCodeMap } from '@/app/lib/auth/register'
+import { errorMessagesCodeMap } from '@/types/email'
+import { fetchBase } from '@/utils/fetch/fetch'
 
 const signUpSchema = z.object({
   username: z.string().min(3, { message: '用户名至少需要3个字符' }),
@@ -39,26 +40,25 @@ export function SignUpForm({ onSignUpAction, onSignUpErrorAction }: SignUpFormPr
   async function onSubmit(data: SignUpFormValues) {
     setIsLoading(true)
     try {
-      const BASE_API_URL = process.env.NEXT_PUBLIC_API_URL || '/api'
-      const response = await fetch(`${BASE_API_URL}/auth/magic-link`, {
+      const response = await fetchBase(`/api/auth/register`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          ...data,
-          purpose: 'registration',
-        }),
+        body: JSON.stringify(data),
       })
-      const result = await response.json()
-      if (response.ok) {
-        onSignUpAction('验证邮件已发送到您的邮箱，请查收并点击链接完成注册。')
+
+      if (response) {
+        onSignUpAction(response.message)
         localStorage.setItem('registrationEmail', data.email)
         router.push('/auth/email-verification?email=' + data.email)
-      } else {
-        throw new Error(result.error || '注册失败')
       }
     } catch (error) {
-      if (error instanceof Error) { 
-        onSignUpErrorAction(errorMessagesCodeMap[error.message as keyof typeof errorMessagesCodeMap].message)
+      if (error instanceof Error) {
+        const code = error.message as keyof typeof errorMessagesCodeMap
+        if (code in errorMessagesCodeMap) {
+          onSignUpErrorAction(errorMessagesCodeMap[code].message)
+        } else {
+          onSignUpErrorAction('注册失败，请稍后再试。')
+        }
       } else {
         onSignUpErrorAction('注册失败，请稍后再试。')
       }

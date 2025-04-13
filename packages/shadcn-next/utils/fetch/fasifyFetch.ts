@@ -8,10 +8,13 @@ export const fetchFastifyApi = async (url: string, options: RequestInit) => {
         finalUrl = `${baseFastifyApiUrl}${url}`
     }
     try {
+        console.log("🚀 ~ fetchFastifyApi ~ options:", finalUrl, options)
+
         const response = await fetch(finalUrl, {
             ...options,
             // 确保跨域请求能正确传递响应头
             headers: {
+                'Content-Type': 'application/json',
                 ...options.headers,
             },
         })

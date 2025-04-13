@@ -26,5 +26,6 @@ const file: FastifyPluginAsyncTypebox = async (fastify): Promise<void> => {
             })
         },
     })
+
 }
 export default file

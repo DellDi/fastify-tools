@@ -1,12 +1,12 @@
 export const fetchBase = async (url: string, options: RequestInit) => {
   const basePath = process.env.NEXT_PUBLIC_BASE_PATH || ''
-  
+
   // 判断当前环境
   const isServer = typeof window === 'undefined'
-  
+
   // 在服务端环境中，需要完整URL；在客户端环境中，使用相对URL
   let finalUrl = url
-  
+
   if (isServer) {
     // 服务端渲染时需要完整URL
     const baseUrl = process.env.BASE_NEXT_API_URL
@@ -21,13 +21,13 @@ export const fetchBase = async (url: string, options: RequestInit) => {
     finalUrl = `${baseUrl || ''}${basePath}${url}`
   } else {
     // 客户端渲染时使用相对URL
-    finalUrl = `${basePath}${url}`
+    finalUrl = url
   }
-  
+
   try {
     const response = await fetch(finalUrl, options)
     if (!response.ok) {
-      return new Error(`Fetch error: ${response.statusText}`)
+      throw new Error(`Fetch error: ${response.statusText}`)
     }
     if (response.headers.get('Content-Type')?.includes('application/json')) {
       return await response.json()

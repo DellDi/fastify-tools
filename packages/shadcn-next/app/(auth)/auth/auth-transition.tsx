@@ -5,17 +5,16 @@ import { useRouter } from 'next/navigation'
 import { motion } from 'framer-motion'
 import { Loader2, CheckCircle, XCircle } from 'lucide-react'
 import { toast } from '@/components/ui/use-toast'
-
-import { initUserStore } from '@/app/lib/user'
-import { initRolePermission } from '@/app/lib/auth'
-
+import { fetchBase } from '@/utils/fetch/fetch'
 interface AuthTransitionProps {
   params: Record<string, string | undefined>
 }
 
 export default function AuthTransition({ params }: AuthTransitionProps) {
   const [effectExecuted, setEffectExecuted] = useState(false)
-  const [status, setStatus] = useState<'base' | 'loading' | 'success' | 'error'>('base')
+  const [status, setStatus] = useState<
+    'base' | 'loading' | 'success' | 'error'
+  >('base')
   const [message, setMessage] = useState('正在验证您的身份...')
   const router = useRouter()
 
@@ -25,38 +24,26 @@ export default function AuthTransition({ params }: AuthTransitionProps) {
       setStatus('loading') // 在开始请求前设置 loading 状态
       setMessage('正在验证您的身份...')
       try {
-        const supabase = createClient()
-        const { data, error } = await supabase.auth.exchangeCodeForSession(code)
-        if (error) {
-          toast({
-            title: '登录提示',
-            description: '授权登录失败！请重试',
-            variant: 'destructive',
-          })
-          throw error
-        }
-
-        if (data && data.user) { // 确保 data 和 data.user 都存在
-          // 分配权限
-          await initRolePermission(data.user)
-          // 初始化用户信息
-          await initUserStore()
-          setStatus('success')
-          setMessage('身份验证成功！正在跳转...')
-          setTimeout(() => router.push(params.redirect || '/dashboard'), 1000)
-          return data.user
-        } else {
-          // 处理data或者data.user不存在的情况
-          toast({
-            title: '登录提示',
-            description: '授权登录失败！用户信息不存在',
-            variant: 'destructive',
-          })
-          throw new Error('用户信息不存在')
-        }
+        const user = await fetchBase('/api/auth/verify', {
+          method: 'POST',
+          body: JSON.stringify({ email: params.email, code }),
+        })
+        setStatus('success')
+        setMessage('身份验证成功！正在跳转...')
+        toast({
+          title: '身份验证成功',
+          description: '正在跳转到您的账户',
+        })
+        setTimeout(() => router.push(params.redirect || '/dashboard'), 1000)
+        return user
       } catch (error) {
         setStatus('error')
         setMessage(`身份验证失败。请稍后重试:${error}`)
+        toast({
+          title: '身份验证失败',
+          description: `身份验证失败。请稍后重试:${error}`,
+          variant: 'destructive',
+        })
         setTimeout(() => router.push('/error'), 1000)
         throw error // 重新抛出错误，以便调用者进行进一步处理
       }
@@ -65,11 +52,10 @@ export default function AuthTransition({ params }: AuthTransitionProps) {
 
   useEffect(() => {
     if (effectExecuted) return
-
     setEffectExecuted(true)
-    authCodeLogin().then(() => {
-    }).catch(() => {
-    })
+    authCodeLogin()
+      .then(() => {})
+      .catch(() => {})
   }, [authCodeLogin, params, effectExecuted])
 
   const iconVariants = {
@@ -78,8 +64,7 @@ export default function AuthTransition({ params }: AuthTransitionProps) {
   }
 
   return (
-    <div
-      className="min-h-screen flex items-center justify-center bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800">
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800">
       <motion.div
         initial={{ opacity: 0, y: -20 }}
         animate={{ opacity: 1, y: 0 }}
@@ -92,18 +77,31 @@ export default function AuthTransition({ params }: AuthTransitionProps) {
           animate="visible"
           className="mb-6"
         >
-          {status === 'loading' && <Loader2 className="mx-auto h-16 w-16 text-blue-500 animate-spin"/>}
-          {status === 'success' && <CheckCircle className="mx-auto h-16 w-16 text-green-500"/>}
-          {status === 'error' && <XCircle className="mx-auto h-16 w-16 text-red-500"/>}
+          {status === 'loading' && (
+            <Loader2 className="mx-auto h-16 w-16 text-blue-500 animate-spin" />
+          )}
+          {status === 'success' && (
+            <CheckCircle className="mx-auto h-16 w-16 text-green-500" />
+          )}
+          {status === 'error' && (
+            <XCircle className="mx-auto h-16 w-16 text-red-500" />
+          )}
         </motion.div>
-        <h2 className="text-2xl font-semibold text-gray-700 dark:text-gray-200 mb-4">身份验证</h2>
-        <p className="text-lg text-gray-600 dark:text-gray-300 mb-6">{message}</p>
+        <h2 className="text-2xl font-semibold text-gray-700 dark:text-gray-200 mb-4">
+          身份验证
+        </h2>
+        <p className="text-lg text-gray-600 dark:text-gray-300 mb-6">
+          {message}
+        </p>
         {Object.keys(params).length > 0 && (
           <div className="mb-6 text-left">
             <h3 className="text-lg font-semibold mb-2">URL 参数：</h3>
             <ul className="list-disc pl-5">
               {Object.entries(params).map(([key, value]) => (
-                <li key={key} className="text-sm text-gray-600 dark:text-gray-400">
+                <li
+                  key={key}
+                  className="text-sm text-gray-600 dark:text-gray-400"
+                >
                   <span className="font-medium">{key}:</span> {value}
                 </li>
               ))}
@@ -120,4 +118,3 @@ export default function AuthTransition({ params }: AuthTransitionProps) {
     </div>
   )
 }
-

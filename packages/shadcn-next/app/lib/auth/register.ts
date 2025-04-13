@@ -5,48 +5,49 @@ import { jwt } from '@/utils/auth/jwt'
 import { z } from 'zod';
 import { fetchFastifyApi } from '@/utils/fetch/fasifyFetch'
 import { User } from '@/generated/client/index.js'
+import { errorMessagesCodeMap } from '@/types/email'
+import { randomUUID } from 'crypto';
 
 const emailSchema = z.string().email();
 
-export async function sendEmailVerification(user: User, code: string) {
-  const BASE_NEXT_API_URL = process.env.BASE_NEXT_API_URL || ''
-  fetchFastifyApi('/email/send', {
+export async function sendEmailVerification(email: string) {
+  // 生成6位随机验证码
+  const randomCode = Math.floor(100000 + Math.random() * 900000).toString()
+
+  const SITE_DOMAIN_URL = process.env.SITE_DOMAIN_URL || 'http://localhost:3000'
+  const NEXT_PUBLIC_BASE_PATH = process.env.NEXT_PUBLIC_BASE_PATH || ''
+  await fetchFastifyApi('/email/send', {
     method: 'POST',
-    body: JSON.stringify({ 
-      email: user.email,
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      email,
       templateName: 'register-confirmation',
       variables: {
-        Email: user.email,
-        ConfirmationURL: `${BASE_NEXT_API_URL}/api/auth/verify?code=${code}`,
-        SiteURL: `${BASE_NEXT_API_URL}`,
+        Email: email,
+        ConfirmationURL: `${SITE_DOMAIN_URL}${NEXT_PUBLIC_BASE_PATH}/auth?code=${randomCode}`,
+        SiteURL: `${SITE_DOMAIN_URL}${NEXT_PUBLIC_BASE_PATH}`,
       },
     }),
   })
+
+  return { code: randomCode }
 }
 
-export const errorMessagesCodeMap = {
-  EMAIL_FORMAT_INVALID: {
-    message: '邮箱格式不正确',
-    code: 'EMAIL_FORMAT_INVALID'
-  },
-  EMAIL_EXISTS: {
-    message: '邮箱已被注册',
-    code: 'EMAIL_EXISTS'
-  },
-  EMAIL_NOT_VERIFIED: {
-    message: '邮箱未验证，请检查邮箱通过点击链接验证',
-    code: 'EMAIL_NOT_VERIFIED'
-  },
-  EMAIL_VERIFICATION_EXPIRED: {
-    message: '邮箱验证已过期，请重新验证',
-    code: 'EMAIL_VERIFICATION_EXPIRED'
-  },
-}
+const INITIAL_PASSWORD = process.env.INITIAL_USER_PASSWORD || '123456'
 
-export async function registerUser(params: { username: string; email: string; password: string }) {
+export async function registerUser(params: { username: string; email: string; phoneNumber: string; }) {
   try {
-    const { username, email, password } = params
-    const encryptedPassword = jwt.encrypt(password)
+    const { username, email, phoneNumber } = params
+
+    // 验证邮箱是否合规
+    const result = emailSchema.safeParse(email)
+    if (!result.success) {
+      throw new Error(errorMessagesCodeMap.EMAIL_FORMAT_INVALID.code)
+    }
+
+    const encryptedPassword = jwt.encrypt(INITIAL_PASSWORD)
 
     // 验证邮箱是否已注册
     const existingUser = await prisma.user.findFirst({
@@ -67,39 +68,31 @@ export async function registerUser(params: { username: string; email: string; pa
       if (new Date() > new Date(verificationData.expiresAt)) {
         throw new Error(errorMessagesCodeMap.EMAIL_VERIFICATION_EXPIRED.code)
       }
-
     }
-    
+
+    // 发送邮箱验证邮件
+    const verificationCode = await sendEmailVerification(email)
+
     // 注册账号、但未验证邮箱、未设置角色
     const user = await prisma.user.create({
       data: {
         username,
         email,
+        phoneNumber,
         encryptedPassword,
       },
     })
 
-    // 验证邮箱是否合规
-    const result = emailSchema.safeParse(email)
-    if (!result.success) {
-      throw new Error(errorMessagesCodeMap.EMAIL_FORMAT_INVALID.code)
-    }
-    
-    // 生成6位随机验证码
-    const randomCode = Math.floor(100000 + Math.random() * 900000).toString()
-
     // 创建验证码
     await prisma.verificationCode.create({
-      data: { 
+      data: {
         userId: user.id,
-        code: randomCode,
+        code: verificationCode.code,
         expiresAt: new Date(Date.now() + 15 * 60 * 1000), // 15 minutes
       },
     })
-    
-    // 发送邮箱验证邮件
-    sendEmailVerification(user, randomCode)
-    return user
+
+    return { user, verificationCode }
   } catch (error) {
     console.error('注册失败:', error)
     throw error

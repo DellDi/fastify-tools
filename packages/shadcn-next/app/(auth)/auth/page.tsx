@@ -14,12 +14,8 @@ export default async function AuthTransitionPage({
       Array.isArray(value) ? value[0] : value,
     ]),
   )
-  if (params.error) {
-    redirect(
-      `/error?${new URLSearchParams(
-        params as Record<string, string>,
-      ).toString()}`,
-    )
+  if (!params.code) {
+    redirect('/error')
   }
   return <AuthTransition params={params}/>
 }

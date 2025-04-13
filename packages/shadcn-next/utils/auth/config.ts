@@ -2,14 +2,14 @@
 export const whiteRoutes = [
   '/',
   '/login',
+  '/auth',
+  '/error',
   '/register',
   '/forgot-password',
   '/reset-password',
-  '/verify-email',
   '/auth/callback',
   '/api/auth/login',
   '/api/auth/register',
-  '/api/auth/verify-email',
   '/api/auth/send-verification',
   '/api/auth/reset-password',
   '/_next',
@@ -21,7 +21,6 @@ export const whiteRoutes = [
 export const sessionUpdateRoutes = [
   '/api/auth/login',
   '/api/auth/register',
-  '/api/auth/verify-email',
 ]
 
 export function isWhiteRoute(pathname: string): boolean {
