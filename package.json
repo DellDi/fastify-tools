@@ -21,7 +21,7 @@
     "upload batch",
     "aes"
   ],
-  "packageManager": "pnpm@10.7.1",
+  "packageManager": "pnpm@10.8.0",
   "workspaces": [
     "packages/*",
     "services/*"
