@@ -4,9 +4,7 @@ import { prisma } from '@/lib/prisma'
 import { jwt } from '@/utils/auth/jwt'
 import { z } from 'zod';
 import { fetchFastifyApi } from '@/utils/fetch/fasifyFetch'
-import { User } from '@/generated/client/index.js'
 import { errorMessagesCodeMap } from '@/types/email'
-import { randomUUID } from 'crypto';
 
 const emailSchema = z.string().email();
 
@@ -14,7 +12,7 @@ export async function sendEmailVerification(email: string) {
   // 生成6位随机验证码
   const randomCode = Math.floor(100000 + Math.random() * 900000).toString()
 
-  const SITE_DOMAIN_URL = process.env.SITE_DOMAIN_URL || 'http://localhost:3000'
+  const SITE_DOMAIN_URL = process.env.SITE_DOMAIN_URL || 'http://localhost:3001'
   const NEXT_PUBLIC_BASE_PATH = process.env.NEXT_PUBLIC_BASE_PATH || ''
   await fetchFastifyApi('/email/send', {
     method: 'POST',
@@ -26,7 +24,7 @@ export async function sendEmailVerification(email: string) {
       templateName: 'register-confirmation',
       variables: {
         Email: email,
-        ConfirmationURL: `${SITE_DOMAIN_URL}${NEXT_PUBLIC_BASE_PATH}/auth?code=${randomCode}`,
+        ConfirmationURL: `${SITE_DOMAIN_URL}${NEXT_PUBLIC_BASE_PATH}/auth?code=${randomCode}&email=${email}`,
         SiteURL: `${SITE_DOMAIN_URL}${NEXT_PUBLIC_BASE_PATH}`,
       },
     }),

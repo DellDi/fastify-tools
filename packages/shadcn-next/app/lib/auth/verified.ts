@@ -49,7 +49,7 @@ export async function resendVerificationEmail(email: string) {
   if (!verificationData) {
     throw new Error(errorMessagesCodeMap.EMAIL_NOT_VERIFIED.code)
   }
-  await sendEmailVerification(user)
+  await sendEmailVerification(email)
 
   return user
 }

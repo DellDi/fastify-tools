@@ -26,8 +26,9 @@ export const fetchBase = async (url: string, options: RequestInit) => {
 
   try {
     const response = await fetch(finalUrl, options)
+
     if (!response.ok) {
-      throw new Error(`Fetch error: ${response.statusText}`)
+      throw response
     }
     if (response.headers.get('Content-Type')?.includes('application/json')) {
       return await response.json()

@@ -8,7 +8,24 @@ export async function POST(request: Request) {
     return NextResponse.json({ message: '邮箱验证成功' })
   } catch (error) {
     console.error('Verification error:', error)
-    return NextResponse.json({ error: '验证失败，请稍后再试' }, { status: 500 })
+    // 将原始错误信息和错误码传递给前端
+    if (error instanceof Error) {
+      return NextResponse.json(
+        {
+          error: error.message,
+          message: '验证失败，请稍后再试'
+        },
+        { status: 400 }
+      )
+    }
+    // 处理未知错误
+    return NextResponse.json(
+      {
+        error: 'UNKNOWN_ERROR',
+        message: '验证失败，请稍后再试'
+      },
+      { status: 500 }
+    )
   }
 }
 
