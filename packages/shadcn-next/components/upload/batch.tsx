@@ -4,6 +4,8 @@ import React, { useCallback, useRef, useState } from 'react'
 import { FileBatchSuccessResponse, useHandleDrop, useHandleFileChange, useUploadProgress } from '@/hooks/use-file'
 import { FileUploadStatus } from '@/components/upload/file-list'
 import { toast } from '@/components/ui/use-toast'
+import { fastifyFetch } from '@/utils/fetch/fastifyFetch'
+
 
 /**
  * 批量文件上传函数
@@ -16,18 +18,20 @@ const batchUploadFunction = async (files: File[]): Promise<void> => {
     formData.append('file', file)
   })
 
-  await fetch(`${process.env.NEXT_PUBLIC_API_URL}/upload/batch`, {
+  await fastifyFetch(`/upload/batch`, {
     method: 'POST',
     body: formData,
   }).then(async (res) => {
-    if (res.ok) {
-      const fileInfo: FileBatchSuccessResponse = await res.json()
-      console.log(fileInfo)
-      toast({
-        title: '上传成功',
-        description: `${fileInfo.message}`,
-      })
-    }
+    const fileInfo: FileBatchSuccessResponse = res
+    toast({
+      title: '上传成功',
+      description: `${fileInfo.message}`,
+    })
+  }).catch((err) => {
+    toast({
+      title: '上传失败',
+      description: `${err.message}`,
+    })
   })
 }
 

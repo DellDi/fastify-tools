@@ -1,6 +1,7 @@
 // `pages/api/jira-filtered.ts` 主要目的内置了过滤saas的客户名称
 import { NextRequest, NextResponse } from 'next/server'
 import { serviceCache } from '@/utils/store/service'
+import { fastifyFetch } from '@/utils/fetch/fastifyFetch'
 
 export interface JiraIssue {
   key: string
@@ -50,7 +51,7 @@ export async function POST(req: NextRequest) {
     const maxResults = 1000 // Adjust based on your primary API's max results per page
 
     while (true) {
-      const response = await fetch(`${process.env.BASE_API_URL}/jira/search`, {
+      const response = await fastifyFetch(`/jira/search`, {
         headers: {
           Authorization: `Bearer bmV3c2VlOm5ld3NlZQ==`,
           'Content-Type': 'application/json',
@@ -64,13 +65,14 @@ export async function POST(req: NextRequest) {
         }),
       })
 
-      if (!response.ok) {
+      if (!response) {
         return NextResponse.json({ message: 'Failed to fetch Jira issues' }, {
           status: 500,
         })
       }
 
-      const data = await response.json()
+      const data = response
+      console.log("🚀 ~ POST ~ data:", data)
       allIssues = allIssues.concat(data.issues)
       if (data.issues.length < maxResults) {
         break

@@ -25,6 +25,8 @@ export const fetchBase = async (url: string, options: RequestInit) => {
   }
 
   try {
+    console.log("🚀 ~ fetchBase ~ finalUrl:", finalUrl, isServer)
+
     const response = await fetch(finalUrl, options)
 
     if (!response.ok) {
@@ -33,7 +35,8 @@ export const fetchBase = async (url: string, options: RequestInit) => {
     if (response.headers.get('Content-Type')?.includes('application/json')) {
       return await response.json()
     }
-    return await response.text()
+
+    return await response
   } catch (error) {
     console.error('Fetch error:', error)
     throw error

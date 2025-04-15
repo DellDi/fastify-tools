@@ -3,8 +3,8 @@
 import { prisma } from '@/lib/prisma'
 import { jwt } from '@/utils/auth/jwt'
 import { z } from 'zod';
-import { fetchFastifyApi } from '@/utils/fetch/fasifyFetch'
 import { errorMessagesCodeMap } from '@/types/email'
+import { fastifyFetch } from '@/utils/fetch/fastifyFetch';
 
 const emailSchema = z.string().email();
 
@@ -14,7 +14,7 @@ export async function sendEmailVerification(email: string) {
 
   const SITE_DOMAIN_URL = process.env.SITE_DOMAIN_URL || 'http://localhost:3001'
   const NEXT_PUBLIC_BASE_PATH = process.env.NEXT_PUBLIC_BASE_PATH || ''
-  await fetchFastifyApi('/email/send', {
+  await fastifyFetch('/email/send', {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',

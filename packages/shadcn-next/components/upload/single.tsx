@@ -1,9 +1,15 @@
 import { FilePlus } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import React, { useCallback, useRef, useState } from 'react'
-import { FileSuccessResponse, useHandleFileChange, useHandlePaste, useUploadProgress } from '@/hooks/use-file'
+import {
+  FileSuccessResponse,
+  useHandleFileChange,
+  useHandlePaste,
+  useUploadProgress,
+} from '@/hooks/use-file'
 import { FileUploadStatus } from '@/components/upload/file-list'
 import { toast } from '@/components/ui/use-toast'
+import { fastifyFetch } from '@/utils/fetch/fastifyFetch'
 
 /**
  * 单文件上传函数
@@ -17,12 +23,15 @@ const singleUploadFunction = async (files: File[]): Promise<void> => {
   })
 
   // 上传新增秒传逻辑，增加hash校验
-  const hash = await crypto.subtle.digest('SHA-256', await files[0].arrayBuffer())
+  const hash = await crypto.subtle.digest(
+    'SHA-256',
+    await files[0].arrayBuffer()
+  )
   const hashArray = Array.from(new Uint8Array(hash))
-  const hashHex = hashArray.map(b => b.toString(16).padStart(2, '0')).join('')
+  const hashHex = hashArray.map((b) => b.toString(16).padStart(2, '0')).join('')
   const orgHash = hashHex.slice(0, 8)
 
-  const resHashCheck = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/upload/check`, {
+  const resHashCheck = await fastifyFetch(`/upload/check`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
@@ -33,7 +42,7 @@ const singleUploadFunction = async (files: File[]): Promise<void> => {
     }),
   })
 
-  const resHashCheckJson = await resHashCheck.json()
+  const resHashCheckJson = resHashCheck
   if (resHashCheckJson.isExist) {
     toast({
       title: '秒传成功',
@@ -43,21 +52,21 @@ const singleUploadFunction = async (files: File[]): Promise<void> => {
   }
 
   try {
-    const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/upload/single`, {
+    const res = await fastifyFetch(`/upload/single`, {
       method: 'POST',
       body: formData,
     })
     if (res.ok) {
-      const fileInfo: FileSuccessResponse = await res.json()
+      const fileInfo: FileSuccessResponse = res
       toast({
         title: '上传成功',
         description: `${fileInfo.fileUrl}`,
       })
     } else {
-      const err = await res.json()
+      const err = res
       toast({
         title: '上传失败',
-        description: `${err.error}`,
+        description: `${err.message}`,
       })
     }
   } catch (e) {
@@ -78,7 +87,8 @@ export function SingleUpload() {
   // 文件输入引用
   const fileInputRef = useRef<HTMLInputElement>(null)
   // 上传进度和状态
-  const { progress, uploading, simulateUpload } = useUploadProgress(singleUploadFunction)
+  const { progress, uploading, simulateUpload } =
+    useUploadProgress(singleUploadFunction)
   // 处理粘贴事件
   const handlePaste = useHandlePaste(setFiles)
   // 处理文件改变事件
@@ -103,7 +113,7 @@ export function SingleUpload() {
       className="h-full flex items-center flex-col justify-center border-2 border-dashed rounded-lg p-4 text-center cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-900 transition-colors"
       onPaste={(e) => handlePaste(e)}
     >
-      <FilePlus className="mx-auto h-20 w-20 text-gray-400"/>
+      <FilePlus className="mx-auto h-20 w-20 text-gray-400" />
       <p className="mt-2">点击这里上传单个文件或粘贴文件</p>
       <input
         type="file"

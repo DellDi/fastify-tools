@@ -1,13 +1,19 @@
-export const fetchFastifyApi = async (url: string, options: RequestInit) => {
-    const baseFastifyApiUrl = process.env.BASE_API_URL || ''
-    // 在服务端环境中，需要完整URL；在客户端环境中，使用相对URL
-    let finalUrl = `${baseFastifyApiUrl}${url}`
+export const fastifyFetch = async (url: string, options: RequestInit) => {
+    // 后端调用地址
+    const baseFastifyApiUrl = process.env.BASE_FASITYFY_API_URL || ''
+    // 前端调用地址
+    const baseApiUrl = process.env.NEXT_PUBLIC_API_URL || ''
+    let finalUrl = url
     // 判断当前环境
     const isServer = typeof window === 'undefined'
     if (isServer) {
         finalUrl = `${baseFastifyApiUrl}${url}`
+    } else {
+        finalUrl = `${baseApiUrl}${url}`
     }
     try {
+        console.log("🚀 ~ fastifyFetch ~ finalUrl:", finalUrl, isServer)
+
         const response = await fetch(finalUrl, {
             ...options,
             // 确保跨域请求能正确传递响应头
