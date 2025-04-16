@@ -1,15 +1,11 @@
 
 import jsonwebtoken from 'jsonwebtoken'
 import type { User } from '../../generated/client/index.js'
-import { LRUCache } from 'lru-cache'
+import { serviceCache } from '@/utils/store/service'
 
 const JWT_SECRET = process.env.JWT_SECRET || 'your-jwt-secret'
 
-const cache = new LRUCache({
-    max: 1000,
-    maxSize: 5000,
-    ttl: 7 * 24 * 60 * 60 * 1000 // 7 days
-})
+const cache = serviceCache
 
 export const jwt = {
     sign: (payload: any) => {
@@ -60,6 +56,9 @@ export const jwt = {
     },
     verifyRefreshToken: (token: string) => {
         return jsonwebtoken.verify(token, JWT_SECRET) as { id: string; email: string; role: string }
+    },
+    compare: (password: string, encryptedPassword: string) => {
+        return jwt.decrypt(encryptedPassword) === password
     }
 }
 

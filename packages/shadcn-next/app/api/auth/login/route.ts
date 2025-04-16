@@ -1,35 +1,46 @@
 'use server'
 import { NextResponse } from 'next/server'
-import { initUserStore } from '@/app/lib/user'
+import { prisma } from '@/lib/prisma'
+import { jwt } from '@/utils/auth/jwt'
 
 export async function POST(request: Request) {
   const { email, password } = await request.json()
 
   try {
-    const { data, error } = await supabase.auth.signInWithPassword({
-      email,
-      password,
+    const user = await prisma.user.findFirst({
+      where: { email },
     })
 
-    if (error) return NextResponse.json({
-      error: `${error.message},检查您的账号或者密码是否存在正确或者重新注册`,
+    if (!user) return NextResponse.json({
+      error: 'Invalid credentials: 账号未注册、或未通过验证',
       code: 401,
     }, { status: 401 })
 
-    if (!data.user) {
+    if (!user.encryptedPassword) {
       return NextResponse.json({ error: 'Invalid credentials: 账号未注册、或未通过验证', code: 401 }, { status: 401 })
     }
 
-    // // 生成 JWT token
-    // const token = sign(s
-    //   { userId: data.user.id, email: data.user.email },
-    //   process.env.SUPABASE_JWT_SECRET!,
-    //   { expiresIn: '1d' }
-    // )
+    const isPasswordValid = await jwt.compare(password, user.encryptedPassword)
+    if (!isPasswordValid) {
+      return NextResponse.json({ error: 'Invalid credentials: 账号未注册、或未通过验证', code: 401 }, { status: 401 })
+    }
 
-    await initUserStore()
-
-    return NextResponse.json({ message: '登录成功', code: 200 })
+    // 生成 JWT token
+    const token = jwt.generateToken(user)
+    const response = NextResponse.json({ message: '登录成功' }, { status: 200 });
+    // 设置 token 到 cookies - 确保 token 是字符串类型
+    response.cookies.set(
+      'auth_token',
+      String(token),
+      {
+        httpOnly: true,
+        secure: true,
+        sameSite: 'strict',
+        path: '/',
+        maxAge: 60 * 60 * 24 * 7 // 7 days
+      }
+    )
+    return response
   } catch (error) {
     console.error('Login error:', error)
     return NextResponse.json({ error: '登录失败，请检查您的邮箱和密码。', code: 500 }, { status: 500 })
