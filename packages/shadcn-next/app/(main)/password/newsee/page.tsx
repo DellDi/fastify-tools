@@ -13,7 +13,7 @@ export default function NewseePassword() {
           </h3>
         </div>
         <div
-          className="flex flex-1 rounded-lg border border-dashed shadow-sm"
+          className="flex flex-1 rounded-lg border border-dashed shadow-xs"
           x-chunk="dashboard-02-chunk-1"
         >
           <div className="w-full items-center gap-1 text-center">

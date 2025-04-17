@@ -46,7 +46,7 @@ export function NavMain({
                 <div className="relative flex items-center">
                   <Link
                       href={item.url}
-                      className="min-w-8 flex h-8 flex-1 items-center gap-2 overflow-hidden rounded-md px-1.5 text-sm font-medium outline-none ring-ring transition-all hover:bg-accent hover:text-accent-foreground focus-visible:ring-2"
+                      className="min-w-8 flex h-8 flex-1 items-center gap-2 overflow-hidden rounded-md px-1.5 text-sm font-medium outline-hidden ring-ring transition-all hover:bg-accent hover:text-accent-foreground focus-visible:ring-2"
                   >
                     <item.icon className="h-4 w-4 shrink-0"/>
                     <div className="flex flex-1 overflow-hidden">
@@ -100,7 +100,7 @@ function SidebarSearch({
     return (
         <Drawer>
           <DrawerTrigger
-              className="min-w-8 flex h-8 w-full flex-1 items-center gap-2 overflow-hidden rounded-md px-1.5 text-sm font-medium outline-none ring-ring transition-all hover:bg-accent hover:text-accent-foreground focus-visible:ring-2 data-[state=open]:bg-accent data-[state=open]:text-accent-foreground">
+              className="min-w-8 flex h-8 w-full flex-1 items-center gap-2 overflow-hidden rounded-md px-1.5 text-sm font-medium outline-hidden ring-ring transition-all hover:bg-accent hover:text-accent-foreground focus-visible:ring-2 data-[state=open]:bg-accent data-[state=open]:text-accent-foreground">
             <Search className="h-4 w-4 shrink-0"/>
             <div className="flex flex-1 overflow-hidden">
               <div className="line-clamp-1 pr-6">搜索</div>
@@ -121,7 +121,7 @@ function SidebarSearch({
                   <Link
                       href={result.url}
                       key={result.title}
-                      className="rounded-md p-2.5 outline-none ring-ring hover:bg-accent hover:text-accent-foreground focus-visible:ring-2"
+                      className="rounded-md p-2.5 outline-hidden ring-ring hover:bg-accent hover:text-accent-foreground focus-visible:ring-2"
                   >
                     <div className="font-medium">{result.title}</div>
                     <div className="line-clamp-2 text-muted-foreground">
@@ -132,7 +132,7 @@ function SidebarSearch({
               <Separator className="my-1.5"/>
               <Link
                   href="#"
-                  className="rounded-md px-2.5 py-1 text-muted-foreground outline-none ring-ring hover:text-foreground focus-visible:ring-2"
+                  className="rounded-md px-2.5 py-1 text-muted-foreground outline-hidden ring-ring hover:text-foreground focus-visible:ring-2"
               >
                 See all results
               </Link>
@@ -145,7 +145,7 @@ function SidebarSearch({
   return (
       <Popover>
         <PopoverTrigger
-            className="min-w-8 flex h-8 w-full flex-1 items-center gap-2 overflow-hidden rounded-md px-1.5 text-sm font-medium outline-none ring-ring transition-all hover:bg-accent hover:text-accent-foreground focus-visible:ring-2 data-[state=open]:bg-accent data-[state=open]:text-accent-foreground">
+            className="min-w-8 flex h-8 w-full flex-1 items-center gap-2 overflow-hidden rounded-md px-1.5 text-sm font-medium outline-hidden ring-ring transition-all hover:bg-accent hover:text-accent-foreground focus-visible:ring-2 data-[state=open]:bg-accent data-[state=open]:text-accent-foreground">
           <Search className="h-4 w-4 shrink-0"/>
           <div className="flex flex-1 overflow-hidden">
             <div className="line-clamp-1 pr-6">搜索</div>
@@ -171,7 +171,7 @@ function SidebarSearch({
                 <Link
                     href={result.url}
                     key={result.title}
-                    className="rounded-md p-2.5 outline-none ring-ring hover:bg-accent hover:text-accent-foreground focus-visible:ring-2"
+                    className="rounded-md p-2.5 outline-hidden ring-ring hover:bg-accent hover:text-accent-foreground focus-visible:ring-2"
                 >
                   <div className="font-medium">{result.title}</div>
                   <div className="line-clamp-2 text-muted-foreground">
@@ -182,7 +182,7 @@ function SidebarSearch({
             <Separator className="my-1.5"/>
             <Link
                 href="#"
-                className="rounded-md px-2.5 py-1 text-muted-foreground outline-none ring-ring hover:text-foreground focus-visible:ring-2"
+                className="rounded-md px-2.5 py-1 text-muted-foreground outline-hidden ring-ring hover:text-foreground focus-visible:ring-2"
             >
               See all results
             </Link>

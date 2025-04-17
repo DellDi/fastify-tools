@@ -21,21 +21,21 @@
     "upload batch",
     "aes"
   ],
-  "packageManager": "pnpm@10.8.0",
+  "packageManager": "pnpm@10.8.1",
   "workspaces": [
     "packages/*",
     "services/*"
   ],
   "devDependencies": {
     "@types/node": "^20.17.30",
-    "@types/pg": "^8.11.11",
+    "@types/pg": "^8.11.13",
     "concurrently": "^9.1.2",
     "pm2": "^6.0.5",
     "ts-node": "^10.9.2",
     "typescript": "^5.8.3"
   },
   "resolutions": {
-    "react": "^19.0.0",
-    "react-dom": "^19.0.0"
+    "react": "^19.1.0",
+    "react-dom": "^19.1.0"
   }
 }

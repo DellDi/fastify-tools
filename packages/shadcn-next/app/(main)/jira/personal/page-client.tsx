@@ -109,7 +109,7 @@ export default function JiraIssuesTable() {
     )
   }
   return (
-    <div className="h-full flex flex-col flex-grow mx-auto">
+    <div className="h-full flex flex-col grow mx-auto">
       <Card className="w-full sm:w-full xl:6/7 md:5/6 lg:w-4/5 flex flex-col space-x-2 mx-auto grow overflow-hidden">
         <CardHeader>
           <CardTitle className="text-2xl font-bold text-primary">
@@ -117,7 +117,7 @@ export default function JiraIssuesTable() {
             <div className="flex h-20 py-2 items-center justify-start">
               <Textarea
                 onChange={(e) => setJiraSql(e.target.value)}
-                className="mr-2 border-2 shadow-sm flex-1"
+                className="mr-2 border-2 shadow-xs flex-1"
                 value={jiraSql}
                 placeholder="Search Jira Issues"
               />
@@ -131,7 +131,7 @@ export default function JiraIssuesTable() {
             </div>
           </CardTitle>
         </CardHeader>
-        <CardContent className="flex-grow overflow-auto">
+        <CardContent className="grow overflow-auto">
           {loading ? (
             <div className="space-y-4 w-full">
               {[...Array(pageSize)].map((_, i) => (

@@ -102,7 +102,7 @@ export default function EnhancedChangelog() {
   }, [loadMore])
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-violet-500 to-fuchsia-500 p-8">
+    <div className="min-h-screen bg-linear-to-br from-violet-500 to-fuchsia-500 p-8">
       <div className="max-w-4xl mx-auto">
         <h1 className="text-6xl font-bold text-white mb-12 text-center">
           更新日志
@@ -113,7 +113,7 @@ export default function EnhancedChangelog() {
               <input
                 type="text"
                 placeholder="搜索更新内容..."
-                className="w-full pl-10 pr-4 py-2 rounded-lg border focus:outline-none focus:ring-2 focus:ring-purple-600"
+                className="w-full pl-10 pr-4 py-2 rounded-lg border focus:outline-hidden focus:ring-2 focus:ring-purple-600"
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
               />
@@ -123,7 +123,7 @@ export default function EnhancedChangelog() {
               <input
                 type="text"
                 placeholder="按版本筛选..."
-                className="w-full pl-10 pr-4 py-2 rounded-lg border focus:outline-none focus:ring-2 focus:ring-purple-600"
+                className="w-full pl-10 pr-4 py-2 rounded-lg border focus:outline-hidden focus:ring-2 focus:ring-purple-600"
                 value={versionFilter}
                 onChange={(e) => setVersionFilter(e.target.value)}
               />
@@ -132,7 +132,7 @@ export default function EnhancedChangelog() {
             <div className="relative">
               <input
                 type="date"
-                className="w-full pl-10 pr-4 py-2 rounded-lg border focus:outline-none focus:ring-2 focus:ring-purple-600"
+                className="w-full pl-10 pr-4 py-2 rounded-lg border focus:outline-hidden focus:ring-2 focus:ring-purple-600"
                 value={startDate}
                 onChange={(e) => setStartDate(e.target.value)}
               />
@@ -141,7 +141,7 @@ export default function EnhancedChangelog() {
             <div className="relative">
               <input
                 type="date"
-                className="w-full pl-10 pr-4 py-2 rounded-lg border focus:outline-none focus:ring-2 focus:ring-purple-600"
+                className="w-full pl-10 pr-4 py-2 rounded-lg border focus:outline-hidden focus:ring-2 focus:ring-purple-600"
                 value={endDate}
                 onChange={(e) => setEndDate(e.target.value)}
               />
@@ -160,7 +160,7 @@ export default function EnhancedChangelog() {
               transition={{ duration: 0.5 }}
             >
               <div
-                className={`bg-gradient-to-r ${item.color} p-6 cursor-pointer`}
+                className={`bg-linear-to-r ${item.color} p-6 cursor-pointer`}
                 onClick={() => setExpandedVersion(expandedVersion === item.version ? null : item.version)}
               >
                 <div className="flex justify-between items-center">

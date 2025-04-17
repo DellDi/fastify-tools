@@ -25,7 +25,7 @@ export function SearchJiraComponent() {
     <div className="flex w-full h-20 py-2 items-center justify-start">
       <Textarea
         onChange={(e) => setSearchTerm(e.target.value)}
-        className="mr-2 border-2 shadow-sm flex-1"
+        className="mr-2 border-2 shadow-xs flex-1"
         value={query}
         placeholder="Search Jira Issues"
       />

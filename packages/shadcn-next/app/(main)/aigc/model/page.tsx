@@ -46,7 +46,7 @@ export default function Model() {
                                         <Select>
                                             <SelectTrigger
                                                 id="model"
-                                                className="items-start [&_[data-description]]:hidden"
+                                                className="items-start **:data-description:hidden"
                                             >
                                                 <SelectValue placeholder="Select a model"/>
                                             </SelectTrigger>

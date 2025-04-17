@@ -26,7 +26,7 @@ export function TeamSwitcher({
 
   return (
     <DropdownMenu>
-      <DropdownMenuTrigger className="w-full rounded-md ring-ring hover:bg-accent hover:text-accent-foreground focus-visible:outline-none focus-visible:ring-2 data-[state=open]:bg-accent">
+      <DropdownMenuTrigger className="w-full rounded-md ring-ring hover:bg-accent hover:text-accent-foreground focus-visible:outline-hidden focus-visible:ring-2 data-[state=open]:bg-accent">
         <div className="flex items-center gap-1.5 overflow-hidden px-2 py-1.5 text-left text-sm transition-all">
           <div className="flex h-5 w-5 items-center justify-center rounded-sm bg-primary text-primary-foreground">
             <activeTeam.logo className="h-3.5 w-3.5 shrink-0" />
