@@ -57,8 +57,5 @@ export const jwt = {
     verifyRefreshToken: (token: string) => {
         return jsonwebtoken.verify(token, JWT_SECRET) as { id: string; email: string; role: string }
     },
-    compare: (password: string, encryptedPassword: string) => {
-        return jwt.decrypt(encryptedPassword) === password
-    }
 }
 

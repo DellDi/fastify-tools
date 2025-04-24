@@ -33,7 +33,7 @@ export async function GET(request: Request) {
     where: { email },
   })
   if (!user) return NextResponse.json({
-    error: 'Invalid credentials: 账号未注册、或未通过验证',
+    error: 'Invalid credentials: 账号未注册',
     code: 401,
   }, { status: 401 })
 

@@ -1,4 +1,4 @@
-import { PrismaClient } from '@/types/prisma.js';
+import { PrismaClient } from '../generated/client';
 import { runVersionedSeed } from './seed/version-manager.js';
 import { seedEmail } from './seed/init-email.js';
 

@@ -7,8 +7,8 @@ export async function POST(request: Request) {
   try {
     await verifyMagicLink(code, email)
 
-    const SITE_DOMAIN_URL = process.env.SITE_DOMAIN_URL || 'http://localhost:3001'
-    const NEXT_PUBLIC_BASE_PATH = process.env.NEXT_PUBLIC_BASE_PATH || ''
+    // const SITE_DOMAIN_URL = process.env.SITE_DOMAIN_URL || 'http://localhost:3001'
+    // const NEXT_PUBLIC_BASE_PATH = process.env.NEXT_PUBLIC_BASE_PATH || ''
 
     const response = NextResponse.json({ message: '邮箱验证成功' })
     try {
@@ -19,9 +19,9 @@ export async function POST(request: Request) {
         },
         body: JSON.stringify({
           email,
-          templateName: 'success-template',
+          templateName: 'register-success',
           variables: {
-            logoUrl: `${SITE_DOMAIN_URL}${NEXT_PUBLIC_BASE_PATH}/logo.png`,
+            logoUrl: `https://poc.new-see.com/M00/00/DB/rBA3xGgJrJyABcs_ABrGg9fghbg128.png`,
             username: email,
             email,
             password: '123456',

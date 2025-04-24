@@ -1,5 +1,7 @@
 import { NextResponse } from 'next/server'
 import { serviceCache } from '@/utils/store/service'
+import { parseCookies } from '@/utils/utils'
+
 const cache = serviceCache
 
 export async function POST() {
@@ -27,11 +29,8 @@ export async function POST() {
     }
     // 获取fetch接口成功后的headers
     const setCookieHeader = response.headers.get('set-cookie') ?? []
-    const cookies = Array.isArray(setCookieHeader)
-      ? setCookieHeader
-      .map((cookie: string) => cookie.split(';')[0])
-      .join(';')
-      : setCookieHeader.split(';')[0]
+    const cookies = parseCookies(setCookieHeader)
+    
     const data = await response.json()
     cache.set('loginResponse', { cookies, data })
     return NextResponse.json({ data, cookies }, { status: 200 })

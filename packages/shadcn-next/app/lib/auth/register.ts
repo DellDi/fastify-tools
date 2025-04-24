@@ -1,10 +1,11 @@
 'use server'
 
 import { prisma } from '@/lib/prisma'
-import { jwt } from '@/utils/auth/jwt'
 import { z } from 'zod';
 import { errorMessagesCodeMap } from '@/types/email'
 import { fastifyFetch } from '@/utils/fetch/fastifyFetch';
+import crypto from 'crypto';
+import { hashPasswordWithSaltCrypto } from '@/utils/auth/password';
 
 const emailSchema = z.string().email();
 
@@ -45,7 +46,7 @@ export async function registerUser(params: { username: string; email: string; ph
       throw new Error(errorMessagesCodeMap.EMAIL_FORMAT_INVALID.code)
     }
 
-    const encryptedPassword = jwt.encrypt(INITIAL_PASSWORD)
+    const { salt, hash } = hashPasswordWithSaltCrypto(INITIAL_PASSWORD)
 
     // 验证邮箱是否已注册
     const existingUser = await prisma.user.findFirst({
@@ -77,7 +78,10 @@ export async function registerUser(params: { username: string; email: string; ph
         username,
         email,
         phoneNumber,
-        encryptedPassword,
+        encryptedPassword: hash,
+        rawUserMetaData: {
+          salt,
+        },
       },
     })
 

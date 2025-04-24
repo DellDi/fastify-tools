@@ -1,6 +1,6 @@
 export const fastifyFetch = async (url: string, options: RequestInit) => {
     // 后端调用地址
-    const baseFastifyApiUrl = process.env.BASE_FASITYFY_API_URL || ''
+    const baseFastifyApiUrl = process.env.BASE_FASTIFY_API_URL || ''
     // 前端调用地址
     const baseApiUrl = process.env.NEXT_PUBLIC_API_URL || ''
     let finalUrl = url

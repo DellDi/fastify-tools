@@ -1,7 +1,10 @@
 'use server'
 import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
+import { verifyPasswordCrypto } from '@/utils/auth/password'
 import { jwt } from '@/utils/auth/jwt'
+import type { UserMetaData } from '@/types/user'
+import { z } from 'zod';
 
 export async function POST(request: Request) {
   const { email, password } = await request.json()
@@ -12,17 +15,36 @@ export async function POST(request: Request) {
     })
 
     if (!user) return NextResponse.json({
-      error: 'Invalid credentials: 账号未注册、或未通过验证',
+      error: 'Invalid credentials: 账号未注册',
       code: 401,
     }, { status: 401 })
 
     if (!user.encryptedPassword) {
-      return NextResponse.json({ error: 'Invalid credentials: 账号未注册、或未通过验证', code: 401 }, { status: 401 })
+      return NextResponse.json({ error: 'Invalid credentials: 账号未通过验证', code: 401 }, { status: 401 })
     }
 
-    const isPasswordValid = await jwt.compare(password, user.encryptedPassword)
+    const UserMetaSchema = z.object({
+      salt: z.string()
+    });
+
+    // 使用时
+    const parseResult = UserMetaSchema.safeParse(user.rawUserMetaData);
+    if (!parseResult.success) {
+      return NextResponse.json({ error: '用户数据格式不正确', code: 401 }, { status: 401 });
+    }
+
+    const { salt } = parseResult.data;
+
+    // 如果没有盐值，则无法验证密码
+    if (!salt) {
+      return NextResponse.json({ error: '用户数据不完整，请联系管理员', code: 401 }, { status: 401 })
+    }
+
+    const rowHash = user.encryptedPassword
+    const isPasswordValid = verifyPasswordCrypto(password, salt, rowHash)
+
     if (!isPasswordValid) {
-      return NextResponse.json({ error: 'Invalid credentials: 账号未注册、或未通过验证', code: 401 }, { status: 401 })
+      return NextResponse.json({ error: '密码错误', code: 401 }, { status: 401 })
     }
 
     // 生成 JWT token

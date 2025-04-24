@@ -69,7 +69,7 @@ services:
       - "4001:3001"
     environment:
       - NODE_ENV=${NODE_ENV:-production}
-      - BASE_FASITYFY_API_URL=http://fastify:3000
+      - BASE_FASTIFY_API_URL=http://fastify:3000
       # 数据库连接配置
       # 如果使用共享 PostgreSQL 容器，修改 POSTGRES_HOST 为该容器的主机名或 IP
       - POSTGRES_HOST=postgres
