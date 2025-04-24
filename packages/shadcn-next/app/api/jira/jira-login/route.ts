@@ -5,9 +5,13 @@ import { parseCookies } from '@/utils/utils'
 const cache = serviceCache
 
 export async function POST() {
-  const loginUrl = 'http://bug.new-see.com:8088/rest/gadget/1.0/login'
-  const username = 'liufengxiao'
-  const password = 'lfx123456'
+  const loginUrl = "http://bug.new-see.com:8088/rest/gadget/1.0/login"
+  const username = process.env.JIRA_USERNAME
+  const password = process.env.JIRA_PASSWORD
+
+  if (!loginUrl || !username || !password) {
+    return NextResponse.json({ message: 'Missing Jira login credentials' }, { status: 400 })
+  }
 
   try {
     // 缓存响应的结果，如果存在则直接返回，不再重复请求 设置过期时间为1小时
@@ -19,18 +23,18 @@ export async function POST() {
     const response = await fetch(loginUrl, {
       method: 'POST',
       headers: {
-        'Authorization': `Basic bmV3c2VlOm5ld3NlZQ==`,
+        'Authorization': `Basic ${Buffer.from(`${username}:${password}`).toString('base64')}`,
         'Content-Type': 'application/x-www-form-urlencoded',
       },
       body: `os_username=${encodeURIComponent(username)}&os_password=${encodeURIComponent(password)}&os_cookie=true`,
     })
     if (!response.ok) {
-      return new Error('Login failed')
+      return NextResponse.json({ message: 'Login failed' }, { status: 500 })
     }
     // 获取fetch接口成功后的headers
     const setCookieHeader = response.headers.get('set-cookie') ?? []
     const cookies = parseCookies(setCookieHeader)
-    
+
     const data = await response.json()
     cache.set('loginResponse', { cookies, data })
     return NextResponse.json({ data, cookies }, { status: 200 })
