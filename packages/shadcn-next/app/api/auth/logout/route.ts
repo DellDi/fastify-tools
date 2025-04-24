@@ -1,6 +1,7 @@
 import { NextResponse, type NextRequest } from 'next/server'
-import { serviceCache } from '@/utils/store/service'
+import { serviceCache } from '@/store/service'
 import { jwt } from '@/utils/auth/jwt'
+
 // 退出登录
 export async function POST(request: NextRequest) {
 

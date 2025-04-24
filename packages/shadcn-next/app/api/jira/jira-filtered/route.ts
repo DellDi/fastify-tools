@@ -1,7 +1,7 @@
 // `pages/api/jira-filtered.ts` 主要目的内置了过滤saas的客户名称
 import { NextRequest, NextResponse } from 'next/server'
-import { serviceCache } from '@/utils/store/service'
 import { fastifyFetch } from '@/utils/fetch/fastifyFetch'
+import { serviceCache } from '@/store/service'
 
 export interface JiraIssue {
   key: string

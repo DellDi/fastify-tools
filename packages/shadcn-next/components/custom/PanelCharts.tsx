@@ -1,23 +1,21 @@
 'use client'
-
-import * as React from 'react'
+import { useActionState, useState, useMemo } from 'react'
 import { Bar, BarChart, CartesianGrid, XAxis } from 'recharts'
 
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import { ChartConfig, ChartContainer, ChartTooltip, ChartTooltipContent } from '@/components/ui/chart'
-
-const chartData = [
-  { date: '2024-01-01', desktop: 222, mobile: 150 },
-]
-
-// 模拟近期20天的数据
-for (let i = 0; i < 29; i++) {
-  chartData.push({
-    date: `2024-10-${i + 1}`,
-    desktop: Math.floor(Math.random() * 500),
-    mobile: Math.floor(Math.random() * 500),
-  })
-}
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from '@/components/ui/card'
+import {
+  ChartConfig,
+  ChartContainer,
+  ChartTooltip,
+  ChartTooltipContent,
+} from '@/components/ui/chart'
+import { getDashboardData } from '@/app/lib/dashboard/base'
 
 const chartConfig = {
   views: {
@@ -33,16 +31,19 @@ const chartConfig = {
   },
 } satisfies ChartConfig
 
-export function PanelCharts() {
+export async function PanelCharts() {
   const [activeChart, setActiveChart] =
-    React.useState<keyof typeof chartConfig>('desktop')
+    useState<keyof typeof chartConfig>('desktop')
 
-  const total = React.useMemo(
+  const [state, action, isPending] = useActionState(getDashboardData, null)
+  const chartData = state || []
+
+  const total = useMemo(
     () => ({
       desktop: chartData.reduce((acc, curr) => acc + curr.desktop, 0),
       mobile: chartData.reduce((acc, curr) => acc + curr.mobile, 0),
     }),
-    [],
+    []
   )
 
   return (
@@ -50,9 +51,7 @@ export function PanelCharts() {
       <CardHeader className="flex flex-col items-stretch space-y-0 border-b p-0 sm:flex-row">
         <div className="flex flex-1 flex-col justify-center gap-1 px-6 py-5 sm:py-6">
           <CardTitle>活跃用户分析</CardTitle>
-          <CardDescription>
-            展示过去1个月的总访客数
-          </CardDescription>
+          <CardDescription>展示过去1个月的总访客数</CardDescription>
         </div>
         <div className="flex">
           {['desktop', 'mobile'].map((key) => {
@@ -82,18 +81,14 @@ export function PanelCharts() {
         >
           <BarChart
             accessibilityLayer
-            data={chartData}
+            data={chartData || []}
             margin={{
               left: 12,
               right: 12,
             }}
           >
-            <CartesianGrid vertical={false}/>
-            <XAxis
-              dataKey="date"
-              tickLine={false}
-              tickMargin={8}
-            ></XAxis>
+            <CartesianGrid vertical={false} />
+            <XAxis dataKey="date" tickLine={false} tickMargin={8}></XAxis>
             <ChartTooltip
               content={
                 <ChartTooltipContent
@@ -109,7 +104,7 @@ export function PanelCharts() {
                 />
               }
             />
-            <Bar dataKey={activeChart} fill={`var(--color-${activeChart})`}/>
+            <Bar dataKey={activeChart} fill={`var(--color-${activeChart})`} />
           </BarChart>
         </ChartContainer>
       </CardContent>

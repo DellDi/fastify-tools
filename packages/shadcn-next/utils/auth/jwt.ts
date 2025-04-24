@@ -1,7 +1,7 @@
 
 import jsonwebtoken from 'jsonwebtoken'
-import type { User } from '../../generated/client/index.js'
-import { serviceCache } from '@/utils/store/service'
+import type { User } from '@/generated/client'
+import { serviceCache } from '@/store/service'
 
 const JWT_SECRET = process.env.JWT_SECRET || 'your-jwt-secret'
 

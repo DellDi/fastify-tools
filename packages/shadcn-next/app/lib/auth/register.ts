@@ -4,7 +4,6 @@ import { prisma } from '@/lib/prisma'
 import { z } from 'zod';
 import { errorMessagesCodeMap } from '@/types/email'
 import { fastifyFetch } from '@/utils/fetch/fastifyFetch';
-import crypto from 'crypto';
 import { hashPasswordWithSaltCrypto } from '@/utils/auth/password';
 
 const emailSchema = z.string().email();

@@ -3,7 +3,6 @@ import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { verifyPasswordCrypto } from '@/utils/auth/password'
 import { jwt } from '@/utils/auth/jwt'
-import type { UserMetaData } from '@/types/user'
 import { z } from 'zod';
 
 export async function POST(request: Request) {
@@ -49,7 +48,7 @@ export async function POST(request: Request) {
 
     // 生成 JWT token
     const token = jwt.generateToken(user)
-    const response = NextResponse.json({ message: '登录成功' }, { status: 200 });
+    const response = NextResponse.json({ message: '登录成功', token, userInfo: user }, { status: 200 });
     // 设置 token 到 cookies - 确保 token 是字符串类型
     response.cookies.set(
       'auth_token',
