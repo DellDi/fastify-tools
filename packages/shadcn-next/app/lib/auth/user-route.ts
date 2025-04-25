@@ -1,7 +1,7 @@
-// /app/lib/auth/user-route.ts
 import { Menu } from '@/generated/client'
 import { prisma } from '@/lib/prisma'
 import { MenuWithChildren } from '@/types/prisma-extensions'
+import { serviceCache } from '@/store/service'
 
 // 获取用户的角色菜单 - 优化版本
 export async function getUserRolesMenu(userId: string): Promise<MenuWithChildren[]> {
@@ -32,7 +32,12 @@ export async function getUserRolesMenu(userId: string): Promise<MenuWithChildren
     const menus = user.userRole.roleMenus.map(rm => rm.menu);
     
     // 构建菜单树
-    return buildMenuTree(menus);
+    const menuTree = buildMenuTree(menus);
+    
+    // 缓存菜单树
+    serviceCache.set(userId + '_menu', menuTree);
+    
+    return menuTree;
 }
 
 /**

@@ -106,5 +106,8 @@ export interface FileSuccessResponse {
  */
 export interface FileBatchSuccessResponse {
   message: string
-  files: FileSuccessResponse[]
+  uploadedFiles: {
+    fileUrl: string
+    originalName: string
+  }[]
 }

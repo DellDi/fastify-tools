@@ -5,8 +5,6 @@ import { serviceCache } from '@/store/service'
 
 const JWT_SECRET = process.env.JWT_SECRET || 'your-jwt-secret'
 
-const cache = serviceCache
-
 export const jwt = {
     sign: (payload: any) => {
         return jsonwebtoken.sign(payload, JWT_SECRET)
@@ -21,12 +19,12 @@ export const jwt = {
         return jsonwebtoken.verify(password, JWT_SECRET)
     },
     generateToken: (user: User) => {
-        const cachedToken = cache.get(user.id)
+        const cachedToken = serviceCache.get(user.id)
         if (cachedToken) {
             return cachedToken
         }
         const token = jsonwebtoken.sign({ id: user.id, email: user.email, role: user.role }, JWT_SECRET)
-        cache.set(user.id, token)
+        serviceCache.set(user.id, token)
         return token
     },
     verifyToken: (token: string) => {
@@ -38,7 +36,7 @@ export const jwt = {
     },
     verifyTokenWithUser: (user: User, token: string) => {
         // 新增过期时间判断
-        const cachedToken = cache.get(user.id)
+        const cachedToken = serviceCache.get(user.id)
         if (!cachedToken || cachedToken !== token) {
             return new Error('Invalid token：过期')
         }

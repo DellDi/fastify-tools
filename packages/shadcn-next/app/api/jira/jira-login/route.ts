@@ -2,9 +2,6 @@ import { NextResponse } from 'next/server'
 import { parseCookies } from '@/utils/utils'
 import { serviceCache } from '@/store/service'
 
-
-const cache = serviceCache
-
 export async function POST() {
   const loginUrl = "http://bug.new-see.com:8088/rest/gadget/1.0/login"
   const username = process.env.JIRA_USERNAME
@@ -16,7 +13,7 @@ export async function POST() {
 
   try {
     // 缓存响应的结果，如果存在则直接返回，不再重复请求 设置过期时间为1小时
-    const cachedResponse = cache.get('loginResponse')
+    const cachedResponse = serviceCache.get('loginResponse')
     if (cachedResponse) {
       return NextResponse.json(cachedResponse)
     }
@@ -37,7 +34,7 @@ export async function POST() {
     const cookies = parseCookies(setCookieHeader)
 
     const data = await response.json()
-    cache.set('loginResponse', { cookies, data })
+    serviceCache.set('loginResponse', { cookies, data })
     return NextResponse.json({ data, cookies }, { status: 200 })
   } catch (error) {
     return NextResponse.json({ message: error }, { status: 500 })
