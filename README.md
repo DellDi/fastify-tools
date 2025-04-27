@@ -78,7 +78,7 @@ pnpm test
 1. 复制环境变量示例文件：
 
 ```bash
-cp .env.example .env
+cp .env.template .env
 ```
 
 2. 根据需要修改 `.env` 文件中的配置。
