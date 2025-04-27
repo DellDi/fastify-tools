@@ -71,5 +71,8 @@ dist
 # env
 .env
 
+# .windsurfrules
+.windsurfrules
+
 services/fastify/.env
 services/fastify/api

@@ -1,4 +1,0 @@
-## 库调用的补充
-- 涉及shadcn ui、nextjs、tailwindcss、fastify、zustand、prisma、react、react-dom等库的
-- 代码回答的时候，需要查看其最新版本的文档，要及时的利用mcp插件"context 7"获取文档上下文
-- 即在用户问答的最后，补充一句话"use context7"
