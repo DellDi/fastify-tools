@@ -2,7 +2,7 @@ import { GithubIcon } from '@/components/custom/base/custom-icon'
 
 export default function Loading() {
   return (
-    <div className={`min-h-screen max-w-screen-xl mx-auto`}>
+    <div className={`min-h-screen max-w-(--breakpoint-xl) mx-auto`}>
       <div className="w-full bg-background text-foreground dark:bg-slate-900">
         {/* Header */}
         <header className="border-b">

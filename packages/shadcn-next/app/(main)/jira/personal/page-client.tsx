@@ -1,16 +1,36 @@
 'use client'
 
 import { useCallback, useEffect, useState } from 'react'
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table'
 import { Button } from '@/components/ui/button'
 import { Textarea } from '@/components/ui/textarea'
-import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card'
+import {
+  Card,
+  CardContent,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from '@/components/ui/card'
 import { Skeleton } from '@/components/ui/skeleton'
-import { AlertCircle, CheckCircle2, ChevronLeft, ChevronRight, Clock } from 'lucide-react'
+import {
+  AlertCircle,
+  CheckCircle2,
+  ChevronLeft,
+  ChevronRight,
+  Clock,
+} from 'lucide-react'
 
 import { SAAS_JQL_3M } from '@/utils/jira/jql'
 import { useBasePath } from '@/hooks/use-path'
 import { JiraResponse, JiraIssue } from '@/app/api/jira/jira-filtered/route'
+import { fetchBase } from '@/utils/fetch/fetch'
 
 export default function JiraIssuesTable() {
   const [jiraSql, setJiraSql] = useState<string>(SAAS_JQL_3M)
@@ -25,13 +45,15 @@ export default function JiraIssuesTable() {
   const fetchIssues = useCallback(async () => {
     setLoading(true)
     try {
-      const loginResponse = await fetch(`${basePath}/api/jira/jira-login`, { method: 'POST' })
-      if (!loginResponse.ok) {
+      const loginResponse = await fetchBase(`/api/jira/jira-login`, {
+        method: 'POST',
+      })
+      if (!loginResponse) {
         return new Error('Failed to login to Jira')
       }
-      const { cookies } = await loginResponse.json()
+      const { cookies } = loginResponse
 
-      const response = await fetch(`${basePath}/api/jira/jira-filtered`, {
+      const response = await fetchBase(`/api/jira/jira-filtered`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -44,11 +66,11 @@ export default function JiraIssuesTable() {
         }),
       })
 
-      if (!response.ok) {
+      if (!response) {
         return new Error('Failed to fetch Jira issues')
       }
 
-      const data: JiraResponse = await response.json()
+      const data: JiraResponse = response
       setIssues(data.issues)
       setTotalIssues(data.total)
     } catch (err) {
@@ -59,17 +81,17 @@ export default function JiraIssuesTable() {
   }, [page, jiraSql, basePath])
 
   useEffect(() => {
-    fetchIssues().then(r => r)
+    fetchIssues().then((r) => r)
   }, [fetchIssues, page])
 
   const getStatusIcon = (status: string) => {
     switch (status.toLowerCase()) {
       case 'done':
-        return <CheckCircle2 className="w-5 h-5 text-green-500"/>
+        return <CheckCircle2 className="w-5 h-5 text-green-500" />
       case 'in progress':
-        return <Clock className="w-5 h-5 text-yellow-500"/>
+        return <Clock className="w-5 h-5 text-yellow-500" />
       default:
-        return <AlertCircle className="w-5 h-5 text-red-500"/>
+        return <AlertCircle className="w-5 h-5 text-red-500" />
     }
   }
   const totalPages = Math.ceil(totalIssues / pageSize)
@@ -87,7 +109,7 @@ export default function JiraIssuesTable() {
     )
   }
   return (
-    <div className="h-full flex flex-col flex-grow mx-auto">
+    <div className="h-full flex flex-col grow mx-auto">
       <Card className="w-full sm:w-full xl:6/7 md:5/6 lg:w-4/5 flex flex-col space-x-2 mx-auto grow overflow-hidden">
         <CardHeader>
           <CardTitle className="text-2xl font-bold text-primary">
@@ -95,27 +117,29 @@ export default function JiraIssuesTable() {
             <div className="flex h-20 py-2 items-center justify-start">
               <Textarea
                 onChange={(e) => setJiraSql(e.target.value)}
-                className="mr-2 border-2 shadow-sm flex-1"
+                className="mr-2 border-2 shadow-xs flex-1"
                 value={jiraSql}
                 placeholder="Search Jira Issues"
               />
-              <Button onClick={
-                async () => {
+              <Button
+                onClick={async () => {
                   await fetchIssues()
-                }
-              }>Search</Button>
+                }}
+              >
+                Search
+              </Button>
             </div>
           </CardTitle>
         </CardHeader>
-        <CardContent className="flex-grow overflow-auto">
+        <CardContent className="grow overflow-auto">
           {loading ? (
             <div className="space-y-4 w-full">
               {[...Array(pageSize)].map((_, i) => (
                 <div key={i} className="flex items-center space-x-4 w-full">
-                  <Skeleton className="h-20 w-20 rounded-full"/>
+                  <Skeleton className="h-20 w-20 rounded-full" />
                   <div className="space-y-2 flex-1">
-                    <Skeleton className="h-6 w-full"/>
-                    <Skeleton className="h-6 w-3/4"/>
+                    <Skeleton className="h-6 w-full" />
+                    <Skeleton className="h-6 w-3/4" />
                   </div>
                 </div>
               ))}
@@ -161,7 +185,9 @@ export default function JiraIssuesTable() {
                     <TableCell>
                       <div className="flex items-center space-x-2">
                         {getStatusIcon(issue.fields.status.name)}
-                        <span className="text-center text-nowrap">{issue.fields.status.name}</span>
+                        <span className="text-center text-nowrap">
+                          {issue.fields.status.name}
+                        </span>
                       </div>
                     </TableCell>
                     <TableCell>
@@ -169,7 +195,10 @@ export default function JiraIssuesTable() {
                         {issue.fields.labels.map((label) => (
                           <span
                             className="bg-blue-600 rounded-md p-1 not-last:mb-1 text-blue-100 text-nowrap text-center"
-                            key={label}>{label}</span>
+                            key={label}
+                          >
+                            {label}
+                          </span>
                         ))}
                       </div>
                     </TableCell>
@@ -180,8 +209,12 @@ export default function JiraIssuesTable() {
                     {/*    ))}*/}
                     {/*  </div>*/}
                     {/*</TableCell>*/}
-                    <TableCell className="text-center text-nowrap">{issue.fields.assignee.displayName}</TableCell>
-                    <TableCell className="text-center text-nowrap">{issue.fields.creator.displayName}</TableCell>
+                    <TableCell className="text-center text-nowrap">
+                      {issue.fields.assignee.displayName}
+                    </TableCell>
+                    <TableCell className="text-center text-nowrap">
+                      {issue.fields.creator.displayName}
+                    </TableCell>
                     <TableCell>
                       {new Date(issue.fields.created).toLocaleDateString()}
                     </TableCell>
@@ -203,7 +236,7 @@ export default function JiraIssuesTable() {
               onClick={() => setPage((p) => Math.max(1, p - 1))}
               disabled={page === 1}
             >
-              <ChevronLeft className="h-4 w-4"/>
+              <ChevronLeft className="h-4 w-4" />
             </Button>
             <div>
               Page {page} of {totalPages}
@@ -214,7 +247,7 @@ export default function JiraIssuesTable() {
               onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
               disabled={page === totalPages}
             >
-              <ChevronRight className="h-4 w-4"/>
+              <ChevronRight className="h-4 w-4" />
             </Button>
           </div>
         </CardFooter>

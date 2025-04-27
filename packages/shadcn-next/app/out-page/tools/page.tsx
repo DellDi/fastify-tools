@@ -202,7 +202,7 @@ export default function APITestingPlatform() {
                   <span>失败: {initialData.results.fail} 条</span>
                 </div>
                 {initialData.results.failReasons.length > 0 && (
-                  <div className={`text-left shadow`}>
+                  <div className={`text-left shadow-sm`}>
                     <h3 className="font-semibold mb-2">失败原因:</h3>
                     <ul className="list-disc p-2">
                       {initialData.results.failReasons.map((reason, index) => (

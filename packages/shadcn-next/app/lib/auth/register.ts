@@ -1,12 +1,10 @@
 'use server'
 
 import { prisma } from '@/lib/prisma'
-import { jwt } from '@/utils/auth/jwt'
 import { z } from 'zod';
-import { fetchFastifyApi } from '@/utils/fetch/fasifyFetch'
-import { User } from '@/generated/client/index.js'
 import { errorMessagesCodeMap } from '@/types/email'
-import { randomUUID } from 'crypto';
+import { fastifyFetch } from '@/utils/fetch/fastifyFetch';
+import { hashPasswordWithSaltCrypto } from '@/utils/auth/password';
 
 const emailSchema = z.string().email();
 
@@ -14,9 +12,9 @@ export async function sendEmailVerification(email: string) {
   // 生成6位随机验证码
   const randomCode = Math.floor(100000 + Math.random() * 900000).toString()
 
-  const SITE_DOMAIN_URL = process.env.SITE_DOMAIN_URL || 'http://localhost:3000'
+  const SITE_DOMAIN_URL = process.env.SITE_DOMAIN_URL || 'http://localhost:3001'
   const NEXT_PUBLIC_BASE_PATH = process.env.NEXT_PUBLIC_BASE_PATH || ''
-  await fetchFastifyApi('/email/send', {
+  await fastifyFetch('/email/send', {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
@@ -26,7 +24,7 @@ export async function sendEmailVerification(email: string) {
       templateName: 'register-confirmation',
       variables: {
         Email: email,
-        ConfirmationURL: `${SITE_DOMAIN_URL}${NEXT_PUBLIC_BASE_PATH}/auth?code=${randomCode}`,
+        ConfirmationURL: `${SITE_DOMAIN_URL}${NEXT_PUBLIC_BASE_PATH}/auth?code=${randomCode}&email=${email}`,
         SiteURL: `${SITE_DOMAIN_URL}${NEXT_PUBLIC_BASE_PATH}`,
       },
     }),
@@ -47,7 +45,7 @@ export async function registerUser(params: { username: string; email: string; ph
       throw new Error(errorMessagesCodeMap.EMAIL_FORMAT_INVALID.code)
     }
 
-    const encryptedPassword = jwt.encrypt(INITIAL_PASSWORD)
+    const { salt, hash } = hashPasswordWithSaltCrypto(INITIAL_PASSWORD)
 
     // 验证邮箱是否已注册
     const existingUser = await prisma.user.findFirst({
@@ -79,7 +77,10 @@ export async function registerUser(params: { username: string; email: string; ph
         username,
         email,
         phoneNumber,
-        encryptedPassword,
+        encryptedPassword: hash,
+        rawUserMetaData: {
+          salt,
+        },
       },
     })
 

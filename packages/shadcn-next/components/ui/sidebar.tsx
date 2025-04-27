@@ -55,7 +55,7 @@ const SidebarLayout = React.forwardRef<
               } as React.CSSProperties
             }
             className={cn(
-                "flex min-h-screen bg-accent/50 pl-0 transition-all duration-300 ease-in-out data-[sidebar=closed]:pl-0 sm:pl-[--sidebar-width]",
+                "flex min-h-screen bg-accent/50 pl-0 transition-all duration-300 ease-in-out data-[sidebar=closed]:pl-0 sm:pl-(--sidebar-width)",
                 className
             )}
             {...props}
@@ -105,7 +105,7 @@ const Sidebar = React.forwardRef<HTMLDivElement, React.ComponentProps<"div">>(
         return (
             <Sheet open={open} onOpenChange={onOpenChange}>
               <SheetContent
-                  className="w-[260px] p-0 md:w-[--sidebar-width] [&>button]:hidden"
+                  className="w-[260px] p-0 md:w-(--sidebar-width) [&>button]:hidden"
                   side="left"
               >
                 {sidebar}
@@ -116,7 +116,7 @@ const Sidebar = React.forwardRef<HTMLDivElement, React.ComponentProps<"div">>(
 
       return (
           <aside
-              className="fixed inset-y-0 left-0 z-10 hidden w-[--sidebar-width] transition-all duration-300 ease-in-out md:block [[data-sidebar=closed]_&]:left-[calc(var(--sidebar-width)*-1)]">
+              className="fixed inset-y-0 left-0 z-10 hidden w-(--sidebar-width) transition-all duration-300 ease-in-out md:block in-data-[sidebar=closed]:left-[calc(var(--sidebar-width)*-1)]">
             {sidebar}
           </aside>
       )

@@ -1,15 +1,9 @@
 
 import jsonwebtoken from 'jsonwebtoken'
-import type { User } from '../../generated/client/index.js'
-import { LRUCache } from 'lru-cache'
+import type { User } from '@/generated/client'
+import { serviceCache } from '@/store/service'
 
 const JWT_SECRET = process.env.JWT_SECRET || 'your-jwt-secret'
-
-const cache = new LRUCache({
-    max: 1000,
-    maxSize: 5000,
-    ttl: 7 * 24 * 60 * 60 * 1000 // 7 days
-})
 
 export const jwt = {
     sign: (payload: any) => {
@@ -25,12 +19,12 @@ export const jwt = {
         return jsonwebtoken.verify(password, JWT_SECRET)
     },
     generateToken: (user: User) => {
-        const cachedToken = cache.get(user.id)
+        const cachedToken = serviceCache.get(user.id)
         if (cachedToken) {
             return cachedToken
         }
         const token = jsonwebtoken.sign({ id: user.id, email: user.email, role: user.role }, JWT_SECRET)
-        cache.set(user.id, token)
+        serviceCache.set(user.id, token)
         return token
     },
     verifyToken: (token: string) => {
@@ -42,7 +36,7 @@ export const jwt = {
     },
     verifyTokenWithUser: (user: User, token: string) => {
         // 新增过期时间判断
-        const cachedToken = cache.get(user.id)
+        const cachedToken = serviceCache.get(user.id)
         if (!cachedToken || cachedToken !== token) {
             return new Error('Invalid token：过期')
         }
@@ -60,6 +54,6 @@ export const jwt = {
     },
     verifyRefreshToken: (token: string) => {
         return jsonwebtoken.verify(token, JWT_SECRET) as { id: string; email: string; role: string }
-    }
+    },
 }
 

@@ -45,7 +45,7 @@ export default async function Home() {
                 <MotionHeading className="text-2xl font-bold mb-4">
                   {section.title}
                 </MotionHeading>
-                <MotionParagraph className="mb-6">
+                <MotionParagraph className="mb-6 h-10">
                   {section.description}
                 </MotionParagraph>
                 <MotionButtonGroup

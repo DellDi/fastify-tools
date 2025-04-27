@@ -4,6 +4,7 @@ import React, { useCallback, useEffect, useState } from 'react'
 import { toast } from '@/components/ui/use-toast'
 import { PasswordCard } from '@/components/password/box-decrypt'
 import { CopyButton } from '@/components/copy-button'
+import { fastifyFetch } from '@/utils/fetch/fastifyFetch'
 
 const selectOptions = {
   database: [
@@ -37,7 +38,7 @@ export function PasswordComponent() {
   const [content, setContent] = useState('')
   const [result, setResult] = useState('')
   const [selectValue, setSelect] = useState<SelectValue>(
-    selectOptions[mode][0].value,
+    selectOptions[mode][0].value
   )
 
   const setSelectValue = useCallback(() => {
@@ -59,36 +60,36 @@ export function PasswordComponent() {
     e.preventDefault()
 
     try {
-      const response = await fetch(
-        `${process.env.NEXT_PUBLIC_API_URL}/newsee/handlePassword`,
-        {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            content,
-            isBatch: isBatchInput,
-            aesEnOrDeType: selectValue,
-          }),
-        },
-      )
-      const data = await response.json()
+      const response = await fastifyFetch(`/newsee/handlePassword`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          content,
+          isBatch: isBatchInput,
+          aesEnOrDeType: selectValue,
+        }),
+      })
 
-      setResult(data.result)
+      setResult(response.result)
 
-      const statusFail = data.statusCode !== 200
+      const statusFail = response.statusCode !== 200
       toast({
         title: statusFail ? '解析异常' : '解析成功',
         variant: statusFail ? 'destructive' : 'default',
         description: statusFail ? (
-          `${data.code}:${data.message}`
+          `${response.code}:${response.message}`
         ) : (
           <>
             <pre className="mt-2 w-[340px] rounded-md bg-gray-900  p-4 overflow-auto">
-            <code className="text-white whitespace-pre-wrap break-words">
-               {data.result}
-            </code>
-          </pre>
-            <CopyButton text={data.result as string} size="sm" className="">
+              <code className="text-white whitespace-pre-wrap break-words">
+                {response.result}
+              </code>
+            </pre>
+            <CopyButton
+              text={response.message as string}
+              size="sm"
+              className=""
+            >
               复制
             </CopyButton>
           </>

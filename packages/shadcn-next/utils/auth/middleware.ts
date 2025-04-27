@@ -1,24 +1,16 @@
 import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
-import { prisma } from '../../lib/prisma'
-import { jwt } from '../../utils/auth/jwt'
-import { type Menu, type Permission, type Role, type User } from '../../generated/client/index.js'
+import { prisma } from '@/lib/prisma'
+import { jwt } from '@/utils/auth/jwt'
+import { type Permission, type Role, type User } from '@/generated/client'
+import { serviceCache } from '@/store/service'
+import { type MenuWithChildren } from '@/types/prisma-extensions'
 
-type FullUser = User & {
+type FullUserInfo = User & {
   userRole?: Role & {
-    rolePermissions: {
-      permission: Permission
-    }[]
-    roleMenus: {
-      menu: Menu
-    }[]
+    rolePermissions: Permission[]
+    roleMenus: MenuWithChildren[]
   }
-}
-
-interface AuthResult {
-  user: FullUser
-  permissions: string[]
-  menus: Menu[]
 }
 
 export async function verifyAuth(request: NextRequest) {
@@ -35,35 +27,45 @@ export async function verifyAuth(request: NextRequest) {
       role: string
     }
 
+    const cachedUser = serviceCache.get(decoded.id + '_user') as FullUserInfo
+    if (cachedUser) {
+      return {
+        user: cachedUser,
+        permissions: cachedUser.userRole?.rolePermissions?.map((rp) => rp) || [],
+        menus: cachedUser.userRole?.roleMenus?.map((rm) => rm) || []
+      } as unknown as FullUserInfo
+    }
+
     const user = await prisma.user.findUnique({
       where: { id: decoded.id },
-      include: {
-        userRole: {
-          include: {
-            rolePermissions: {
-              include: {
-                permission: true
-              }
-            },
-            roleMenus: {
-              include: {
-                menu: true
-              }
-            }
-          }
-        }
-      }
     })
+    
 
     if (!user) {
       return null
     }
 
-    return {
-      user,
-      permissions: user.userRole?.rolePermissions.map((rp) => rp.permission.name) || [],
-      menus: user.userRole?.roleMenus.map((rm) => rm.menu) || []
-    } as AuthResult
+    const fullUser = {
+      ...user,
+      userRole: {
+        roleMenus: [] as MenuWithChildren[],
+        rolePermissions: [] as Permission[]
+      }
+    }
+
+    if (user && !fullUser.userRole?.roleMenus) {
+      const menus = serviceCache.get(user.id + '_menu') as MenuWithChildren[]
+      fullUser.userRole.roleMenus = menus ?? []
+    }
+
+    if (user && !fullUser.userRole?.rolePermissions) {
+      const permissions = serviceCache.get(user.id + '_permission') as Permission[]
+      fullUser.userRole.rolePermissions = permissions ?? []
+    }
+
+    serviceCache.set(decoded.id + '_user', fullUser)
+
+    return fullUser
   } catch (error) {
     console.error('Auth verification failed:', error)
     return null
@@ -71,22 +73,22 @@ export async function verifyAuth(request: NextRequest) {
 }
 
 export async function updateSession(request: NextRequest) {
-  const authResult = await verifyAuth(request)
+  const authUserResult = await verifyAuth(request)
 
-  if (!authResult) {
+  if (!authUserResult) {
     return NextResponse.redirect(new URL('/login', request.url))
   }
 
   // 更新用户最后登录时间
   await prisma.user.update({
-    where: { id: authResult.user.id },
+    where: { id: authUserResult.id },
     data: { lastSignInAt: new Date() }
   })
 
   // 记录登录日志
   await prisma.loginLog.create({
     data: {
-      userId: authResult.user.id,
+      userId: authUserResult.id,
       ipAddress: request.headers.get('x-real-ip') || request.headers.get('x-forwarded-for') || '',
       userAgent: request.headers.get('user-agent') || ''
     }
@@ -96,19 +98,15 @@ export async function updateSession(request: NextRequest) {
 }
 
 export async function hasPermission(request: NextRequest, requiredPermission: string) {
-  const authResult = await verifyAuth(request)
-  if (!authResult) return false
-  return authResult.permissions.includes(requiredPermission)
-}
-
-export async function hasAdminRole(request: NextRequest) {
-  const authResult = await verifyAuth(request)
-  if (!authResult) return false
-  return authResult.user.userRole?.name === 'admin'
-}
-
-export async function canAccessMenu(request: NextRequest, menuUrl: string) {
-  const authResult = await verifyAuth(request)
-  if (!authResult) return false
-  return authResult.menus.some((menu) => menuUrl.startsWith(menu.url || ''))
+  const authUserResult = await verifyAuth(request)
+  if (!authUserResult) return false
+  
+  // 使用 for 循环替代 some 方法
+  const permissions = authUserResult.userRole?.rolePermissions || []
+  for (const permission of permissions) {
+    if (permission.name === requiredPermission) {
+      return true
+    }
+  }
+  return false
 }

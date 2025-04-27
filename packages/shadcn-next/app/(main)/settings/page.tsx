@@ -1,5 +1,5 @@
 import AccountForm from './account-form'
-import { getCurrentUser } from '@/app/lib/user'
+import { getCurrentUser } from '@/store/client/userStore'
 
 export const metadata = {
   title: '账户设置',
@@ -7,7 +7,7 @@ export const metadata = {
 }
 
 export default async function AccountPage() {
-  const user = await getCurrentUser()
+  const user = getCurrentUser()
   if (!user) {
     return (
       <div className="container mx-auto py-10">

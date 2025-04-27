@@ -81,7 +81,7 @@ export default function ChangelogAdmin() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-violet-500 to-fuchsia-500 p-8">
+    <div className="min-h-screen bg-linear-to-br from-violet-500 to-fuchsia-500 p-8">
       <div className="max-w-4xl mx-auto">
         <h1 className="text-6xl font-bold text-white mb-12 text-center">
           更新日志管理
@@ -106,7 +106,7 @@ export default function ChangelogAdmin() {
                 setNewItem(null)
               }}/>
             ) : (
-              <div className={`bg-gradient-to-r ${item.color} p-6`}>
+              <div className={`bg-linear-to-r ${item.color} p-6`}>
                 <div className="flex justify-between items-center">
                   <h2 className="text-3xl font-bold text-white">版本 {item.version}</h2>
                   <div>
@@ -165,7 +165,7 @@ function EditForm({ item, onSave, onCancel }: { item: ChangelogItem, onSave: (it
           版本
         </label>
         <input
-          className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+          className="shadow-sm appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-hidden focus:shadow-outline"
           id="version"
           type="text"
           name="version"
@@ -179,7 +179,7 @@ function EditForm({ item, onSave, onCancel }: { item: ChangelogItem, onSave: (it
           日期
         </label>
         <input
-          className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+          className="shadow-sm appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-hidden focus:shadow-outline"
           id="date"
           type="date"
           name="date"
@@ -193,7 +193,7 @@ function EditForm({ item, onSave, onCancel }: { item: ChangelogItem, onSave: (it
           颜色
         </label>
         <select
-          className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+          className="shadow-sm appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-hidden focus:shadow-outline"
           id="color"
           name="color"
           value={editedItem.color}
@@ -213,7 +213,7 @@ function EditForm({ item, onSave, onCancel }: { item: ChangelogItem, onSave: (it
         {editedItem.changes.map((change, index) => (
           <div key={index} className="flex mb-2">
             <input
-              className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline mr-2"
+              className="shadow-sm appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-hidden focus:shadow-outline mr-2"
               type="text"
               value={change}
               onChange={(e) => handleChangeChange(index, e.target.value)}

@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { User } from '@supabase/supabase-js'
+import { User } from '@/generated/client'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import * as z from 'zod'
@@ -13,6 +13,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { useToast } from "@/components/ui/use-toast"
 import { Card, CardContent } from "@/components/ui/card"
 import { Icons } from "@/components/ui/icons"
+import { fetchBase } from '@/utils/fetch/fetch'
 
 
 const formSchema = z.object({
@@ -28,13 +29,12 @@ const formSchema = z.object({
 export default function AccountForm({ user }: { user: User }) {
   const [isLoading, setIsLoading] = useState(false)
   const router = useRouter()
-  const supabase = createClient()
   const { toast } = useToast()
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      username: user.user_metadata.username || '',
+      username: user.username || '',
       email: user.email || '',
     },
   })
@@ -42,29 +42,16 @@ export default function AccountForm({ user }: { user: User }) {
   async function onSubmit(values: z.infer<typeof formSchema>) {
     setIsLoading(true)
     try {
-      let avatarUrl = user.user_metadata.avatar_url
+      let avatarUrl = user.avatarUrl
 
-      if (values.avatar) {
-        const fileExt = values.avatar.name.split('.').pop()
-        const fileName = `${Math.random()}.${fileExt}`
-        const { error: uploadError } = await supabase.storage
-        .from('avatars')
-        .upload(fileName, values.avatar)
-
-        if (uploadError) {
-          throw uploadError
-        }
-
-        const { data: urlData } = supabase.storage.from('avatars').getPublicUrl(fileName)
-        avatarUrl = urlData.publicUrl
-      }
-
-      const { error } = await supabase.auth.updateUser({
-        email: values.email,
-        data: { username: values.username, avatar_url: avatarUrl }
+      fetchBase('/api/user/update', {
+        method: 'PUT',
+        body: JSON.stringify({
+          username: values.username,
+          email: values.email,
+          avatarUrl
+        })
       })
-
-      if (error) throw error
 
       toast({
         title: "更新成功",
@@ -97,9 +84,9 @@ export default function AccountForm({ user }: { user: User }) {
                   <FormControl>
                     <div className="flex flex-col sm:flex-row items-center space-y-4 sm:space-y-0 sm:space-x-4">
                       <Avatar className="w-24 h-24 border-4 border-primary/20">
-                        <AvatarImage src={user.user_metadata.avatar_url} />
+                        <AvatarImage src={user.avatarUrl || ''} />
                         <AvatarFallback className="bg-primary/10 text-primary text-2xl font-bold">
-                          {user.user_metadata.username?.charAt(0) || user.email?.charAt(0)}
+                          {user.username?.charAt(0) || user.email?.charAt(0)}
                         </AvatarFallback>
                       </Avatar>
                       <div className="flex-1">

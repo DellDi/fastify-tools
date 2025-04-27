@@ -6,6 +6,8 @@ import { motion } from 'framer-motion'
 import { Loader2, CheckCircle, XCircle } from 'lucide-react'
 import { toast } from '@/components/ui/use-toast'
 import { fetchBase } from '@/utils/fetch/fetch'
+import { errorMessagesCodeMap } from '@/types/email'
+
 interface AuthTransitionProps {
   params: Record<string, string | undefined>
 }
@@ -28,6 +30,7 @@ export default function AuthTransition({ params }: AuthTransitionProps) {
           method: 'POST',
           body: JSON.stringify({ email: params.email, code }),
         })
+        console.log("🚀 ~ authCodeLogin ~ user:", user)
         setStatus('success')
         setMessage('身份验证成功！正在跳转...')
         toast({
@@ -36,15 +39,69 @@ export default function AuthTransition({ params }: AuthTransitionProps) {
         })
         setTimeout(() => router.push(params.redirect || '/dashboard'), 1000)
         return user
-      } catch (error) {
+      } catch (error: unknown) {
+        console.log("🚀 ~ authCodeLogin ~ error:", error)
         setStatus('error')
-        setMessage(`身份验证失败。请稍后重试:${error}`)
-        toast({
-          title: '身份验证失败',
-          description: `身份验证失败。请稍后重试:${error}`,
-          variant: 'destructive',
-        })
-        setTimeout(() => router.push('/error'), 1000)
+        
+        // 处理API返回的错误对象
+        if (error instanceof Response) {
+          // 解析Response对象
+          const errorData = await error.json()
+          console.log("🚀 ~ authCodeLogin ~ errorData:", errorData)
+          
+          if (errorData.error && errorMessagesCodeMap[errorData.error as keyof typeof errorMessagesCodeMap]) {
+            const errorCode = errorData.error as keyof typeof errorMessagesCodeMap
+            const errorInfo = errorMessagesCodeMap[errorCode]
+            
+            setMessage(`身份验证失败。请稍后重试: ${errorInfo.message}`)
+            toast({
+              title: '身份验证失败',
+              description: `身份验证失败。请稍后重试: ${errorInfo.message}`,
+              variant: 'destructive',
+            })
+            
+            setTimeout(
+              () => router.push(`/error?errorCode=${errorInfo.code}&email=${params.email}`),
+              2000
+            )
+            return
+          }
+        }
+        
+        // 处理普通Error对象（兜底处理）
+        if (error instanceof Error) {
+          const errorMessage = error.message
+          const errorCode = Object.keys(errorMessagesCodeMap).find(
+            (key) => errorMessagesCodeMap[key as keyof typeof errorMessagesCodeMap].code === errorMessage
+          ) as keyof typeof errorMessagesCodeMap | undefined
+          
+          if (errorCode) {
+            setMessage(
+              `身份验证失败。请稍后重试: ${errorMessagesCodeMap[errorCode].message}`
+            )
+            toast({
+              title: '身份验证失败',
+              description: `身份验证失败。请稍后重试: ${errorMessagesCodeMap[errorCode].message}`,
+              variant: 'destructive',
+            })
+            setTimeout(
+              () => router.push(`/error?errorCode=${errorMessagesCodeMap[errorCode].code}&email=${params.email}`),
+              2000
+            )
+          } else {
+            // 未知错误处理
+            setMessage(`身份验证失败。请稍后重试: ${error.message}`)
+            toast({
+              title: '身份验证失败',
+              description: `身份验证失败。请稍后重试: ${error.message}`,
+              variant: 'destructive',
+            })
+            setTimeout(
+              () => router.push(`/error?errorCode=UNKNOWN_ERROR&email=${params.email}`),
+              2000
+            )
+          }
+        }
         throw error // 重新抛出错误，以便调用者进行进一步处理
       }
     }
@@ -64,7 +121,7 @@ export default function AuthTransition({ params }: AuthTransitionProps) {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800">
+    <div className="min-h-screen flex items-center justify-center bg-linear-to-br from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800">
       <motion.div
         initial={{ opacity: 0, y: -20 }}
         animate={{ opacity: 1, y: 0 }}

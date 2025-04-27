@@ -1,39 +1,30 @@
 import { NextResponse } from 'next/server'
-import { createClient } from '@supabase/supabase-js'
-import { verify } from 'jsonwebtoken'
-import { cookies } from 'next/headers'
+import { prisma } from '@/lib/prisma'
+import { requireAuth } from '@/app/actions/menu-actions'
 
-const supabase = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!)
-
-export async function POST(request: Request) {
-  const cookieStore = await cookies()
-  const token = cookieStore.get('auth_token')?.value
-
-  if (!token) {
+// 更新用户信息
+export async function PUT(request: Request) {
+  const userId = await requireAuth()
+  if (!userId) {
     return NextResponse.json({ error: "未认证" }, { status: 401 })
   }
 
+  const { username, email, phoneNumber, avatarUrl } = await request.json()
+
   try {
-    const decoded = verify(token, process.env.SUPABASE_JWT_SECRET!) as { userId: string }
-    const { username, email, phone_number } = await request.json()
+    const user = await prisma.user.update({
+      where: { id: userId },
+      data: { email, username, phoneNumber, avatarUrl }
+    })
 
-    const { data, error } = await supabase.auth.admin.updateUserById(
-      decoded.userId,
-      {
-        email,
-        user_metadata: { username, phone_number }
-      }
-    )
-
-    if (error) {
-      console.error('Error updating user:', error)
+    if (!user) {
       return NextResponse.json({ error: "更新用户信息失败" }, { status: 500 })
     }
 
-    return NextResponse.json({ message: "用户信息更新成功", data })
+    return NextResponse.json({ message: "用户信息更新成功", data: user })
   } catch (error) {
-    console.error('Error verifying token:', error)
-    return NextResponse.json({ error: "未认证" }, { status: 401 })
+    console.error('Error updating user:', error)
+    return NextResponse.json({ error: "更新用户信息失败" }, { status: 500 })
   }
 }
 

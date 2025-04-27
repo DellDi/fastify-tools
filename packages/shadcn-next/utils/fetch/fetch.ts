@@ -1,40 +1,95 @@
-export const fetchBase = async (url: string, options: RequestInit) => {
+import { baseFetch, isServerEnvironment } from './baseFetch'
+
+/**
+ * 用于调用 Next.js 本地服务端的 fetch 函数
+ * @param url API 路径
+ * @param options 请求选项
+ * @returns 响应数据
+ */
+export const fetchBase = async (url: string, options: RequestInit = {}) => {
   const basePath = process.env.NEXT_PUBLIC_BASE_PATH || ''
-
-  // 判断当前环境
-  const isServer = typeof window === 'undefined'
-
-  // 在服务端环境中，需要完整URL；在客户端环境中，使用相对URL
-  let finalUrl = url
-
+  const isServer = isServerEnvironment()
+  
+  // 在服务端环境中需要完整URL
   if (isServer) {
-    // 服务端渲染时需要完整URL
     const baseUrl = process.env.BASE_NEXT_API_URL
-    if (!baseUrl) {
-      console.warn('BASE_NEXT_API_URL 未设置，服务端渲染可能无法正确请求API')
-      // 在服务端但没有设置BASE_NEXT_API_URL时，返回空结果避免错误
-      if (url.startsWith('/api/')) {
-        console.log('服务端渲染跳过API请求:', url)
-        return { skipped: true, message: 'API request skipped in server environment without BASE_NEXT_API_URL' }
+    
+    // 如果是 API 请求但没有设置 BASE_NEXT_API_URL，跳过请求
+    if (!baseUrl && url.startsWith('/api/')) {
+      console.warn('BASE_NEXT_API_URL 未设置，服务端渲染跳过API请求:', url)
+      return { 
+        skipped: true, 
+        message: 'API request skipped in server environment without BASE_NEXT_API_URL' 
       }
     }
-    finalUrl = `${baseUrl || ''}${basePath}${url}`
-  } else {
-    // 客户端渲染时使用相对URL
-    finalUrl = url
+    
+    // 使用完整的基础URL
+    const fullBaseUrl = `${baseUrl || ''}${basePath}`
+    return baseFetch(url, fullBaseUrl, options)
   }
+  
+  // 客户端环境直接使用相对URL
+  return baseFetch(url, '', options)
+}
 
-  try {
-    const response = await fetch(finalUrl, options)
-    if (!response.ok) {
-      throw new Error(`Fetch error: ${response.statusText}`)
+/**
+ * 创建用于 useSWR 的 Next.js API 数据获取函数
+ */
+export const createNextSWRFetcher = (defaultOptions: RequestInit = {}) => {
+  return async (key: string | [string, any]) => {
+    // 支持 useSWR 的键值对形式，如 [url, params]
+    let url: string
+    let options = { ...defaultOptions }
+    
+    if (Array.isArray(key)) {
+      url = key[0]
+      const params = key[1]
+      
+      // 如果第二个参数是对象，将其作为请求体或查询参数
+      if (params && typeof params === 'object') {
+        if (options.method === 'GET' || !options.method) {
+          // GET 请求：转换为查询参数
+          const queryParams = new URLSearchParams()
+          Object.entries(params).forEach(([k, v]) => {
+            if (v !== undefined && v !== null) {
+              queryParams.append(k, String(v))
+            }
+          })
+          const queryString = queryParams.toString()
+          if (queryString) {
+            url = `${url}${url.includes('?') ? '&' : '?'}${queryString}`
+          }
+        } else {
+          // 其他请求：作为 JSON 请求体
+          options.headers = {
+            ...options.headers,
+            'Content-Type': 'application/json',
+          }
+          options.body = JSON.stringify(params)
+        }
+      }
+    } else {
+      url = key
     }
-    if (response.headers.get('Content-Type')?.includes('application/json')) {
-      return await response.json()
+    
+    // 在客户端环境中才执行请求
+    if (typeof window === 'undefined') {
+      // 服务端环境跳过 API 请求，返回空数据
+      if (url.startsWith('/api/')) {
+        return { skipped: true, message: 'API request skipped in server environment' }
+      }
     }
-    return await response.text()
-  } catch (error) {
-    console.error('Fetch error:', error)
-    throw error
+    
+    return fetchBase(url, options)
   }
 }
+
+/**
+ * 用于 GET 请求的 SWR fetcher
+ */
+export const nextSWRFetcher = createNextSWRFetcher({ method: 'GET' })
+
+/**
+ * 用于 POST 请求的 SWR fetcher
+ */
+export const nextSWRPostFetcher = createNextSWRFetcher({ method: 'POST' })

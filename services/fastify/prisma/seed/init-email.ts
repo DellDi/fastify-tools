@@ -30,7 +30,7 @@ export async function seedEmail() {
         update: {},
         create: {
             name: 'register-success',
-            subject: '邮件注册成功',
+            subject: '注册成功',
             body: fs.readFileSync(path.join(__dirname, '../../public/email/success-template.html'), 'utf8'),
             variables: {
                 logoUrl: 'string',

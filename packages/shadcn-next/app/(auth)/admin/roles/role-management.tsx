@@ -7,16 +7,12 @@ import { Input } from '@/components/ui/input'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { useToast } from '@/components/ui/use-toast'
 
-import { usePermissions } from '@/hooks/use-permissions'
-
 export default function RoleManagement() {
-  const { hasPermission, isLoading: permissionsLoading } = usePermissions()
   const { toast } = useToast()
   // const router = useRouter()
   const [roles, setRoles] = useState([])
   const [newRoleName, setNewRoleName] = useState('')
   const [isLoading, setIsLoading] = useState(false)
-  const supabase = createClient()
 
   useEffect(() => {
     fetchRoles()
@@ -25,10 +21,6 @@ export default function RoleManagement() {
 
   if (permissionsLoading) {
     return <div>加载权限中...</div>
-  }
-
-  if (!hasPermission('manage_roles')) {
-    return <div>您没有管理角色的权限。</div>
   }
 
 

@@ -15,7 +15,7 @@ export function MotionHeading({
   return (
     <motion.h1
       className={cn(
-        'text-5xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-blue-600 to-purple-600',
+        'text-5xl font-bold bg-clip-text text-transparent bg-linear-to-r from-blue-600 to-purple-600',
         className
       )}
       initial={{ opacity: 0, y: -20 }}
@@ -48,10 +48,10 @@ export function MotionParagraph({
   )
 }
 
-export function MotionButtonGroup({ 
+export function MotionButtonGroup({
   className,
   buttons,
-}: { 
+}: {
   className?: string
   buttons?: Array<{
     text: string
@@ -74,19 +74,19 @@ export function MotionButtonGroup({
 
   return (
     <motion.div
-      className={cn('mt-8 flex justify-center space-x-4', className)}
+      className={cn('mt-8 flex justify-center space-x-4 ', className)}
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.8, delay: 0.4 }}
     >
       {defaultButtons.map((button, index) => (
         <Link key={index} href={button.href}>
-          <button 
+          <button
             className={cn(
-              'px-6 py-2 rounded-full hover:shadow-lg transition duration-300 transform hover:scale-105',
-              button.variant === 'outline' 
-                ? 'bg-gray-200 text-gray-600 dark:bg-gray-700 dark:text-blue-100' 
-                : 'bg-gradient-to-r from-blue-600 to-purple-600 text-white'
+              'px-6 py-2 rounded-full hover:shadow-lg transition cursor-pointer duration-300 transform hover:scale-105',
+              button.variant !== 'outline'
+                ? 'bg-gray-200 text-gray-600 dark:bg-gray-700 dark:text-blue-100'
+                : 'bg-linear-to-r from-blue-600 to-purple-600 text-white'
             )}
           >
             {button.text}
@@ -118,7 +118,7 @@ export function MotionSection({
     return (
       <motion.div
         className={cn(
-          'border border-gray-200 dark:border-gray-700 rounded-lg p-6 flex flex-col items-center justify-center text-center shadow-sm hover:shadow-md transition-all duration-300',
+          'border border-gray-200 dark:border-gray-700 rounded-lg p-6 flex flex-col items-center justify-center text-center shadow-xs hover:shadow-md transition-all duration-300',
           className
         )}
         initial={{ opacity: 0, y: 20 }}
@@ -133,7 +133,7 @@ export function MotionSection({
   return (
     <motion.div
       className={cn(
-        `bg-gradient-to-br ${gradient} text-white border border-gray-200 dark:border-gray-700 shadow-lg p-6 rounded-lg hover:shadow-xl transition duration-300 transform hover:scale-105 flex flex-col items-center text-center`
+        `bg-linear-to-br ${gradient} text-white border border-gray-200 dark:border-gray-700 shadow-lg p-6 rounded-lg hover:shadow-xl transition duration-300 transform hover:scale-105 flex flex-col items-center text-center`
       )}
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
@@ -141,7 +141,10 @@ export function MotionSection({
     >
       <h3 className="text-xl font-bold">{title}</h3>
       <p className="mt-2 text-gray-100">{description}</p>
-      <Link href={linkHref || '#'} className="text-white mt-4 block hover:underline">
+      <Link
+        href={linkHref || '#'}
+        className="text-white mt-4 block hover:underline"
+      >
         {linkText} →
       </Link>
     </motion.div>

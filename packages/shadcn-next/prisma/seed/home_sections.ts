@@ -1,4 +1,4 @@
-import { PrismaClient } from '../../generated/client/index.js';
+import { PrismaClient } from '@/types/prisma';
 const prisma = new PrismaClient();
 
 export async function seedHomeSections() {

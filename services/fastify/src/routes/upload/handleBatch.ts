@@ -1,6 +1,6 @@
 import path from 'node:path'
 import { UPLOAD_DIR } from '../../utils/index.js'
-import { pipeline } from 'node:stream'
+import { pipeline } from 'node:stream/promises' // 使用 promises 版本的 pipeline
 import fs from 'node:fs'
 import { FastifyRequest, FastifyReply } from 'fastify'
 import { ALLOWED_TYPES } from '../../utils/upload.js'
@@ -19,7 +19,8 @@ export async function handleBatch(req: FastifyRequest, reply: FastifyReply) {
       const fileName = `${Date.now()}-${part.filename}`
       const filePath = path.join(UPLOAD_DIR, fileName)
 
-      pipeline(part.file, fs.createWriteStream(filePath))
+      // 使用 await 等待 pipeline 完成
+      await pipeline(part.file, fs.createWriteStream(filePath))
 
       uploadedFiles.push({
         originalName: part.filename,

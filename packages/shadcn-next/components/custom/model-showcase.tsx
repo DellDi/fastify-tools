@@ -68,7 +68,7 @@ const ModelCard = ({ model }: { model: Model }) => {
   return (
     <Card className="overflow-hidden transition-all duration-300 hover:shadow-lg dark:hover:shadow-primary/25 group relative">
       <div
-        className={`absolute inset-0 bg-gradient-to-br ${gradientClass} opacity-20 group-hover:opacity-30 transition-all duration-300 ease-in-out`}
+        className={`absolute inset-0 bg-linear-to-br ${gradientClass} opacity-20 group-hover:opacity-30 transition-all duration-300 ease-in-out`}
       />
       <CardHeader className="flex flex-row items-center gap-4">
         <img

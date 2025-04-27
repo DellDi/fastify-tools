@@ -1,16 +1,16 @@
-import { PrismaClient } from '../../generated/client';
+import { PrismaClient } from '@/types/prisma.js';
 import crypto from 'crypto';
 
 const prisma = new PrismaClient();
 
-export async function seedAuthInit() {
+export async function seedInitRoleMenu() {
   // 1. 创建默认权限
   const permissions = [
     { name: 'password:view', description: '查看密码', groupName: 'password' },
     { name: 'password:create', description: '创建密码', groupName: 'password' },
     { name: 'file:manage', description: '管理文件', groupName: 'file' },
     { name: 'file:upload', description: '上传文件', groupName: 'file' },
-    { name: 'file:bigLoad', description: '上传大文件', groupName: 'file' },
+    { name: 'file:big_upload', description: '上传大文件', groupName: 'file' },
     { name: 'jira:view', description: '查看Jira', groupName: 'jira' },
     { name: 'jira:create', description: '创建Jira', groupName: 'jira' },
     { name: 'chat:view', description: '使用Chat工具', groupName: 'chat' },
@@ -18,11 +18,13 @@ export async function seedAuthInit() {
     { name: 'task:view', description: '任务管理', groupName: 'task' },
     { name: 'task:download', description: '任务下载', groupName: 'task' },
     { name: 'task:delete', description: '任务删除', groupName: 'task' },
-    { name: 'settings:view', description: '查看设置', groupName: 'settings' },
+    { name: 'settings:view', description: '查看个人设置', groupName: 'settings' },
+    { name: 'settings:edit', description: '编辑个人设置', groupName: 'settings' },
     { name: 'role:view', description: '查看角色', groupName: 'role' },
     { name: 'role:create', description: '创建角色', groupName: 'role' },
     { name: 'role:update', description: '更新角色', groupName: 'role' },
-    { name: 'role:delete', description: '删除角色', groupName: 'role' }
+    { name: 'role:delete', description: '删除角色', groupName: 'role' },
+    { name: 'role:assign', description: '分配角色', groupName: 'role' },
   ]
 
   for (const permission of permissions) {
@@ -39,14 +41,14 @@ export async function seedAuthInit() {
     { name: '文件系统', url: '#', icon: 'Bot' },
     { name: 'jira中心', url: '#', icon: 'BookOpen' },
     { name: 'AIGC', url: '#', icon: 'Code2' },
-    { name: '设置', url: '#', icon: 'Settings2' }
+    { name: '设置', url: '#', icon: 'Settings2' },
   ]
 
   const subMenus = [
     { parentName: '密码解析', name: 'v10加密中心', url: '/password/newsee', icon: 'History', description: 'neesee密码加解密' },
     { parentName: '文件系统', name: '文件管理', url: '/file/manage', icon: 'Rabbit', description: '我们最快的通用模型。' },
     { parentName: '文件系统', name: '文件上传', url: '/file/upload', icon: 'Bird', description: '高效的性能和速度。' },
-    { parentName: '文件系统', name: '大文件上传', url: '/file/bigLoad', icon: 'Turtle', description: '最强大的复杂计算模型。' },
+    { parentName: '文件系统', name: '大文件上传', url: '/file/big_upload', icon: 'Turtle', description: '最强大的复杂计算模型。' },
     { parentName: 'jira中心', name: '个人看板', url: '/jira/personal', icon: 'BookOpen', description: '个人看板' },
     { parentName: 'jira中心', name: '创建工单', url: '/jira/create', icon: 'BookOpen', description: '创建工单' },
     { parentName: 'AIGC', name: 'Chat工具', url: '/aigc/chat', icon: 'SquareTerminal', description: 'Chat工具' },
@@ -150,13 +152,16 @@ export async function seedAuthInit() {
   const userPermissions = [
     'password:view', 'password:create',
     'file:manage', 'file:upload',
+    'file:big_upload',
     'jira:view', 'jira:create',
-    'aigc:chat'
+    'settings:view',
+    'task:view',
+    'task:download',
   ]
 
   const userMenus = [
-    'v10加密中心', '文件管理', '文件上传',
-    '个人看板', 'Chat工具'
+    'v10加密中心', '文件管理', '文件上传', '大文件上传',
+    '个人看板', 'Chat工具', '任务管理', '账户'
   ]
 
   // 分配权限
@@ -166,7 +171,7 @@ export async function seedAuthInit() {
 
   for (const permission of basicPermissions) {
     await prisma.rolePermission.upsert({
-      where: {
+      where: {  
         roleId_permissionId: {
           roleId: userRole.id,
           permissionId: permission.id
@@ -201,5 +206,5 @@ export async function seedAuthInit() {
     })
   }
 
-  console.log('Auth initialization completed successfully')
+  console.log('菜单与权限初始化种子完成')
 }

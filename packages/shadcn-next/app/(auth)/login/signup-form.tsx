@@ -6,7 +6,14 @@ import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form'
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from '@/components/ui/form'
 import { useRouter } from 'next/navigation'
 import { errorMessagesCodeMap } from '@/types/email'
 import { fetchBase } from '@/utils/fetch/fetch'
@@ -14,7 +21,9 @@ import { fetchBase } from '@/utils/fetch/fetch'
 const signUpSchema = z.object({
   username: z.string().min(3, { message: '用户名至少需要3个字符' }),
   email: z.string().email({ message: '请输入有效的邮箱地址' }),
-  phoneNumber: z.string().regex(/^1[3-9]\d{9}$/, { message: '请输入有效的手机号码' }),
+  phoneNumber: z
+    .string()
+    .regex(/^1[3-9]\d{9}$/, { message: '请输入有效的手机号码' }),
 })
 
 type SignUpFormValues = z.infer<typeof signUpSchema>
@@ -24,7 +33,10 @@ interface SignUpFormProps {
   onSignUpErrorAction: (error: string) => void
 }
 
-export function SignUpForm({ onSignUpAction, onSignUpErrorAction }: SignUpFormProps) {
+export function SignUpForm({
+  onSignUpAction,
+  onSignUpErrorAction,
+}: SignUpFormProps) {
   const [isLoading, setIsLoading] = useState(false)
   const router = useRouter()
 
@@ -79,7 +91,7 @@ export function SignUpForm({ onSignUpAction, onSignUpErrorAction }: SignUpFormPr
               <FormControl>
                 <Input placeholder="your_username" {...field} />
               </FormControl>
-              <FormMessage/>
+              <FormMessage />
             </FormItem>
           )}
         />
@@ -92,7 +104,7 @@ export function SignUpForm({ onSignUpAction, onSignUpErrorAction }: SignUpFormPr
               <FormControl>
                 <Input placeholder="your@email.com" {...field} />
               </FormControl>
-              <FormMessage/>
+              <FormMessage />
             </FormItem>
           )}
         />
@@ -103,9 +115,9 @@ export function SignUpForm({ onSignUpAction, onSignUpErrorAction }: SignUpFormPr
             <FormItem>
               <FormLabel>手机号码</FormLabel>
               <FormControl>
-                <Input placeholder="13800138000" {...field} />
+                <Input placeholder="18668184122" {...field} />
               </FormControl>
-              <FormMessage/>
+              <FormMessage />
             </FormItem>
           )}
         />
@@ -116,4 +128,3 @@ export function SignUpForm({ onSignUpAction, onSignUpErrorAction }: SignUpFormPr
     </Form>
   )
 }
-
