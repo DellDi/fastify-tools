@@ -9,7 +9,9 @@
     "dev:all": "pnpm recursive run dev",
     "dev:concurrently": "concurrently \"pnpm -F shadcn-next dev\"  \"pnpm -F fastify-service dev\"",
     "update:deps": "pnpm update -r",
-    "prisma:generate:all": "pnpm -r run prisma:generate"
+    "prisma:generate:all": "pnpm -r run prisma:generate",
+    "prisma:deploy:all": "pnpm -r run prisma:migrate:deploy",
+    "prisma:seed:all": "pnpm -r run prisma:seed"
   },
   "keywords": [
     "next",

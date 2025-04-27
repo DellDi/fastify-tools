@@ -1,4 +1,4 @@
-import { baseFetch, isServerEnvironment } from './baseFetch'
+import { baseFetch } from './baseFetch'
 
 /**
  * 用于调用 Next.js 本地服务端的 fetch 函数
@@ -7,27 +7,6 @@ import { baseFetch, isServerEnvironment } from './baseFetch'
  * @returns 响应数据
  */
 export const fetchBase = async (url: string, options: RequestInit = {}) => {
-  const basePath = process.env.NEXT_PUBLIC_BASE_PATH || ''
-  const isServer = isServerEnvironment()
-  
-  // 在服务端环境中需要完整URL
-  if (isServer) {
-    const baseUrl = process.env.BASE_NEXT_API_URL
-    
-    // 如果是 API 请求但没有设置 BASE_NEXT_API_URL，跳过请求
-    if (!baseUrl && url.startsWith('/api/')) {
-      console.warn('BASE_NEXT_API_URL 未设置，服务端渲染跳过API请求:', url)
-      return { 
-        skipped: true, 
-        message: 'API request skipped in server environment without BASE_NEXT_API_URL' 
-      }
-    }
-    
-    // 使用完整的基础URL
-    const fullBaseUrl = `${baseUrl || ''}${basePath}`
-    return baseFetch(url, fullBaseUrl, options)
-  }
-  
   // 客户端环境直接使用相对URL
   return baseFetch(url, '', options)
 }

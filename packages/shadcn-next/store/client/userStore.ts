@@ -1,9 +1,8 @@
-// 用户状态管理
-// 使用zustand实现，支持持久化存储
-
+// 用户信息状态管理
 import { create } from 'zustand'
 import { persist, createJSONStorage } from 'zustand/middleware'
 import { User } from '@/generated/client'
+import { fetchBase } from '@/utils/fetch/fetch'
 
 interface UserState {
   user: User | null
@@ -31,6 +30,34 @@ export const useUserStore = create<UserState>()(
   )
 )
 
-export const getUserStore = () => useUserStore
+export const useUserActions = () => {
+  const { user, setUser, isLoading, setLoading } = useUserStore()
+
+  const loadUser = async () => {
+    setLoading(true)
+    try {
+      const response = await fetchBase('/api/auth/user')
+      const data = await response.json()
+      setUser(data.user)
+    } catch (error) {
+      console.error('加载用户失败:', error)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const clearUserOnLogout = () => {
+    setUser(null)
+  }
+
+  return {
+    user,
+    setUser,
+    isLoading,
+    setLoading,
+    clearUserOnLogout,
+    loadUser
+  }
+}
 
 export const getCurrentUser = () => useUserStore.getState().user
