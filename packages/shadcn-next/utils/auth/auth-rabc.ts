@@ -48,7 +48,7 @@ export const PERMISSION_GROUPS: Record<string, Permission[]> = {
   "role": ["role:view", "role:create", "role:update", "role:delete"],
 };
 
-export function hasPermission(user: User, permission: Permission) {
+export function hasRabcPermission(user: User, permission: Permission) {
   return user.roles.some((role) => (ROLES[role] as readonly Permission[]).includes(permission));
 }
 
@@ -57,16 +57,16 @@ const user: User = { id: "1", roles: ["user"] };
 const moderatorUser: User = { id: "2", roles: ["moderator"] };
 const adminUser: User = { id: "3", roles: ["admin"] };
 
-console.log(hasPermission(user, "password:view")); // true
-console.log(hasPermission(user, "file:manage")); // false
-console.log(hasPermission(moderatorUser, "file:manage")); // true
-console.log(hasPermission(adminUser, "role:delete")); // true
+console.log(hasRabcPermission(user, "password:view")); // true
+console.log(hasRabcPermission(user, "file:manage")); // false
+console.log(hasRabcPermission(moderatorUser, "file:manage")); // true
+console.log(hasRabcPermission(adminUser, "role:delete")); // true
 
 // 在前端进行权限分组展示，使用英文
 const userPermissions = user.roles.flatMap(role => ROLES[role]);
 
 for (const groupName in PERMISSION_GROUPS) {
   const permissionsInGroup: Permission[] = PERMISSION_GROUPS[groupName];
-  const hasPermissionInGroup = permissionsInGroup.some(permission => userPermissions.includes(permission));
-  console.log(`User has ${hasPermissionInGroup ? 'access' : 'no access'} in ${groupName}`);
+  const hasRabcPermissionInGroup = permissionsInGroup.some(permission => userPermissions.includes(permission));
+  console.log(`User has ${hasRabcPermissionInGroup ? 'access' : 'no access'} in ${groupName}`);
 }

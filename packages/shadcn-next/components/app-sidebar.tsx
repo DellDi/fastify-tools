@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useRef } from 'react'
 import { NavMain } from '@/components/nav-main'
 import { NavProjects } from '@/components/nav-projects'
 import { NavUser } from '@/components/nav-user'
@@ -16,67 +16,64 @@ import {
 } from '@/components/ui/sidebar'
 import { usePathname } from 'next/navigation'
 import { routesConfig } from '@/utils/slide/route'
-import { getUserMenus } from '@/app/actions/menu-actions'
-import { NavItem, convertMenuToRouteConfig, updateActiveMenu } from '@/utils/menu-converter'
+import { convertMenuToRouteConfig, updateActiveMenu } from '@/utils/menu-converter'
 import { Skeleton } from '@/components/ui/skeleton'
+import { useMenuStore, useMenuActions } from '@/store/client/menuStore'
 
 export function AppSidebar() {
   const pathname = usePathname()
-  const [navItems, setNavItems] = useState<NavItem[]>(routesConfig.navMain)
-  const [isLoading, setIsLoading] = useState(true)
+  const { navItems, menus, isLoading, setNavItems, setLoading } = useMenuStore()
+  const { loadMenusFromServer } = useMenuActions()
   
+  // 使用 useRef 跟踪是否已经初始化，防止重复调用
+  const initialized = useRef(false)
+  
+  // 当路径变化时更新活动菜单
   useEffect(() => {
-    async function loadMenus() {
-      try {
-        // 首先尝试从 localStorage 获取菜单
-        const storedMenus = localStorage.getItem('user_menus')
-        
-        if (storedMenus) {
-          try {
-            const parsedMenus = JSON.parse(storedMenus)
-            const convertedNavItems = convertMenuToRouteConfig(parsedMenus)
-            setNavItems(convertedNavItems)
-            setIsLoading(false)
-          } catch (e) {
-            console.error('解析存储的菜单数据失败:', e)
-            await fetchMenusFromServer()
-          }
-        } else {
-          await fetchMenusFromServer()
-        }
-      } catch (error) {
-        console.error('加载菜单失败:', error)
-        setIsLoading(false)
-      }
+    if (navItems.length > 0) {
+      setNavItems(updateActiveMenu(navItems, pathname))
     }
-    
-    loadMenus()
-  }, [])
+  }, [pathname, setNavItems])
   
-  async function fetchMenusFromServer() {
-    try {
-      const { menus, error } = await getUserMenus()
-      
-      if (error) {
-        console.error('获取菜单错误:', error)
+  // 只在组件首次渲染时加载菜单
+  useEffect(() => {
+    // 防止重复初始化
+    if (initialized.current) return
+    initialized.current = true
+    
+    async function initializeMenu() {
+      // 如果已经有菜单数据，只需要更新活动状态
+      if (menus.length > 0) {
+        const convertedNavItems = convertMenuToRouteConfig(menus)
+        setNavItems(updateActiveMenu(convertedNavItems, pathname))
+        setLoading(false)
         return
       }
       
-      if (menus && menus.length > 0) {
-        const convertedNavItems = convertMenuToRouteConfig(menus)
-        setNavItems(convertedNavItems)
-        // 同时更新 localStorage
-        localStorage.setItem('user_menus', JSON.stringify(menus))
+      // 否则从服务器加载菜单
+      try {
+        await loadMenusFromServer()
+        
+        // 如果没有获取到菜单，使用默认菜单
+        if (navItems.length === 0) {
+          setNavItems(updateActiveMenu(routesConfig.navMain, pathname))
+        }
+      } catch (error) {
+        console.error('初始化菜单失败:', error)
+        // 使用默认菜单
+        setNavItems(updateActiveMenu(routesConfig.navMain, pathname))
+      } finally {
+        setLoading(false)
       }
-    } catch (error) {
-      console.error('获取菜单失败:', error)
-    } finally {
-      setIsLoading(false)
     }
-  }
+    
+    initializeMenu()
+  }, [])
   
   // 更新当前活动菜单
-  const updatedNavItems = updateActiveMenu(navItems, pathname)
+  const displayNavItems = navItems.length > 0 
+    ? navItems 
+    : updateActiveMenu(routesConfig.navMain, pathname)
   
   return (
     <Sidebar>
@@ -93,7 +90,7 @@ export function AppSidebar() {
               <Skeleton className="h-10 w-full" />
             </div>
           ) : (
-            <NavMain items={updatedNavItems} searchResults={routesConfig.searchResults}/>
+            <NavMain items={displayNavItems} searchResults={routesConfig.searchResults}/>
           )}
         </SidebarItem>
         <SidebarItem>

@@ -4,67 +4,56 @@ import { useState, useEffect, useCallback } from 'react'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { useToast } from '@/components/ui/use-toast'
-
-import { usePermissions } from '@/hooks/use-permissions'
-import { type Role, type User } from '@supabase/supabase-js'
 import { Skeleton } from '@/components/ui/skeleton'
+import { prisma } from '@/lib/prisma'
+import { User, Role } from '@/types/prisma'
 
 export default function UserManagement() {
   const [users, setUsers] = useState<User[]>([])
   const [roles, setRoles] = useState<Role[]>([])
   const [isLoading, setIsLoading] = useState(false)
   const { toast } = useToast()
-  const { hasPermission, isLoading: permissionsLoading } = usePermissions()
 
   const fetchUsers = useCallback(async () => {
-    const supabase = createClient()
-    const { data, error } = await supabase
-    .from('auth.users')
-    .select('*')
-    .order('created_at')
+    const users = await prisma.user.findMany()
 
-    if (error) {
+    if (!users) {
       toast({
         title: '获取用户失败',
-        description: error.message,
+        description: '未找到用户',
         variant: 'destructive',
       })
     } else {
-      setUsers(data)
+      setUsers(users)
     }
   }, [toast])
 
 
   const fetchRoles = useCallback(async () => {
-    const supabase = createClient()
-    const { data, error } = await supabase
-    .from('roles')
-    .select('*')
-    .order('name')
+    const roles = await prisma.role.findMany()
 
-    if (error) {
+    if (!roles) {
       toast({
         title: '获取角色失败',
-        description: error.message,
+        description: '未找到角色',
         variant: 'destructive',
       })
     } else {
-      setRoles(data)
+      setRoles(roles)
     }
   }, [toast])
 
   const updateUserRole = useCallback(async (userId: string, roleId: string) => {
     setIsLoading(true)
-    const supabase = createClient()
-    const { error } = await supabase
-    .from('users')
-    .update({ role_id: roleId })
-    .eq('id', userId)
+    const updatedUser = await prisma.user.update({
+      where: { id: userId },
+      data: { roleId: roleId },
+    })
 
-    if (error) {
+    if (!updatedUser) {
       toast({
         title: '更新用户角色失败',
-        description: error.message,
+        description: '未找到用户',
         variant: 'destructive',
       })
     } else {
@@ -85,13 +74,11 @@ export default function UserManagement() {
   }, [fetchUsers, fetchRoles])
 
 
-  if (permissionsLoading) {
-    return <div>加载权限中...</div>
+  if (isLoading) {
+    return <div>加载用户中...</div>
   }
 
-  if (!hasPermission('manage_users')) {
-    return <div>您没有管理用户的权限。</div>
-  }
+
 
   if (isLoading) {
     return (
@@ -118,16 +105,16 @@ export default function UserManagement() {
       <TableBody>
         {users.map((user) => (
           <TableRow key={user.id}>
-            <TableCell>{user.user_metadata.username}</TableCell>
+            <TableCell>{user.username}</TableCell>
             <TableCell>{user.email}</TableCell>
-            <TableCell>{user.role_id}</TableCell>
+            <TableCell>{user.roleId}</TableCell>
             <TableCell>
               <Select
                 onValueChange={(value) => updateUserRole(user.id, value)}
-                defaultValue={`${user.role_id}`}
+                defaultValue={`${user.roleId}`}
               >
                 <SelectTrigger className="w-[180px]">
-                  <SelectValue placeholder="选择角色"/>
+                  <SelectValue placeholder="选择角色" />
                 </SelectTrigger>
                 <SelectContent>
                   {roles.map((role) => (

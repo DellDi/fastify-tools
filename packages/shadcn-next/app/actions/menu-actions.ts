@@ -7,14 +7,7 @@ import { MenuWithChildren } from '@/types/prisma-extensions'
 import { serviceCache } from '@/store/service'
 import { redirect } from 'next/navigation'
 import { prisma } from '@/lib/prisma'
-import { Menu } from '@/generated/client'
-
-// 定义 JWT 解码后的数据类型
-type JwtPayload = {
-  id: string
-  email: string
-  role?: string
-}
+import { Permission } from '@/generated/client'
 
 /**
  * 获取用户菜单数据
@@ -25,23 +18,10 @@ export async function getUserMenus(): Promise<{
   error?: string 
 }> {
   try {
-    // 从 cookie 获取 token
-    const cookieStore = await cookies()
-    const token = cookieStore.get('auth_token')?.value
-    
-    if (!token) {
+    const userId = await requireAuth()
+    if (!userId) {
       return { menus: [], error: '未认证' }
     }
-    
-    // 验证 token 并获取用户 ID
-    const decoded = jwt.verifyToken(token)
-    
-    // 验证解码结果
-    if (!decoded || decoded instanceof Error) {
-      return { menus: [], error: 'token无效' }
-    }
-    
-    const userId = typeof decoded === 'string' ? decoded : decoded.id
     
     // 先尝试从缓存获取菜单
     const cachedMenu = serviceCache.get(userId + '_menu') as MenuWithChildren[]
@@ -105,23 +85,12 @@ export async function requireAuth() {
 /**
  * 获取用户的所有权限
  */
-export async function getUserPermissions(): Promise<string[]> {
+export async function getUserPermissions(): Promise<Permission[]> {
   try {
-    const cookieStore = await cookies()
-    const token = cookieStore.get('auth_token')?.value
-    
-    if (!token) {
+    const userId = await requireAuth()
+    if (!userId) {
       return []
     }
-    
-    const decoded = jwt.verifyToken(token)
-    
-    if (!decoded || decoded instanceof Error) {
-      return []
-    }
-    
-    const userId = typeof decoded === 'string' ? decoded : decoded.id
-    
     const user = await prisma.user.findUnique({
       where: { id: userId },
       include: {
@@ -140,8 +109,16 @@ export async function getUserPermissions(): Promise<string[]> {
     if (!user || !user.userRole) {
       return []
     }
+
+    const cachedPermissions = serviceCache.get(userId + '_permission') as Permission[]
+    if (cachedPermissions) {
+      return cachedPermissions
+    }
+
+    const permissions = user.userRole.rolePermissions.map(rp => rp.permission)
+    serviceCache.set(userId + '_permission', permissions)
     
-    return user.userRole.rolePermissions.map(rp => rp.permission.name)
+    return permissions
   } catch (error) {
     console.error('获取用户权限失败:', error)
     return []

@@ -85,7 +85,7 @@ const ROLES = {
   },
 } as const satisfies RolesWithPermissions
 
-export function hasPermission<Resource extends keyof Permissions>(
+export function hasABACPermission<Resource extends keyof Permissions>(
   user: User,
   resource: Resource,
   action: Permissions[Resource]["action"],
@@ -111,10 +111,10 @@ const todo: Todo = {
 }
 
 // Can create a comment
-hasPermission(user, "comments", "create")
+hasABACPermission(user, "comments", "create")
 
 // Can view the todos
-hasPermission(user, "todos", "view", todo)
+hasABACPermission(user, "todos", "view", todo)
 
 // Can view all todos
-hasPermission(user, "todos", "view")
+hasABACPermission(user, "todos", "view")
