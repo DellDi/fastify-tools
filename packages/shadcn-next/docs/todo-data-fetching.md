@@ -8,27 +8,6 @@
 2. 服务端环境中的 fetch 需要完整 URL（包含协议和域名）
 3. 当前的 `fetchBase` 实现没有正确区分服务端和客户端环境
 
-## 临时解决方案
-
-我们已经更新了 `fetchBase` 函数，通过检测运行环境来决定 URL 格式：
-
-```typescript
-export const fetchBase = async (url: string, options: RequestInit) => {
-  const isServer = typeof window === 'undefined'
-  
-  if (isServer) {
-    // 服务端环境需要完整URL
-    const baseUrl = process.env.BASE_NEXT_API_URL
-    finalUrl = `${baseUrl || ''}${basePath}${url}`
-  } else {
-    // 客户端环境使用相对URL
-    finalUrl = `${basePath}${url}`
-  }
-  
-  // 其余代码...
-}
-```
-
 ## 建议的长期解决方案：采用 useSWR
 
 ### useSWR 优势

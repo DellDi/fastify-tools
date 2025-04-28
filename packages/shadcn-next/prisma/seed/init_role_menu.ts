@@ -110,6 +110,15 @@ export async function seedInitRoleMenu() {
     }
   })
 
+  const testRole = await prisma.role.upsert({
+    where: { name: 'test' },
+    update: {},
+    create: {
+      name: 'test',
+      description: '测试用户'
+    }
+  })
+
   // 4. 为管理员角色分配所有权限和菜单
   const allPermissions = await prisma.permission.findMany()
   const allMenus = await prisma.menu.findMany()
@@ -164,6 +173,7 @@ export async function seedInitRoleMenu() {
     '个人看板', 'Chat工具', '任务管理', '账户'
   ]
 
+
   // 分配权限
   const basicPermissions = await prisma.permission.findMany({
     where: { name: { in: userPermissions } }
@@ -171,7 +181,7 @@ export async function seedInitRoleMenu() {
 
   for (const permission of basicPermissions) {
     await prisma.rolePermission.upsert({
-      where: {  
+      where: {
         roleId_permissionId: {
           roleId: userRole.id,
           permissionId: permission.id
@@ -201,6 +211,62 @@ export async function seedInitRoleMenu() {
       update: {},
       create: {
         roleId: userRole.id,
+        menuId: menu.id
+      }
+    })
+  }
+
+  // 6. 为测试用户分配分配测试权限和菜单
+  const textPermissions = [
+    'password:view', 'password:create',
+    'file:manage', 'file:upload',
+    'file:big_upload',
+    'jira:view', 'jira:create',
+    'chat:view',
+    'task:view',
+    'task:download',
+    'task:delete',
+  ]
+
+  const textMenus = [
+    'v10加密中心', '个人看板', '任务管理', "爬虫管理"
+  ]
+  // 分配权限
+  const textPermissionsData = await prisma.permission.findMany({
+    where: { name: { in: textPermissions } }
+  })
+
+  for (const permission of textPermissionsData) {
+    await prisma.rolePermission.upsert({
+      where: {
+        roleId_permissionId: {
+          roleId: testRole.id,
+          permissionId: permission.id
+        }
+      },
+      update: {},
+      create: {
+        roleId: testRole.id,
+        permissionId: permission.id
+      }
+    })
+  }
+
+  // 分配菜单
+  const textMenusData = await prisma.menu.findMany({
+    where: { name: { in: textMenus } }
+  })
+  for (const menu of textMenusData) {
+    await prisma.roleMenu.upsert({
+      where: {
+        roleId_menuId: {
+          roleId: testRole.id,
+          menuId: menu.id
+        }
+      },
+      update: {},
+      create: {
+        roleId: testRole.id,
         menuId: menu.id
       }
     })
