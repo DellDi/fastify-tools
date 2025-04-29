@@ -44,10 +44,12 @@ export const singleUpload = {
   consumes: ['multipart/form-data'],
   response: {
     // 200 返回合并 resFileType 类型 和 message 字段
-    200: Type.Object({
-      message: Type.String({ description: '文件上传成功' }),
-      ...resFileType.props,
-    }),
+    200: Type.Composite([
+      resFileType,
+      Type.Object({
+        message: Type.String({ description: '文件上传成功' }),
+      })
+    ]),
     400: Type.Object({
       error: Type.Any(),
     }),

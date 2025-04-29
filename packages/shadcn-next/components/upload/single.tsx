@@ -1,15 +1,15 @@
-import { FilePlus } from 'lucide-react'
-import { Button } from '@/components/ui/button'
-import React, { useCallback, useRef, useState } from 'react'
+import { FilePlus } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import React, { useCallback, useRef, useState } from "react";
 import {
   FileSuccessResponse,
   useHandleFileChange,
   useHandlePaste,
   useUploadProgress,
-} from '@/hooks/use-file'
-import { FileUploadStatus } from '@/components/upload/file-list'
-import { toast } from '@/components/ui/use-toast'
-import { fastifyFetch } from '@/utils/fetch/fastifyFetch'
+} from "@/hooks/use-file";
+import { FileUploadStatus } from "@/components/upload/file-list";
+import { toast } from "@/components/ui/use-toast";
+import { fastifyFetch } from "@/utils/fetch/fastifyFetch";
 
 /**
  * 单文件上传函数
@@ -17,65 +17,61 @@ import { fastifyFetch } from '@/utils/fetch/fastifyFetch'
  * @returns {Promise<void>}
  */
 const singleUploadFunction = async (files: File[]): Promise<void> => {
-  const formData = new FormData()
+  const formData = new FormData();
   files.forEach((file) => {
-    formData.append('file', file)
-  })
+    formData.append("file", file);
+  });
 
   // 上传新增秒传逻辑，增加hash校验
   const hash = await crypto.subtle.digest(
-    'SHA-256',
+    "SHA-256",
     await files[0].arrayBuffer()
-  )
-  const hashArray = Array.from(new Uint8Array(hash))
-  const hashHex = hashArray.map((b) => b.toString(16).padStart(2, '0')).join('')
-  const orgHash = hashHex.slice(0, 8)
+  );
+  const hashArray = Array.from(new Uint8Array(hash));
+  const hashHex = hashArray
+    .map((b) => b.toString(16).padStart(2, "0"))
+    .join("");
+  const orgHash = hashHex.slice(0, 8);
 
   const resHashCheck = await fastifyFetch(`/upload/check`, {
-    method: 'POST',
+    method: "POST",
     headers: {
-      'Content-Type': 'application/json',
+      "Content-Type": "application/json",
     },
     body: JSON.stringify({
       filename: files[0].name,
       fileHash: orgHash,
     }),
-  })
+  });
 
-  const resHashCheckJson = resHashCheck
+  const resHashCheckJson = resHashCheck;
   if (resHashCheckJson.isExist) {
     toast({
-      title: '秒传成功',
+      title: "秒传成功",
       description: `文件已存在，文件名为${resHashCheckJson.extantFilename}`,
-    })
-    return
+    });
+    return;
   }
 
   try {
     const res = await fastifyFetch(`/upload/single`, {
-      method: 'POST',
+      method: "POST",
       body: formData,
     })
-    if (res.ok) {
-      const fileInfo: FileSuccessResponse = res
-      toast({
-        title: '上传成功',
-        description: `${fileInfo.fileUrl}`,
-      })
-    } else {
-      const err = res
-      toast({
-        title: '上传失败',
-        description: `${err.message}`,
-      })
-    }
+    console.log("🚀 ~ singleUploadFunction ~ res:", res)
+
+    const fileInfo: FileSuccessResponse = res;
+    toast({
+      title: "上传成功",
+      description: `${fileInfo.fileUrl}`,
+    });
   } catch (e) {
     toast({
-      title: '上传失败',
+      title: "上传失败",
       description: `请稍后再试${e}`,
-    })
+    });
   }
-}
+};
 
 /**
  * 单文件上传组件
@@ -83,30 +79,30 @@ const singleUploadFunction = async (files: File[]): Promise<void> => {
  */
 export function SingleUpload() {
   // 文件状态
-  const [files, setFiles] = useState<File[]>([])
+  const [files, setFiles] = useState<File[]>([]);
   // 文件输入引用
-  const fileInputRef = useRef<HTMLInputElement>(null)
+  const fileInputRef = useRef<HTMLInputElement>(null);
   // 上传进度和状态
   const { progress, uploading, simulateUpload } =
-    useUploadProgress(singleUploadFunction)
+    useUploadProgress(singleUploadFunction);
   // 处理粘贴事件
-  const handlePaste = useHandlePaste(setFiles)
+  const handlePaste = useHandlePaste(setFiles);
   // 处理文件改变事件
-  const handleFileChange = useHandleFileChange(setFiles)
+  const handleFileChange = useHandleFileChange(setFiles);
 
   /**
    * 处理上传过程
    */
   const handleUpload = useCallback(() => {
-    simulateUpload(files, () => setFiles([]))
-  }, [files, simulateUpload])
+    simulateUpload(files, () => setFiles([]));
+  }, [files, simulateUpload]);
 
   /**
    * 清除选中的文件
    */
   const handleClearFiles = useCallback(() => {
-    setFiles([])
-  }, [])
+    setFiles([]);
+  }, []);
 
   return (
     <div
@@ -133,5 +129,5 @@ export function SingleUpload() {
         onClearFiles={handleClearFiles}
       />
     </div>
-  )
+  );
 }

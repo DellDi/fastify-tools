@@ -75,6 +75,7 @@ const upload: FastifyPluginAsyncTypebox = async (fastify): Promise<void> => {
       const orgHash = hashes[0] as string
       const fileNameList = fs.readdirSync(UPLOAD_DIR)
       const fileFullName = fileNameList.find(a => a.includes(orgHash))
+      console.log("🚀 ~ fileFullName:", fileFullName)
       if (fileFullName) {
         return reply.code(200).send({
           message: 'one second File uploaded successfully',
