@@ -72,7 +72,6 @@ export async function POST(req: NextRequest) {
       }
 
       const data = response
-      console.log("🚀 ~ POST ~ data:", data)
       allIssues = allIssues.concat(data.issues)
       if (data.issues.length < maxResults) {
         break

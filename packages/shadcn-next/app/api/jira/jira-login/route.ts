@@ -21,7 +21,7 @@ export async function POST() {
     const response = await fetch(loginUrl, {
       method: 'POST',
       headers: {
-        'Authorization': `Basic ${Buffer.from(`${username}:${password}`).toString('base64')}`,
+        'Authorization': `Basic ${Buffer.from(`newsee:newsee`).toString('base64')}`,
         'Content-Type': 'application/x-www-form-urlencoded',
       },
       body: `os_username=${encodeURIComponent(username)}&os_password=${encodeURIComponent(password)}&os_cookie=true`,
