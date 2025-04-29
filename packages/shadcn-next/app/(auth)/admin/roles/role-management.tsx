@@ -23,8 +23,6 @@ export default function RoleManagement() {
     return <div>加载权限中...</div>
   }
 
-
-
   async function fetchRoles() {
     const { data, error } = await supabase
     .from('roles')

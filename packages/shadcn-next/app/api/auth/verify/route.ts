@@ -1,16 +1,17 @@
 import { verifyMagicLink } from '@/app/lib/auth/verified'
 import { NextResponse } from 'next/server'
 import { fastifyFetch } from '@/utils/fetch/fastifyFetch'
+import { prisma } from '@/lib/prisma'
 
 export async function POST(request: Request) {
   const { email, code } = await request.json()
   try {
     await verifyMagicLink(code, email)
-
-    // const SITE_DOMAIN_URL = process.env.SITE_DOMAIN_URL || 'http://localhost:3001'
-    // const NEXT_PUBLIC_BASE_PATH = process.env.NEXT_PUBLIC_BASE_PATH || ''
-
-    const response = NextResponse.json({ message: '邮箱验证成功' })
+    // 返回用户信息
+    const user = await prisma.user.findFirst({
+      where: { email },
+    })
+    const response = NextResponse.json({ message: '邮箱验证成功', userInfo: user })
     try {
       await fastifyFetch('/email/send', {
         method: 'POST',

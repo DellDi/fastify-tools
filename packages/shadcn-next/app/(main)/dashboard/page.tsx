@@ -8,6 +8,7 @@ import { TimeCards } from '@/app/(main)/dashboard/components/time-cards'
 import { ShowCloud } from '@/components/custom/ShowCloud'
 import { PanelCharts } from '@/components/custom/PanelCharts'
 import { redirect } from 'next/navigation'
+// import { MenuInitializer } from './components/menu-initializer'
 
 export const metadata: Metadata = {
   title: 'Dashboard',
@@ -18,6 +19,8 @@ export default async function DashboardPage() {
   try {
     return (
       <main className="flex-1 space-y-4 p-8 pt-6">
+        {/* 菜单初始化组件 - 确保在登录后跳转时菜单数据已加载 */}
+        {/* <MenuInitializer /> */}
         <div className="flex items-center justify-between space-y-2">
           <div className="flex items-center space-x-2">
             <CalendarDateRangePicker/>

@@ -1,11 +1,11 @@
-"use client";
+'use client'
 
-import { useState, useEffect } from "react";
-import { useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
-import * as z from "zod";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
+import { useState, useEffect } from 'react'
+import { useForm } from 'react-hook-form'
+import { zodResolver } from '@hookform/resolvers/zod'
+import * as z from 'zod'
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
 import {
   Form,
   FormControl,
@@ -13,84 +13,78 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
-} from "@/components/ui/form";
-import { Checkbox } from "@/components/ui/checkbox";
-import { useRouter } from "next/navigation";
-import { useSearchParams } from "next/navigation";
-import { useUserActions } from "@/store/client/userStore";
+} from '@/components/ui/form'
+import { Checkbox } from '@/components/ui/checkbox'
+import { useRouter } from 'next/navigation'
+import { useSearchParams } from 'next/navigation'
+import { fetchBase } from '@/utils/fetch/fetch'
 
 const loginSchema = z.object({
-  email: z.string().email({ message: "请输入有效的邮箱地址" }),
-  password: z.string().min(1, { message: "请输入密码" }),
+  email: z.string().email({ message: '请输入有效的邮箱地址' }),
+  password: z.string().min(1, { message: '请输入密码' }),
   rememberMe: z.boolean().optional(),
-});
+})
 
-type LoginFormValues = z.infer<typeof loginSchema>;
+type LoginFormValues = z.infer<typeof loginSchema>
 
 interface LoginFormProps {
-  onSuccessAction: (message: string) => void;
-  onErrorAction: (error: string) => void;
+  onSuccessAction: (message: string) => void
+  onErrorAction: (error: string) => void
 }
 
 export function LoginForm({ onSuccessAction, onErrorAction }: LoginFormProps) {
-  const [isLoading, setIsLoading] = useState(false);
-  const router = useRouter();
-  const searchParams = useSearchParams();
+  const [isLoading, setIsLoading] = useState(false)
+  const router = useRouter()
+  const searchParams = useSearchParams()
 
   const form = useForm<LoginFormValues>({
     resolver: zodResolver(loginSchema),
     defaultValues: {
-      email: searchParams?.get("email") || "",
-      password: searchParams?.get("password") || "",
+      email: searchParams?.get('email') || '',
+      password: searchParams?.get('password') || '',
       rememberMe: false,
     },
-  });
+  })
 
   async function onSubmit(data: LoginFormValues) {
-    setIsLoading(true);
+    setIsLoading(true)
     try {
-      const response = await fetch("/api/auth/login", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
+      const response = await fetchBase('/api/auth/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(data),
-      });
-      const result = await response.json();
-      if (response.ok) {
-        onSuccessAction(result.message);
-        // 如果选择了"记住我"，可以在这里设置相应的本地存储
-        if (data.rememberMe) {
-          localStorage.setItem("rememberedEmail", data.email);
-        } else {
-          localStorage.removeItem("rememberedEmail");
-        }
-        const { loadUser } = useUserActions();
-        await loadUser();
-        // 重定向到仪表板
-        router.replace("/dashboard");
+      })
+      const result = response
+      onSuccessAction(result.message)
+      // 如果选择了"记住我"，可以在这里设置相应的本地存储
+      if (data.rememberMe) {
+        localStorage.setItem('rememberedEmail', data.email)
       } else {
-        throw new Error(result.error || "登录失败");
+        localStorage.removeItem('rememberedEmail')
       }
+      // 重定向到仪表板
+      router.replace('/dashboard')
     } catch (error) {
       onErrorAction(
         error instanceof Error
           ? error.message
-          : "登录失败，请检查您的邮箱和密码。"
-      );
+          : '登录失败，请检查您的邮箱和密码。'
+      )
     } finally {
-      setIsLoading(false);
+      setIsLoading(false)
     }
   }
 
   useEffect(() => {
-    const email = searchParams?.get("email");
-    const password = searchParams?.get("password");
+    const email = searchParams?.get('email')
+    const password = searchParams?.get('password')
 
     // 只有在手动提交表单时才执行登录
     if (email && password) {
-      form.setValue("email", email);
-      form.setValue("password", password);
+      form.setValue('email', email)
+      form.setValue('password', password)
     }
-  }, [searchParams, form]);
+  }, [searchParams, form])
 
   return (
     <Form {...form}>
@@ -139,9 +133,9 @@ export function LoginForm({ onSuccessAction, onErrorAction }: LoginFormProps) {
           )}
         />
         <Button type="submit" className="w-full" disabled={isLoading}>
-          {isLoading ? "登录中..." : "登录"}
+          {isLoading ? '登录中...' : '登录'}
         </Button>
       </form>
     </Form>
-  );
+  )
 }

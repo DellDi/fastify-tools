@@ -4,27 +4,37 @@ import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { LogOut, Loader } from 'lucide-react'
 import { useMenuActions } from '@/store/client/menuStore'
+import { fetchBase } from '@/utils/fetch/fetch'
+import { useToast } from '@/components/ui/use-toast'
 
 export function LogoutButton() {
+  const { toast } = useToast()
   const [isLoading, setIsLoading] = useState(false)
   const { clearMenusOnLogout } = useMenuActions()
   const router = useRouter()
-
   const handleLogout = async () => {
     setIsLoading(true)
     try {
-      const response = await fetch('/api/auth/logout', {
+      await fetchBase('/api/auth/logout', {
         method: 'POST',
       })
-      if (response.ok) {
-        router.push('/')
-        // 清除菜单数据
-        clearMenusOnLogout()
-      } else {
-        return new Error('登出失败')
-      }
+
+      toast({
+        title: '登出成功',
+        description: '你已经成功登出',
+        variant: 'default',
+      })
+
+      router.push('/')
+      // 清除菜单数据
+      clearMenusOnLogout()
     } catch (error) {
       console.error('Logout error:', error)
+      toast({
+        title: '登出失败',
+        description: '请检查网络连接或API权限',
+        variant: 'destructive',
+      })
     } finally {
       setIsLoading(false)
     }

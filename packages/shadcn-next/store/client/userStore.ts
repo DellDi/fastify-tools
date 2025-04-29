@@ -20,7 +20,7 @@ export const useUserStore = create<UserState>()(
       setLoading: (isLoading) => set({ isLoading }),
     }),
     {
-      name: 'user',
+      name: 'user-storage',
       storage: createJSONStorage(() => localStorage),
       partialize: (state) => ({
         user: state.user,
@@ -33,12 +33,11 @@ export const useUserStore = create<UserState>()(
 export const useUserActions = () => {
   const { user, setUser, isLoading, setLoading } = useUserStore()
 
-  const loadUser = async () => {
+  const loadUserFromServer = async () => {
     setLoading(true)
     try {
-      const response = await fetchBase('/api/auth/user')
-      const data = await response.json()
-      setUser(data.user)
+      const user = await fetchBase('/api/user')
+      setUser(user)
     } catch (error) {
       console.error('加载用户失败:', error)
     } finally {
@@ -56,7 +55,7 @@ export const useUserActions = () => {
     isLoading,
     setLoading,
     clearUserOnLogout,
-    loadUser
+    loadUserFromServer
   }
 }
 

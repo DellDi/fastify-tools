@@ -93,6 +93,7 @@ export const useMenuActions = () => {
 
   /**
    * 从服务器加载菜单
+   * @returns 加载的菜单数据
    */
   const loadMenusFromServer = async () => {
     setLoading(true)
@@ -100,18 +101,29 @@ export const useMenuActions = () => {
       // 使用封装好的 fetch
       const response = await fetchBase('/api/auth/menu')
 
-      const data = response
-
-      if (data.menus && Array.isArray(data.menus)) {
+      // 打印响应数据，便于调试
+      console.log('🚀 菜单接口原始响应:', response)
+      
+      if (response && response.menus && Array.isArray(response.menus)) {
         // 设置菜单数据
-        setMenus(data.menus)
+        setMenus(response.menus)
         
         // 同时转换并设置导航项
-        const convertedNavItems = convertMenuToRouteConfig(data.menus)
+        const convertedNavItems = convertMenuToRouteConfig(response.menus)
+        console.log('🚀 转换后的导航项:', convertedNavItems)
+        
+        // 更新导航项状态
         setNavItems(convertedNavItems)
+        
+        // 返回处理后的菜单数据
+        return { menus: response.menus, navItems: convertedNavItems }
+      } else {
+        console.warn('菜单数据格式不正确:', response)
+        return { menus: [], navItems: [] }
       }
     } catch (error) {
       console.error('加载菜单失败:', error)
+      return { error, menus: [], navItems: [] }
     } finally {
       setLoading(false)
     }

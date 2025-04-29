@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server'
 import { requireAuth } from '@/app/actions/menu-actions'
-import { prisma } from '@/lib/prisma'
+import { getUserInfo } from '@/app/actions/user-actions'
 
 export async function GET() {
   const userId = await requireAuth()
@@ -9,10 +9,7 @@ export async function GET() {
   }
 
   try {
-    const user = await prisma.user.findUnique({
-      where: { id: userId },
-    })
-
+    const user = await getUserInfo(userId)
     if (!user) {
       return NextResponse.json({ error: "User not found" }, { status: 404 })
     }

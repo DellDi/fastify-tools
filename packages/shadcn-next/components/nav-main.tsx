@@ -1,7 +1,7 @@
 'use client'
 
 import Link from 'next/link'
-import { ChevronRight, type LucideIcon, Search } from 'lucide-react'
+import { ChevronRight, type LucideIcon, Search, FileIcon } from 'lucide-react'
 
 import { useIsMobile } from '@/hooks/use-mobile'
 import { cn } from '@/utils/utils'
@@ -56,7 +56,12 @@ export function NavMain({
                 href={item.url}
                 className="min-w-8 flex h-8 flex-1 items-center gap-2 overflow-hidden rounded-md px-1.5 text-sm font-medium outline-hidden ring-ring transition-all hover:bg-accent hover:text-accent-foreground focus-visible:ring-2"
               >
-                <item.icon className="h-4 w-4 shrink-0" />
+                {/* 安全渲染图标，确保即使图标组件有问题也能正常渲染 */}
+                {item.icon && typeof item.icon === 'function' ? (
+                  <item.icon className="h-4 w-4 shrink-0" />
+                ) : (
+                  <FileIcon className="h-4 w-4 shrink-0" />
+                )}
                 <div className="flex flex-1 overflow-hidden">
                   <div className="line-clamp-1 pr-6">{item.title}</div>
                 </div>
@@ -77,7 +82,7 @@ export function NavMain({
                   <li key={subItem.title}>
                     {/*${isActive(subItem.url) ? 'bg-accent text-accent-foreground' : ''}*/}
                     <Link
-                      href={subItem.url}
+                      href={subItem.url || '#'}
                       className={`min-w-8 flex h-8 items-center gap-2 overflow-hidden rounded-md px-2 text-sm font-medium text-muted-foreground ring-ring transition-all hover:bg-accent hover:text-accent-foreground focus-visible:ring-2`}
                     >
                       <div className="line-clamp-1">{subItem.title}</div>

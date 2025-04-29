@@ -1,4 +1,5 @@
-import React from 'react'
+"use client"
+
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { Button } from '@/components/ui/button'
 import { JiraResponse } from '@/app/api/jira/jira-filtered/route'
@@ -99,6 +100,4 @@ export const JiraSaaSTable: React.FC<{ page: number, pageSize: number, query: st
       </div>
     )
   }
-
-
 }
