@@ -6,11 +6,13 @@ import { LogOut, Loader } from 'lucide-react'
 import { useMenuActions } from '@/store/client/menuStore'
 import { fetchBase } from '@/utils/fetch/fetch'
 import { useToast } from '@/components/ui/use-toast'
+import { useUserActions } from '@/store/client/userStore'
 
 export function LogoutButton() {
   const { toast } = useToast()
   const [isLoading, setIsLoading] = useState(false)
   const { clearMenusOnLogout } = useMenuActions()
+  const { clearUserOnLogout } = useUserActions()
   const router = useRouter()
   const handleLogout = async () => {
     setIsLoading(true)
@@ -25,9 +27,15 @@ export function LogoutButton() {
         variant: 'default',
       })
 
-      router.push('/')
+      // 清楚客户端缓存
+      localStorage.clear()
       // 清除菜单数据
       clearMenusOnLogout()
+      // 清除用户数据
+      clearUserOnLogout()
+
+      router.push('/')
+
     } catch (error) {
       console.error('Logout error:', error)
       toast({

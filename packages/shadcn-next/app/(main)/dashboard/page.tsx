@@ -8,7 +8,6 @@ import { TimeCards } from '@/app/(main)/dashboard/components/time-cards'
 import { ShowCloud } from '@/components/custom/ShowCloud'
 import { PanelCharts } from '@/components/custom/PanelCharts'
 import { redirect } from 'next/navigation'
-// import { MenuInitializer } from './components/menu-initializer'
 
 export const metadata: Metadata = {
   title: 'Dashboard',
@@ -19,39 +18,35 @@ export default async function DashboardPage() {
   try {
     return (
       <main className="flex-1 space-y-4 p-8 pt-6">
-        {/* 菜单初始化组件 - 确保在登录后跳转时菜单数据已加载 */}
-        {/* <MenuInitializer /> */}
         <div className="flex items-center justify-between space-y-2">
           <div className="flex items-center space-x-2">
-            <CalendarDateRangePicker/>
+            <CalendarDateRangePicker />
             <Button size="sm">下载</Button>
           </div>
         </div>
         <div className="grid grid-cols-4 gap-4 ">
           <div className="grid col-span-4 xl:col-span-3 flex-1 gap-4">
-            <PanelCharts/>
+            <PanelCharts />
           </div>
           <div className="flex-1 gap-4 hidden xl:grid">
-            <ShowCloud/>
+            <ShowCloud />
           </div>
         </div>
-        <div
-          className="chart-wrapper mx-auto flex flex-col flex-wrap items-start justify-center gap-4 sm:flex-row sm:p-1">
+        <div className="chart-wrapper mx-auto flex flex-col flex-wrap items-start justify-center gap-4 sm:flex-row sm:p-1">
           <div className="grid flex-1 max-w-[38rem] gap-4">
-            <Card1/>
-            <Card2/>
+            <Card1 />
+            <Card2 />
           </div>
           <div className="grid max-w-[32rem] gap-4">
-            <ProgressCards/>
+            <ProgressCards />
           </div>
           <div className="grid  flex-1 gap-4">
-            <TimeCards/>
+            <TimeCards />
           </div>
         </div>
       </main>
     )
-  } catch
-    (error) {
+  } catch (error) {
     console.error('Error verifying token:', error)
     redirect('/login')
   }

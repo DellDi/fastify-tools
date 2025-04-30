@@ -1,10 +1,10 @@
 'use client'
-
+import React from 'react'
 import Link from 'next/link'
-import { ChevronRight, type LucideIcon, Search, FileIcon } from 'lucide-react'
+import { ChevronRight, type LucideIcon, Search, FileIcon, icons, type LucideProps } from 'lucide-react'
 
 import { useIsMobile } from '@/hooks/use-mobile'
-import { cn } from '@/utils/utils'
+import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
 import {
   Collapsible,
@@ -19,6 +19,8 @@ import {
   PopoverTrigger,
 } from '@/components/ui/popover'
 import { Separator } from '@/components/ui/separator'
+import { usePathname } from 'next/navigation'
+import { Icons } from './ui/icons'
 
 export function NavMain({
   className,
@@ -28,7 +30,7 @@ export function NavMain({
   items: {
     title: string
     url: string
-    icon: LucideIcon
+    icon: LucideIcon | string
     isActive?: boolean
     items?: {
       title: string
@@ -37,11 +39,69 @@ export function NavMain({
   }[]
   searchResults: React.ComponentProps<typeof SidebarSearch>['results']
 } & React.ComponentProps<'ul'>) {
-  // 获取是否激活状态的方法
-  // const pathname = usePathname();
-  // const isActive = (url: string) => {
-  //   return pathname.includes(url)
-  // }
+  // 获取当前路径
+  const pathname = usePathname()
+  
+  // 检查菜单项是否激活
+  const isActive = (url: string) => {
+    return pathname.includes(url)
+  }
+  
+  // 检查父菜单是否应该展开（当前路径匹配父菜单或其任何子菜单）
+  const shouldExpand = (item: any) => {
+    // 如果当前路径匹配父菜单URL，则展开
+    if (isActive(item.url)) return true
+    
+    // 如果有子菜单，检查是否有任何子菜单匹配当前路径
+    if (item.items && item.items.length > 0) {
+      return item.items.some((subItem: any) => isActive(subItem.url))
+    }
+    
+    return item.isActive || false
+  }
+  
+  // 渲染图标函数 - 支持组件函数和字符串名称
+  const renderIcon = (icon: LucideIcon | string | undefined) => {
+    // 默认图标，当没有图标时使用
+    if (!icon) {
+      return <FileIcon className="h-4 w-4 shrink-0" />
+    }
+    
+    try {
+      // 如果是对象并且是React组件（包括Forward Ref）
+      if (typeof icon === 'object' && icon !== null && 'render' in icon) {
+        return React.createElement(icon as any, { className: "h-4 w-4 shrink-0" })
+      }
+      
+      // 如果是函数组件（Lucide图标）
+      if (typeof icon === 'function') {
+        return React.createElement(icon as any, { className: "h-4 w-4 shrink-0" })
+      }
+      
+      // 如果是字符串
+      if (typeof icon === 'string') {
+        // 从自定义Icons对象中查找
+        if (icon in Icons) {
+          return React.createElement(Icons[icon as keyof typeof Icons] as any, { className: "h-4 w-4 shrink-0" })
+        }
+        
+        // 从lucide-react图标库中查找
+        if (icon in icons) {
+          return React.createElement(icons[icon as keyof typeof icons] as any, { className: "h-4 w-4 shrink-0" })
+        }
+        
+        // 如果是图片URL
+        if (icon.startsWith('http') || icon.startsWith('/')) {
+          return <img src={icon} alt="menu icon" className="h-4 w-4 shrink-0 object-contain" />
+        }
+      }
+    } catch (error) {
+      console.error('Error rendering icon:', error)
+    }
+    
+    // 默认图标
+    return <FileIcon className="h-4 w-4 shrink-0" />
+  }
 
   return (
     <ul className={cn('grid gap-0.5', className)}>
@@ -49,19 +109,17 @@ export function NavMain({
         <SidebarSearch results={searchResults} />
       </li>
       {items.map((item) => (
-        <Collapsible key={item.title} asChild defaultOpen={item.isActive}>
+        <Collapsible key={item.title} asChild defaultOpen={shouldExpand(item)}>
           <li>
             <div className="relative flex items-center">
               <Link
                 href={item.url}
-                className="min-w-8 flex h-8 flex-1 items-center gap-2 overflow-hidden rounded-md px-1.5 text-sm font-medium outline-hidden ring-ring transition-all hover:bg-accent hover:text-accent-foreground focus-visible:ring-2"
+                className={`min-w-8 flex h-8 flex-1 items-center gap-2 overflow-hidden rounded-md px-1.5 text-sm font-medium outline-hidden ring-ring transition-all hover:bg-accent hover:text-accent-foreground focus-visible:ring-2 ${
+                  isActive(item.url) ? 'bg-accent text-accent-foreground' : ''
+                }`}
               >
-                {/* 安全渲染图标，确保即使图标组件有问题也能正常渲染 */}
-                {item.icon && typeof item.icon === 'function' ? (
-                  <item.icon className="h-4 w-4 shrink-0" />
-                ) : (
-                  <FileIcon className="h-4 w-4 shrink-0" />
-                )}
+                {/* 安全渲染图标，支持组件函数和字符串名称 */}
+                {renderIcon(item.icon)}
                 <div className="flex flex-1 overflow-hidden">
                   <div className="line-clamp-1 pr-6">{item.title}</div>
                 </div>
@@ -80,10 +138,11 @@ export function NavMain({
               <ul className="grid border-l px-2">
                 {item.items?.map((subItem) => (
                   <li key={subItem.title}>
-                    {/*${isActive(subItem.url) ? 'bg-accent text-accent-foreground' : ''}*/}
                     <Link
                       href={subItem.url || '#'}
-                      className={`min-w-8 flex h-8 items-center gap-2 overflow-hidden rounded-md px-2 text-sm font-medium text-muted-foreground ring-ring transition-all hover:bg-accent hover:text-accent-foreground focus-visible:ring-2`}
+                      className={`min-w-8 flex h-8 items-center gap-2 overflow-hidden rounded-md px-2 text-sm font-medium text-muted-foreground ring-ring transition-all hover:bg-accent hover:text-accent-foreground focus-visible:ring-2 ${isActive(subItem.url)
+                        ? 'bg-accent text-accent-foreground'
+                        : ''}`}
                     >
                       <div className="line-clamp-1">{subItem.title}</div>
                     </Link>

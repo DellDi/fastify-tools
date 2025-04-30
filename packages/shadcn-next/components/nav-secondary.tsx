@@ -3,7 +3,7 @@
 import Link from "next/link"
 import { type LucideIcon } from "lucide-react"
 
-import { cn } from "@/utils/utils"
+import { cn } from "@/lib/utils"
 
 export function NavSecondary({
   className,

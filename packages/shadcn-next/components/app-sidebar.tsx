@@ -77,7 +77,7 @@ export function AppSidebar() {
       </SidebarHeader>
       <SidebarContent>
         <SidebarItem>
-          <SidebarLabel>Platform</SidebarLabel>
+          <SidebarLabel>工具平台</SidebarLabel>
           {isLoading || displayNavItems.length === 0 ? (
             <div className="space-y-2 p-2">
               <Skeleton className="h-10 w-full" />
@@ -92,7 +92,7 @@ export function AppSidebar() {
           )}
         </SidebarItem>
         <SidebarItem>
-          <SidebarLabel>Projects</SidebarLabel>
+          <SidebarLabel>项目中心</SidebarLabel>
           <NavProjects projects={routesConfig.projects} />
         </SidebarItem>
         <SidebarItem>

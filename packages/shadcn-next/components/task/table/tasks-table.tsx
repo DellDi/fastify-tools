@@ -33,7 +33,7 @@ import {
 } from '@/components/ui/pagination'
 import { Badge } from '@/components/ui/badge'
 import { MoreHorizontal, Plus, RefreshCw, Download, Filter } from 'lucide-react'
-import { formatDate } from '@/utils/utils'
+import { formatDate } from '@/lib/utils'
 import { useToast } from '@/components/ui/use-toast'
 import {
   Select,

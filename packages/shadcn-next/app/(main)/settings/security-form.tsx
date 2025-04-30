@@ -68,6 +68,9 @@ export default function SecurityForm({ user }: { user: any }) {
     resolver: zodResolver(formSchema),
     defaultValues: {
       email: user.email || '',
+      emailCode: '',
+      password: '',
+      confirmPassword: '',
     },
   })
 

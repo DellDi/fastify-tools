@@ -1,6 +1,6 @@
 import { MenuWithChildren } from '@/types/prisma-extensions'
-import { 
-  SquareTerminal, Bot, BookOpen, Code2, Settings2, 
+import {
+  SquareTerminal, Bot, BookOpen, Code2, Settings2,
   History, Rabbit, Bird, Turtle, Map, PieChart, Frame,
   LucideIcon, FileIcon // 添加一个默认图标
 } from 'lucide-react'
@@ -19,6 +19,7 @@ const iconMap: Record<string, LucideIcon> = {
   'Map': Map,
   'PieChart': PieChart,
   'Frame': Frame,
+  'Model': FileIcon,
   // 可以添加更多图标
 }
 
@@ -61,11 +62,11 @@ export function convertMenuToRouteConfig(menus: MenuWithChildren[]): NavItem[] {
     try {
       // 获取图标，确保是有效的 Lucide 图标组件
       let IconComponent: LucideIcon = Settings2 // 默认图标
-      
+
       if (menu.icon && typeof menu.icon === 'string') {
         IconComponent = iconMap[menu.icon] || Settings2
       }
-      
+
       // 处理父级菜单
       return {
         title: menu.name || '未命名菜单',
@@ -73,34 +74,34 @@ export function convertMenuToRouteConfig(menus: MenuWithChildren[]): NavItem[] {
         icon: IconComponent,
         isActive: false,
         description: menu.description || '',
-        items: Array.isArray(menu.children) 
+        items: Array.isArray(menu.children)
           ? menu.children
-              .filter(child => child) // 过滤掉 null 或 undefined
-              .map(child => {
-                try {
-                  // 获取子菜单图标
-                  let ChildIconComponent: LucideIcon = History // 默认子菜单图标
-                  
-                  if (child.icon && typeof child.icon === 'string') {
-                    ChildIconComponent = iconMap[child.icon] || History
-                  }
-                  
-                  return {
-                    title: child.name || '未命名项',
-                    url: child.url || '/',
-                    icon: ChildIconComponent,
-                    description: child.description || '',
-                  }
-                } catch (error) {
-                  console.error('处理子菜单项时出错:', error)
-                  return {
-                    title: child.name || '错误项',
-                    url: '#',
-                    icon: History,
-                    description: '',
-                  }
+            .filter(child => child) // 过滤掉 null 或 undefined
+            .map(child => {
+              try {
+                // 获取子菜单图标
+                let ChildIconComponent: LucideIcon = History // 默认子菜单图标
+
+                if (child.icon && typeof child.icon === 'string') {
+                  ChildIconComponent = iconMap[child.icon] || History
                 }
-              })
+
+                return {
+                  title: child.name || '未命名项',
+                  url: child.url || '/',
+                  icon: ChildIconComponent,
+                  description: child.description || '',
+                }
+              } catch (error) {
+                console.error('处理子菜单项时出错:', error)
+                return {
+                  title: child.name || '错误项',
+                  url: '#',
+                  icon: History,
+                  description: '',
+                }
+              }
+            })
           : []
       }
     } catch (error) {

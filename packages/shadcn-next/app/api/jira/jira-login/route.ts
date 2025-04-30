@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server'
-import { parseCookies } from '@/utils/utils'
+import { parseCookies } from '@/lib/utils'
 import { serviceCache } from '@/store/service'
 
 export async function POST() {

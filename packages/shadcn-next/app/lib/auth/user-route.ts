@@ -28,11 +28,40 @@ export async function getUserRolesMenu(userId: string): Promise<MenuWithChildren
         return [];
     }
 
-    // 提取所有菜单
-    const menus = user.userRole.roleMenus.map(rm => rm.menu);
-    
+    const menuIds = user.userRole.roleMenus.map(rm => rm.menu.id);
+
+    // 查询所有菜单（不过滤）
+    const allMenus = await prisma.menu.findMany({
+        orderBy: { sortOrder: 'asc' }
+    });
+
+    // 创建菜单ID到菜单的映射
+    const menuMap = new Map<string, Menu>();
+    allMenus.forEach(menu => menuMap.set(menu.id, menu));
+
+    // 找出用户有权限的菜单及其所有父菜单
+    const accessibleMenuIds = new Set<string>();
+
+    // 添加直接有权限的菜单
+    menuIds.forEach(id => accessibleMenuIds.add(id));
+
+    // 添加所有父菜单
+    const addParentMenus = (menuId: string) => {
+        const menu = menuMap.get(menuId);
+        if (menu && menu.parentId) {
+            accessibleMenuIds.add(menu.parentId);
+            addParentMenus(menu.parentId); // 递归添加所有父菜单
+        }
+    };
+
+    // 为每个有权限的菜单添加其所有父菜单
+    menuIds.forEach(id => addParentMenus(id));
+
+    // 过滤出用户可访问的菜单
+    const accessibleMenus = allMenus.filter(menu => accessibleMenuIds.has(menu.id));
+
     // 构建菜单树
-    const menuTree = buildMenuTree(menus);
+    const menuTree = buildMenuTree(accessibleMenus);
     
     // 缓存菜单树
     serviceCache.set(userId + '_menu', menuTree);

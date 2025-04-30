@@ -1,4 +1,4 @@
-import { cn } from '@/utils/utils'
+import { cn } from '@/lib/utils'
 import Marquee from '@/components/ui/marquee'
 
 const reviews = [

@@ -173,7 +173,6 @@ export async function seedInitRoleMenu() {
     '个人看板', 'Chat工具', '任务管理', '账户'
   ]
 
-
   // 分配权限
   const basicPermissions = await prisma.permission.findMany({
     where: { name: { in: userPermissions } }
@@ -223,13 +222,14 @@ export async function seedInitRoleMenu() {
     'file:big_upload',
     'jira:view', 'jira:create',
     'chat:view',
+    'model:view',
     'task:view',
     'task:download',
     'task:delete',
   ]
 
   const textMenus = [
-    'v10加密中心', '个人看板', '任务管理', "爬虫管理"
+    'v10加密中心', '个人看板', '创建工单', '任务管理', "爬虫管理", "模型调优", '账户'
   ]
   // 分配权限
   const textPermissionsData = await prisma.permission.findMany({
