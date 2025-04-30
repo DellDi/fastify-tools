@@ -44,5 +44,41 @@ export async function seedEmail() {
         }
     })
 
+    await prisma.emailTemplate.upsert({
+        where: { id: randomUUID() },
+        update: {},
+        create: {
+            name: 'edit-password',
+            subject: '修改密码',
+            body: fs.readFileSync(path.join(__dirname, '../../public/email/edit-password.html'), 'utf8'),
+            variables: {
+                Email: 'string',
+                Code: 'string',
+                SiteName: 'string',
+                SiteURL: 'string',
+                SupportEmail: 'string'
+            },
+            createdAt: new Date(),
+            updatedAt: new Date()
+        }
+    })
+
+    await prisma.emailTemplate.upsert({
+        where: { id: randomUUID() },
+        update: {},
+        create: {
+            name: 'reset-password',
+            subject: '重置密码',
+            body: fs.readFileSync(path.join(__dirname, '../../public/email/reset-password.html'), 'utf8'),
+            variables: {
+                logoUrl: 'string',
+                ConfirmationURL: 'string',
+                SiteURL: 'string'
+            },
+            createdAt: new Date(),
+            updatedAt: new Date()
+        }
+    })
+
     console.log('Email templates seeded successfully')
 }

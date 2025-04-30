@@ -48,6 +48,22 @@ export async function POST(request: Request) {
 
     // 生成 JWT token
     const token = jwt.generateToken(user)
+
+    // 使用事务记录登录日志
+    await prisma.$transaction(async (tx) => {
+      await tx.loginLog.create({
+        data: {
+          userId: user.id,
+          ipAddress: request.headers.get('cf-connecting-ip') || '',
+          userAgent: request.headers.get('user-agent') || '',
+        },
+      })
+
+      await tx.user.update({
+        where: { id: user.id },
+        data: { lastSignInAt: new Date() },
+      })
+    })
     const response = NextResponse.json({ message: '登录成功', token, userInfo: user }, { status: 200 });
     // 设置 token 到 cookies - 确保 token 是字符串类型
     response.cookies.set(

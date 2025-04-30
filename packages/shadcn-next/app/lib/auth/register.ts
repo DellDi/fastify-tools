@@ -5,6 +5,7 @@ import { z } from 'zod';
 import { errorMessagesCodeMap } from '@/types/email'
 import { fastifyFetch } from '@/utils/fetch/fastifyFetch';
 import { hashPasswordWithSaltCrypto } from '@/utils/auth/password';
+import { User } from '@/generated/client';
 
 const emailSchema = z.string().email();
 
@@ -70,27 +71,31 @@ export async function registerUser(params: { username: string; email: string; ph
 
     // 发送邮箱验证邮件
     const verificationCode = await sendEmailVerification(email)
+    let user: User | null = null
+    // 创建事务
+    await prisma.$transaction(async (tx) => {
+      // 注册账号、但未验证邮箱、未设置角色
+      user = await tx.user.create({
+        data: {
+          username,
+          email,
+          phoneNumber,
+          encryptedPassword: hash,
+          rawUserMetaData: {
+            salt,
+          },
 
-    // 注册账号、但未验证邮箱、未设置角色
-    const user = await prisma.user.create({
-      data: {
-        username,
-        email,
-        phoneNumber,
-        encryptedPassword: hash,
-        rawUserMetaData: {
-          salt,
         },
-      },
-    })
+      })
 
-    // 创建验证码
-    await prisma.verificationCode.create({
-      data: {
-        userId: user.id,
-        code: verificationCode.code,
-        expiresAt: new Date(Date.now() + 15 * 60 * 1000), // 15 minutes
-      },
+      // 创建验证码
+      await tx.verificationCode.create({
+        data: {
+          userId: user.id,
+          code: verificationCode.code,
+          expiresAt: new Date(Date.now() + 15 * 60 * 1000), // 15 minutes
+        },
+      })
     })
 
     return { user, verificationCode }

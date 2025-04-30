@@ -11,7 +11,6 @@ import {
   HelpCircle,
   Image,
   Laptop,
-  Loader2,
   LightbulbIcon as LucideProps,
   Moon,
   MoreVertical,
@@ -20,16 +19,24 @@ import {
   Settings,
   SunMedium,
   Trash,
-  Twitter,
-  User,
   X,
-  TypeIcon as type,
+  Lock,
+  Loader2,
+  UserCircle,
+  ImageIcon,
+  Shield,
+  AlertCircle,
   type LucideIcon,
 } from 'lucide-react'
 
 export type Icon = LucideIcon
 
 export const Icons = {
+  lock: Lock,
+  shield: Shield,
+  alertCircle: AlertCircle,
+  userCircle: UserCircle,
+  ImageIcon: ImageIcon,
   logo: Command,
   close: X,
   spinner: Loader2,
@@ -44,7 +51,6 @@ export const Icons = {
   ellipsis: MoreVertical,
   add: Plus,
   warning: AlertTriangle,
-  user: User,
   arrowRight: ArrowRight,
   help: HelpCircle,
   pizza: Pizza,
@@ -68,7 +74,5 @@ export const Icons = {
       ></path>
     </svg>
   ),
-  twitter: Twitter,
   check: Check,
 }
-

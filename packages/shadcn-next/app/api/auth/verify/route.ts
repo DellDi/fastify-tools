@@ -1,9 +1,9 @@
-import { verifyMagicLink } from '@/app/lib/auth/verified'
-import { NextResponse } from 'next/server'
+import { sendVerificationEmail, verifyMagicLink } from '@/app/lib/auth/verified'
+import { NextResponse, NextRequest } from 'next/server'
 import { fastifyFetch } from '@/utils/fetch/fastifyFetch'
 import { prisma } from '@/lib/prisma'
 
-export async function POST(request: Request) {
+export async function POST(request: NextRequest) {
   const { email, code } = await request.json()
   try {
     await verifyMagicLink(code, email)
@@ -60,3 +60,25 @@ export async function POST(request: Request) {
   }
 }
 
+// 发送邮箱验证码
+export async function GET(request: NextRequest) {
+  const email = request.nextUrl.searchParams.get('email');
+  if (!email) {
+    return NextResponse.json({
+      error: 'Email is required',
+      message: '邮箱是必填项'
+    }, { status: 400 })
+  }
+  try {
+    await sendVerificationEmail(email)
+    return NextResponse.json({
+      message: "验证码已发送, 请及时查收",
+    })
+  } catch (error) {
+    console.error('Verification error:', error)
+    return NextResponse.json({
+      error: 'Verification error',
+      message: '验证失败，请稍后再试'
+    }, { status: 500 })
+  }
+}

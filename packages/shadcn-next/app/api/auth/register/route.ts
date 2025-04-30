@@ -1,11 +1,11 @@
 import { registerUser } from '@/app/lib/auth/register'
-import { NextResponse } from 'next/server'
+import { NextResponse, NextRequest } from 'next/server'
 import { errorMessagesCodeMap } from '@/types/email'
 import { sendEmailVerification } from '@/app/lib/auth/register'
 import { prisma } from '@/lib/prisma'
 
 // 使用邮箱注册
-export async function POST(request: Request) {
+export async function POST(request: NextRequest) {
   // 默认颁发初始化密码
   const { username, email, phoneNumber } = await request.json()
   try {
@@ -26,7 +26,7 @@ export async function POST(request: Request) {
 }
 
 // 邮箱重发
-export async function GET(request: Request) {
+export async function GET(request: NextRequest) {
   const { email } = await request.json()
 
   const user = await prisma.user.findFirst({
