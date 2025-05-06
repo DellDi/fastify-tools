@@ -7,9 +7,6 @@ import {
   isPublicApiRoute,
   isUserApiRoute 
 } from '@/utils/auth/config'
-import { serviceCache } from '@/store/service'
-import { MenuWithChildren } from '@/types/prisma-extensions'
-import { canAccessMenu } from '@/utils/auth/middleware'
 import { checkRoutePermission } from './app/actions/menu-actions'
 
 export async function middleware(req: NextRequest) {

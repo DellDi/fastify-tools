@@ -2,32 +2,21 @@
 
 import { NextRequest, NextResponse } from 'next/server'
 import { getUserRolesMenu } from '@/app/lib/auth/user-route'
-import { jwt } from '@/utils/auth/jwt'
 import { serviceCache } from '@/store/service'
 import { MenuWithChildren } from '@/types/prisma-extensions'
+import { requireAuth } from '@/app/actions/menu-actions'
 
 /**
  * 获取用户菜单接口
  * 用于前端获取用户菜单数据
  */
-export async function GET(request: NextRequest) {
+export async function GET() {
   try {
-    // 从 cookie 获取 token
-    const token = request.cookies.get('auth_token')?.value
+    const userId = await requireAuth()
     
-    if (!token) {
+    if (!userId) {
       return NextResponse.json({ error: '未认证', code: 401 }, { status: 401 })
     }
-    
-    // 验证 token 并获取用户 ID
-    const decoded = jwt.verifyToken(token)
-    
-    // 验证解码结果
-    if (!decoded || decoded instanceof Error) {
-      return NextResponse.json({ error: 'token无效', code: 401 }, { status: 401 })
-    }
-    
-    const userId = typeof decoded === 'string' ? decoded : decoded.id
     
     // 先尝试从缓存获取菜单
     const cachedMenu = serviceCache.get(userId + '_menu') as MenuWithChildren[]
