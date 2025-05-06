@@ -61,7 +61,7 @@ export async function middleware(req: NextRequest) {
     }
 
     // 5. 认证成功，检查权限（如果需要）
-    console.log(`✅ 认证成功，用户ID: ${authResult.id}`)
+    console.log(`✅ 认证成功: ${authResult}`)
 
     // 如果不是 API 路由，可以在这里检查菜单权限
     if (!pathname.startsWith('/api/')) {
