@@ -31,6 +31,7 @@ export const jwt = {
         try {
             return jsonwebtoken.verify(token, JWT_SECRET) as { id: string; email: string; role: string }
         } catch (error) {
+            console.log("🚀 ~ error:", error)
             return new Error('Invalid token')
         }
     },

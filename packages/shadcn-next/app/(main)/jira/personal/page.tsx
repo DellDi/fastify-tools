@@ -4,21 +4,19 @@ import {
   CardFooter,
   CardHeader,
   CardTitle,
-} from "@/components/ui/card";
-import { SearchJiraComponent } from "@/components/jira/search";
-import { JiraSaaSTable } from "@/components/jira/table";
-import { InvoicesTableSkeleton } from "@/components/jira/tableSkeleton";
-import { Suspense } from "react";
-import { JiraPaginator } from "@/components/jira/paginator";
+} from '@/components/ui/card'
+import { SearchJiraComponent } from '@/components/jira/search'
+import { JiraSaaSTable } from '@/components/jira/table'
+import { JiraPaginator } from '@/components/jira/paginator'
 
 export default async function JiraPage({
   page = 1,
   pageSize = 50,
   query,
 }: {
-  page: number;
-  pageSize: number;
-  query: string;
+  page: number
+  pageSize: number
+  query: string
 }) {
   return (
     <div className="h-full flex flex-col grow mx-auto">
@@ -32,14 +30,12 @@ export default async function JiraPage({
           </CardTitle>
         </CardHeader>
         <CardContent className="grow overflow-auto">
-          <Suspense fallback={<InvoicesTableSkeleton pageSize={pageSize} />}>
-            <JiraSaaSTable page={page} pageSize={pageSize} query={query} />
-          </Suspense>
+          <JiraSaaSTable page={page} pageSize={pageSize} query={query} />
         </CardContent>
         <CardFooter className="flex justify-between items-center">
           <JiraPaginator />
         </CardFooter>
       </Card>
     </div>
-  );
+  )
 }

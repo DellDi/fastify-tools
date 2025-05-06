@@ -11,7 +11,8 @@
     "update:deps": "pnpm update -r",
     "prisma:generate:all": "pnpm -r run prisma:generate",
     "prisma:deploy:all": "pnpm -r run prisma:migrate:deploy",
-    "prisma:seed:all": "pnpm -r run prisma:seed"
+    "prisma:seed:all": "pnpm -r run prisma:seed",
+    "prisma:reset:all": "pnpm -r run prisma:migrate:reset"
   },
   "keywords": [
     "next",

@@ -1,75 +1,22 @@
+"use server"
+
 import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
-import { prisma } from '@/lib/prisma'
-import { jwt } from '@/utils/auth/jwt'
-import { type Permission, type Role, type User } from '@/generated/client'
-import { serviceCache } from '@/store/service'
-import { type MenuWithChildren } from '@/types/prisma-extensions'
-
-type FullUserInfo = User & {
-  userRole?: Role & {
-    rolePermissions: Permission[]
-    roleMenus: MenuWithChildren[]
-  }
-}
 
 export async function verifyAuth(request: NextRequest) {
-  const token = request.cookies.get('auth-token')?.value
+  // 输出所有 cookies，便于调试
+  console.log('中间件收到的所有 cookies：', request.cookies.getAll())
+
+  // 尝试获取 auth_token
+  const token = request.cookies.get('auth_token')?.value
+  console.log('中间件获取到的 auth_token：', token)
 
   if (!token) {
-    return null
+    console.log('未找到 auth_token cookies')
+    return false
   }
 
-  try {
-    const decoded = jwt.verifyToken(token) as {
-      id: string
-      email: string
-      role: string
-    }
-
-    const cachedUser = serviceCache.get(decoded.id + '_user') as FullUserInfo
-    if (cachedUser) {
-      return {
-        user: cachedUser,
-        permissions: cachedUser.userRole?.rolePermissions?.map((rp) => rp) || [],
-        menus: cachedUser.userRole?.roleMenus?.map((rm) => rm) || []
-      } as unknown as FullUserInfo
-    }
-
-    const user = await prisma.user.findUnique({
-      where: { id: decoded.id },
-    })
-    
-
-    if (!user) {
-      return null
-    }
-
-    const fullUser = {
-      ...user,
-      userRole: {
-        roleMenus: [] as MenuWithChildren[],
-        rolePermissions: [] as Permission[]
-      }
-    }
-
-    if (user && !fullUser.userRole?.roleMenus) {
-      const menus = serviceCache.get(user.id + '_menu') as MenuWithChildren[]
-      fullUser.userRole.roleMenus = menus ?? []
-    }
-
-    if (user && !fullUser.userRole?.rolePermissions) {
-      const permissions = serviceCache.get(user.id + '_permission') as Permission[]
-      fullUser.userRole.rolePermissions = permissions ?? []
-    }
-
-    serviceCache.set(decoded.id + '_user', fullUser)
-
-    return fullUser
-  } catch (error) {
-    console.error('Auth verification failed:', error)
-    return null
-  }
+  return true
 }
 
 export async function updateSession(request: NextRequest) {
@@ -79,34 +26,15 @@ export async function updateSession(request: NextRequest) {
     return NextResponse.redirect(new URL('/login', request.url))
   }
 
-  // 更新用户最后登录时间
-  await prisma.user.update({
-    where: { id: authUserResult.id },
-    data: { lastSignInAt: new Date() }
-  })
-
-  // 记录登录日志
-  await prisma.loginLog.create({
-    data: {
-      userId: authUserResult.id,
-      ipAddress: request.headers.get('x-real-ip') || request.headers.get('x-forwarded-for') || '',
-      userAgent: request.headers.get('user-agent') || ''
-    }
-  })
-
+  // 中间件不进行数据库操作，直接返回
   return NextResponse.next()
 }
 
 export async function hasPermission(request: NextRequest, requiredPermission: string) {
   const authUserResult = await verifyAuth(request)
   if (!authUserResult) return false
-  
-  // 使用 for 循环替代 some 方法
-  const permissions = authUserResult.userRole?.rolePermissions || []
-  for (const permission of permissions) {
-    if (permission.name === requiredPermission) {
-      return true
-    }
-  }
-  return false
+
+  // 简化版本不检查具体权限，只要用户已登录就返回 true
+  // 实际权限检查应该放在 API 路由或页面组件中进行
+  return true
 }

@@ -27,6 +27,7 @@
     "prisma:seed": "npx prisma db seed",
     "prisma:migrate:dev": "npx prisma migrate dev",
     "prisma:migrate:deploy": "npx prisma migrate deploy",
+    "prisma:migrate:reset": "npx prisma migrate reset --force",
     "prisma:studio": "npx prisma studio"
   },
   "dependencies": {

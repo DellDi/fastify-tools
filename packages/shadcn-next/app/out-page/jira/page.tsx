@@ -2,6 +2,7 @@ import JiraIssuesTablePage from '@/app/(main)/jira/personal/page'
 import type { Metadata } from 'next'
 import { Suspense } from 'react'
 import { InvoicesTableSkeleton } from '@/components/jira/tableSkeleton'
+import { SAAS_JQL_3M } from '@/utils/jira/jql'
 
 export const experimental_ppr = true
 
@@ -15,7 +16,7 @@ export const metadata: Metadata = {
 export default async function jiraPage() {
   return (
     <Suspense fallback={<InvoicesTableSkeleton pageSize={40} />}>
-      <JiraIssuesTablePage />
+      <JiraIssuesTablePage page={1} pageSize={40} query={SAAS_JQL_3M} />
     </Suspense>
   )
 }

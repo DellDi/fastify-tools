@@ -13,26 +13,26 @@ import { Permission } from '@/generated/client'
  * 获取用户菜单数据
  * 优先从缓存获取，如果缓存中没有则从数据库获取
  */
-export async function getUserMenus(): Promise<{ 
+export async function getUserMenus(): Promise<{
   menus: MenuWithChildren[],
-  error?: string 
+  error?: string
 }> {
   try {
     const userId = await requireAuth()
     if (!userId) {
       return { menus: [], error: '未认证' }
     }
-    
+
     // 先尝试从缓存获取菜单
     const cachedMenu = serviceCache.get(userId + '_menu') as MenuWithChildren[]
-    
+
     if (cachedMenu) {
       return { menus: cachedMenu }
     }
-    
+
     // 如果缓存中没有，则从数据库获取
     const menus = await getUserRolesMenu(userId)
-    
+
     return { menus }
   } catch (error) {
     console.error('获取菜单失败:', error)
@@ -46,16 +46,16 @@ export async function getUserMenus(): Promise<{
  */
 export async function checkRoutePermission(route: string): Promise<boolean> {
   const { menus, error } = await getUserMenus()
-  
+
   if (error || !menus.length) {
     return false
   }
-  
+
   // 扁平化所有菜单项
-  const allRoutes = menus.flatMap(menu => 
+  const allRoutes = menus.flatMap(menu =>
     [menu.url, ...menu.children.map(child => child.url)]
   ).filter(Boolean) as string[]
-  
+
   // 检查用户是否有权限访问该路由
   return allRoutes.some(menuRoute => route.startsWith(menuRoute || ''))
 }
@@ -67,17 +67,17 @@ export async function checkRoutePermission(route: string): Promise<boolean> {
 export async function requireAuth() {
   const cookieStore = await cookies()
   const token = cookieStore.get('auth_token')?.value
-  
+
   if (!token) {
     redirect('/login')
   }
-  
+
   const decoded = jwt.verifyToken(token)
-  
+
   if (!decoded || decoded instanceof Error) {
     redirect('/login')
   }
-  
+
   const userId = typeof decoded === 'string' ? decoded : decoded.id
   return userId
 }
@@ -105,7 +105,7 @@ export async function getUserPermissions(): Promise<Permission[]> {
         }
       }
     })
-    
+
     if (!user || !user.userRole) {
       return []
     }
@@ -117,7 +117,7 @@ export async function getUserPermissions(): Promise<Permission[]> {
 
     const permissions = user.userRole.rolePermissions.map(rp => rp.permission)
     serviceCache.set(userId + '_permission', permissions)
-    
+
     return permissions
   } catch (error) {
     console.error('获取用户权限失败:', error)

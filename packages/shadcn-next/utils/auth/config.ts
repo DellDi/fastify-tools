@@ -3,11 +3,11 @@ export const whiteRoutes = [
   // 页面路由 - 公开访问
   '/',
   '/login',
-  '/auth',
   '/error',
   '/register',
   '/forgot-password',
   '/reset-password',
+  '/auth',
   '/auth/callback',
 
   // 静态资源
@@ -52,27 +52,27 @@ export const sessionUpdateRoutes = [
 
 // 检查是否为白名单路由
 export function isWhiteRoute(pathname: string): boolean {
-  return whiteRoutes.some(route => pathname.startsWith(route))
+  return whiteRoutes.some(route => pathname.endsWith(route))
 }
 
 // 检查是否为公共 API 路由
 export function isPublicApiRoute(pathname: string): boolean {
-  return publicApiRoutes.some(route => pathname.startsWith(route))
+  return publicApiRoutes.some(route => pathname.endsWith(route))
 }
 
 // 检查是否为需要用户认证的 API 路由
 export function isUserApiRoute(pathname: string): boolean {
-  return userApiRoutes.some(route => pathname.startsWith(route))
+  return userApiRoutes.some(route => pathname.endsWith(route))
 }
 
 // 检查是否为需要管理员权限的 API 路由
 export function isAdminApiRoute(pathname: string): boolean {
-  return adminApiRoutes.some(route => pathname.startsWith(route))
+  return adminApiRoutes.some(route => pathname.endsWith(route))
 }
 
 // 检查是否为需要更新 session 的路由
 export function isUpSessionRoute(pathname: string): boolean {
-  return sessionUpdateRoutes.some(route => pathname.startsWith(route))
+  return sessionUpdateRoutes.some(route => pathname.endsWith(route))
 }
 
 // JWT配置
