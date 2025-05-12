@@ -25,6 +25,7 @@ const jira: FastifyPluginAsyncTypebox = async (fastify): Promise<void> => {
         customerName,
         jiraUser,
         jiraPassword,
+        customAutoFields,
       } = req.body
 
       try {
@@ -38,15 +39,15 @@ const jira: FastifyPluginAsyncTypebox = async (fastify): Promise<void> => {
         })
         const { cookies, atlToken } = resLogin.json() as JiraLoginResponseType
 
+        const customAutoFieldsKeys = Object.keys(customAutoFields || {})
+
         const jiraPostData = {
           pid: '11450',
           issuetype: '10604',
           atl_token: atlToken,
           summary: title,
           components: '13676',
-          // 客户名称
           customfield_10000: '14169',
-          // 客户信息
           customfield_12600: '17714',
           'customfield_12600:1': '21057',
           customfield_10041: dayjs().format('YYYY-MM-DD'),
@@ -58,16 +59,19 @@ const jira: FastifyPluginAsyncTypebox = async (fastify): Promise<void> => {
           timetracking: '',
           isCreateIssue: 'true',
           hasWorkStarted: 'false',
+          ...(customAutoFields || {}),
           fieldsToRetain: [
             'project',
             'issuetype',
             'components',
             'customfield_10000',
             'customfield_12600',
+            'customfield_12600:1',
             'customfield_10041',
             'priority',
             'assignee',
             'labels',
+            ...customAutoFieldsKeys,
           ],
         }
 
@@ -82,12 +86,27 @@ const jira: FastifyPluginAsyncTypebox = async (fastify): Promise<void> => {
               'Content-Type': 'application/x-www-form-urlencoded',
             },
             body: qs.stringify(jiraPostData),
-          },
+          }
         )
 
         const responseBody =
           (await createTicketResponse.body.json()) as JiraAddResInfoType
 
+        // 检查是否有错误信息
+        if (createTicketResponse.statusCode >= 400 || responseBody.errors) {
+          // 将错误对象转换为格式化的字符串
+          const errorMsg = responseBody.errors
+            ? Object.entries(responseBody.errors)
+                .map(([key, value]) => `${key}: ${value}`)
+                .join('\n')
+            : '未知错误'
+
+          fastify.log.error(`创建 Jira 工单失败: ${errorMsg}`)
+          return reply.status(400).send({
+            error: `创建 Jira 工单失败: ${errorMsg}`,
+            details: responseBody.errors,
+          })
+        }
         // 调用查询客户信息接口
         const resFields = responseBody.fields
         const customerBase = resFields.find((a) => a.id === 'customfield_10000')

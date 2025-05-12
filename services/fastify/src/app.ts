@@ -2,7 +2,6 @@ import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 import AutoLoad, { AutoloadPluginOptions } from '@fastify/autoload'
 import { FastifyPluginAsync } from 'fastify'
-
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = path.dirname(__filename)
 
@@ -13,7 +12,7 @@ const options: AppOptions = {}
 
 const app: FastifyPluginAsync<AppOptions> = async (
   fastify,
-  opts,
+  opts
 ): Promise<void> => {
 
   void fastify.register(AutoLoad, {
@@ -22,7 +21,7 @@ const app: FastifyPluginAsync<AppOptions> = async (
     forceESM: true,
     ignoreFilter: (path) => {
       return path.includes('test')
-    }
+    },
   })
 
   // 加载所有路由
@@ -45,7 +44,6 @@ const app: FastifyPluginAsync<AppOptions> = async (
     fastify.log.info(fastify.printRoutes())
   })
 
-
   fastify.addHook('preHandler', function (req, reply, done) {
     if (req.body) {
       req.log.info({ body: req.body }, 'parsed body')
@@ -56,11 +54,10 @@ const app: FastifyPluginAsync<AppOptions> = async (
   fastify.addHook('onRequest', (req, reply, done) => {
     reply.header(
       'Access-Control-Allow-Methods',
-      'GET, POST, PUT, DELETE, OPTIONS',
+      'GET, POST, PUT, DELETE, OPTIONS'
     )
     done()
   })
-
 }
 
 export default app

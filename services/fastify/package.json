@@ -17,7 +17,7 @@
     "dev": "npm run build && concurrently -k -p \"[{name}]\" -n \"TypeScript,App\" -c \"yellow.bold,cyan.bold\" \"npm:watch:ts\" \"npm:dev:start\"",
     "build": "tsc",
     "watch:ts": "tsc -w",
-    "start": "npm run build && node --experimental-loader=./loader.mjs ./api/index.js",
+    "start": "npm run build && node ./api/index.js",
     "dev:start": "fastify start --ignore-watch=.ts$ -w -l info -P --loader=./loader.mjs ./api/app.js",
     "debug": "fastify start --debug --ignore-watch=.ts$ -w -l info -P --loader=./loader.mjs ./api/app.js",
     "pm2:start:config": "pm2 start ecosystem.config.cjs",

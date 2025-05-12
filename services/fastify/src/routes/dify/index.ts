@@ -9,24 +9,24 @@ import {
 
 const dify: FastifyPluginAsync = async (fastify): Promise<void> => {
   fastify
-  .register(auth)
-  .register(bearerAuth, {
-    addHook: true,
-    keys: new Set(['zd-nb-19950428']),
-  })
-  .decorate(
-    'allowAnonymous',
-    function (
-      req: { headers: { authorization: any } },
-      reply: any,
-      done: (arg0: Error | undefined) => any,
-    ) {
-      if (req.headers.authorization) {
-        return done(Error('not anonymous'))
+    .register(auth)
+    .register(bearerAuth, {
+      addHook: true,
+      keys: new Set(['zd-nb-19950428']),
+    })
+    .decorate(
+      'allowAnonymous',
+      function (
+        req: { headers: { authorization: any } },
+        reply: any,
+        done: (arg0: Error | undefined) => any
+      ) {
+        if (req.headers.authorization) {
+          return done(Error('not anonymous'))
+        }
+        return done(undefined)
       }
-      return done(undefined)
-    },
-  )
+    )
   fastify.post<{
     Body: InputDataType
     Response: DifyResponseType
@@ -43,7 +43,9 @@ const dify: FastifyPluginAsync = async (fastify): Promise<void> => {
       try {
         if (point === 'app.create_jira_tool') {
           if (!params.title || !params.description) {
-            reply.code(400).send({ error: 'Missing required fields: title and description' })
+            reply
+              .code(400)
+              .send({ error: 'Missing required fields: title and description' })
             return
           }
           const { issueId, issueKey, issueUrl, updateMsg } =
@@ -55,7 +57,6 @@ const dify: FastifyPluginAsync = async (fastify): Promise<void> => {
             issueUrl,
             updateMsg,
           })
-          return
         }
       } catch (e) {
         reply.code(400).send({ error: `Not implemented: ${e}` })
@@ -64,11 +65,21 @@ const dify: FastifyPluginAsync = async (fastify): Promise<void> => {
   })
 }
 
+// 修改 handleAppExternalDataToolQuery 函数，增加错误处理
 async function handleAppExternalDataToolQuery(
   fastify: FastifyInstance,
-  params: Omit<InputDataType, 'point'>,
+  params: Omit<InputDataType, 'point'>
 ) {
-  const { title, description, assignee, customerName, jiraUser, jiraPassword, labels } = params || {}
+  const {
+    title,
+    description,
+    assignee,
+    customerName,
+    jiraUser,
+    jiraPassword,
+    labels,
+    customAutoFields,
+  } = params || {}
 
   const res = await fastify.inject({
     url: '/jira/create-ticket',
@@ -81,14 +92,47 @@ async function handleAppExternalDataToolQuery(
       assignee,
       labels,
       customerName,
+      customAutoFields,
     },
     headers: {
       'content-type': 'application/json',
     },
   })
-
-  return {
-    ...res.json(),
+  
+  // 检查响应状态码
+  if (res.statusCode >= 400) {
+    fastify.log.error(`Jira API 错误: ${res.statusCode} - ${res.body}`)
+    throw new Error(`创建 Jira 工单失败: ${res.body}`)
+  }
+  
+  // 尝试解析 JSON 并验证必要字段
+  try {
+    const jsonData = res.json()
+    
+    // 检查是否包含错误信息
+    if (jsonData.error) {
+      fastify.log.error(`Jira API 返回错误: ${jsonData.error}`)
+      
+      // 如果有详细错误信息，格式化并记录
+      if (jsonData.details) {
+        const detailsStr = Object.entries(jsonData.details)
+          .map(([key, value]) => `${key}: ${value}`)
+          .join('\n')
+        fastify.log.error(`错误详情:\n${detailsStr}`)
+      }
+      
+      throw new Error(jsonData.error)
+    }
+    
+    // 验证必要字段
+    if (!jsonData.issueId || !jsonData.issueKey) {
+      throw new Error('返回的 Jira 数据缺少必要字段')
+    }
+    
+    return jsonData
+  } catch (error) {
+    fastify.log.error(`解析 Jira 响应失败: ${error}`)
+    throw new Error(`处理 Jira 响应时出错: ${error}`)
   }
 }
 

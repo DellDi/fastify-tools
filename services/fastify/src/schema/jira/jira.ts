@@ -31,36 +31,65 @@ export const JiraCreateExportBody = Type.Object({
     default: '【超级工单】新增测试工单-我是工单的描述信息',
     description: '单子描述',
   }),
-
   labels: Type.Optional(
     Type.String({
       default: 'SaaS内部已评审',
       description: '单子标签',
-    }),
+    })
   ),
   assignee: Type.Optional(
     Type.String({
       default: process.env.JIRA_ASSIGNEE_USER,
       description: 'jira-经办人',
-    }),
+    })
   ),
   jiraUser: Type.Optional(
     Type.String({
       default: process.env.JIRA_USER,
       description: 'jira用户名-创建人',
-    }),
+    })
   ),
   jiraPassword: Type.Optional(
     Type.String({
       default: process.env.JIRA_PASSWORD,
       description: 'jira密码-创建人',
-    }),
+    })
   ),
   customerName: Type.Optional(
     Type.String({
       description: '客户名称信息',
       default: '新安明珠',
-    }),
+    })
+  ),
+  customAutoFields: Type.Object(
+    {
+      customfield_10601: Type.String({
+        description: '功能现状是必需的。',
+        default: '功能现状是必需的。',
+      }),
+      customfield_10602: Type.String({
+        description: '提交角色是必需的。',
+        default: '提交角色是必需的。',
+      }),
+      customfield_12303: Type.String({
+        description: '修改建议是必需的。',
+        default: '修改建议是必需的。',
+      }),
+      customfield_12302: Type.String({
+        description: '业务场景是必需的。',
+        default: '业务场景是必需的。',
+      }),
+    },
+    {
+      default: {
+        customfield_10601: '功能现状是必需的。',
+        customfield_10602: '提交角色是必需的。',
+        customfield_12303: '修改建议是必需的。',
+        customfield_12302: '业务场景是必需的。',
+      },
+      // 允许用户添加额外的自定义属性，类型为任意
+      additionalProperties: Type.Any(),
+    }
   ),
 })
 
@@ -98,6 +127,10 @@ export const jiraCreateExport = {
   body: JiraCreateExportBody,
   response: {
     200: JiraCreateExportResponse,
+    400: Type.Object({
+      error: Type.String(),
+      details: Type.Optional(Type.Record(Type.String(), Type.String())),
+    }),
     500: Type.Object({
       error: Type.Any(),
     }),
@@ -114,39 +147,39 @@ const JiraUpdateBody = Type.Object({
     Type.String({
       default: process.env.JIRA_USER,
       description: 'jira用户名-创建人',
-    }),
+    })
   ),
   jiraPassword: Type.Optional(
     Type.String({
       default: process.env.JIRA_PASSWORD,
       description: 'jira密码-创建人',
-    }),
+    })
   ),
   customfield_12600: Type.Optional(
     Type.String({
       default: '19960',
       description: '自定义字段12600: 客户信息',
-    }),
+    })
   ),
   'customfield_12600:1': Type.Optional(
     Type.String({
       default: '19961',
       description: '自定义字段12600:1 客户信息-1',
-    }),
+    })
   ),
   customfield_10000: Type.Optional(
     Type.String({
       default: '19962',
       description: '自定义字段10000:1 : 客户名称',
-    }),
+    })
   ),
   labels: Type.Optional(
     Type.Array(
       Type.String({
         default: '数据中台',
         description: 'labels: 单子标签',
-      }),
-    ),
+      })
+    )
   ),
   issueId: Type.Number({
     default: 123456,
@@ -160,7 +193,7 @@ const JiraUpdateBody = Type.Object({
     Type.String({
       default: 'labels',
       description: '单子字段的标签',
-    }),
+    })
   ),
 })
 
@@ -195,8 +228,10 @@ const jiraAddResInfo = Type.Object({
       label: Type.String(),
       required: Type.Boolean(),
       editHtml: Type.String(),
-    }),
+    })
   ),
+  errorMessages: Type.Optional(Type.Array(Type.String())),
+  errors: Type.Optional(Type.Any()),
 })
 
 export type JiraAddResInfoType = Static<typeof jiraAddResInfo>
@@ -235,24 +270,26 @@ const JiraSearchResponse = Type.Object({
         fixVersions: Type.Array(
           Type.Object({
             name: Type.String(),
-          }),
+          })
         ),
         labels: Type.Array(Type.String()),
         // 自定义字段
-        'customfield_10000': Type.Optional(
+        customfield_10000: Type.Optional(
           Type.Object({
             value: Type.String(),
             id: Type.Number(),
-          }),
+          })
         ),
-        customFieldCode: Type.Optional(Type.Number({ description: '自定义的客户名称code' })),
+        customFieldCode: Type.Optional(
+          Type.Number({ description: '自定义的客户名称code' })
+        ),
         created: Type.String(),
         summary: Type.String(),
         status: Type.Object({
           name: Type.String(),
         }),
       }),
-    }),
+    })
   ),
 })
 
@@ -269,4 +306,3 @@ export const JiraSearchSchema = {
 }
 
 export type JiraSearchResponseType = Static<typeof JiraSearchResponse>
-
