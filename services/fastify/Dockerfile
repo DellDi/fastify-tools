@@ -19,6 +19,10 @@ COPY pnpm-workspace.yaml package.json ./
 # 复制服务目录
 COPY services/fastify ./services/fastify
 
+# 确保启动脚本存在并可执行
+RUN ls -la /app/services/fastify/
+RUN test -f /app/services/fastify/docker-start.sh && echo "Script exists" || echo "Script NOT found"
+
 # 安装依赖
 RUN pnpm install
 
@@ -32,4 +36,4 @@ WORKDIR /app/services/fastify
 EXPOSE 3000
 
 # Command to run the application
-CMD ["./docker-start.sh"]
+CMD ["sh", "/app/services/fastify/docker-start.sh"]

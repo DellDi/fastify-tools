@@ -19,6 +19,10 @@ COPY pnpm-workspace.yaml package.json ./
 # 复制 Next.js 项目目录
 COPY packages/shadcn-next ./packages/shadcn-next
 
+# 确保启动脚本存在并可执行
+RUN ls -la /app/packages/shadcn-next/
+RUN test -f /app/packages/shadcn-next/docker-start.sh && echo "Script exists" || echo "Script NOT found"
+
 # 安装依赖
 RUN pnpm install
 
@@ -46,4 +50,4 @@ RUN pnpm run build
 EXPOSE 3001
 
 # Command to run the application
-CMD ["./docker-start.sh"]
+CMD ["sh", "/app/packages/shadcn-next/docker-start.sh"]
