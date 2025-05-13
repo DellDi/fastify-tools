@@ -11,6 +11,9 @@ const schema = Type.Object({
   // 数据库连接字符串
   DATABASE_URL: Type.String(),
 
+  // API 前缀
+  API_PREFIX: Type.Optional(Type.String({ default: '' })),
+
   // SMTP 配置（设为可选）
   SMTP_HOST: Type.Optional(Type.String()),
   SMTP_PORT: Type.Optional(Type.Number()),

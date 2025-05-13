@@ -41,6 +41,8 @@ services:
     environment:
       - NODE_ENV=${NODE_ENV:-production}
       - PORT=3100
+      # API 前缀配置（生产环境使用 /fastify，开发环境留空）
+      - API_PREFIX=${API_PREFIX:-/fastify}
       # 数据库连接配置
       - DATABASE_URL=${FASTIFY_DATABASE_URL:-postgresql://postgres:postgres@postgres:5432/fastify_db}
       - POSTGRES_HOST=postgres
@@ -58,7 +60,7 @@ services:
       dockerfile: packages/shadcn-next/Dockerfile
       args:
         NEXT_PUBLIC_BASE_PATH: /next
-        NEXT_PUBLIC_API_URL: /fastify
+        NEXT_PUBLIC_API_URL: ${API_PREFIX:-/fastify}
         NEXT_PUBLIC_FAST_API_URL: https://poc.new-see.com:88
         NEXT_PUBLIC_FAST_API_KEY: ${NEXT_PUBLIC_FAST_API_KEY:-your_fastapi_key}
     container_name: shadcn-next
