@@ -78,13 +78,6 @@ export default fp(async (fastify) => {
 
   fastify.log.info('成功注册 Swagger UI')
 
-  // 使用前面定义的 openApiJsonPath
-
-  // 注册 OpenAPI JSON 路由
-  fastify.get(openApiJsonPath, (request, reply) => {
-    reply.send(fastify.swagger())
-  })
-
   // 注册 Scalar API Reference
   await fastify.register(scalarReference, {
     routePrefix: '/reference', // 使用不同的路由前缀
