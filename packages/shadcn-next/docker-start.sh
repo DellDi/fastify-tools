@@ -15,7 +15,7 @@ npx prisma migrate deploy
 
 # 生成 Prisma Client
 # 只检查客户端目录是否存在
-if [ ! -d "../generated/client" ]; then
+if [ ! -d "./generated/client" ]; then
   echo "🔧 生成 Prisma Client..."
   npx prisma generate
 else
