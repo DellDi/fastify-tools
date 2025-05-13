@@ -8,7 +8,7 @@ import { baseFetch, isServerEnvironment } from './baseFetch'
  */
 export const fastifyFetch = async (url: string, options: RequestInit = {}) => {
     // 后端调用地址
-    const baseFastifyApiUrl = process.env.NEXT_PUBLIC_FASTIFY_API || ''
+    const baseFastifyApiUrl = process.env.SERVER_FASTIFY_API || ''
     // 前端调用地址
     const baseApiUrl = process.env.NEXT_PUBLIC_API_URL || ''
 

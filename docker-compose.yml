@@ -69,7 +69,7 @@ services:
       - '${EXPORT_NEXT_PORT:-4001}:3200'
     environment:
       - NODE_ENV=${NODE_ENV:-production}
-      - NEXT_PUBLIC_FASTIFY_API=http://fastify:3000
+      - SERVER_FASTIFY_API=${SERVER_FASTIFY_API:-http://fastify:3100}
       # 数据库连接配置
       - DATABASE_URL=${NEXT_DATABASE_URL:-postgresql://postgres:postgres@postgres:5432/shadcn_next}
       - JWT_SECRET=${JWT_SECRET:?JWT_SECRET is required}
