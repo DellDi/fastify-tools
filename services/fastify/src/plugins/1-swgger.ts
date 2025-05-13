@@ -8,8 +8,6 @@ export default fp(async (fastify) => {
 
   // 自定义路径常量
   const customApiDocsPath = '/docs'
-  const customJsonPath = 'openapi.json'
-
   // 注册 swagger
   await fastify.register(swagger, {
     openapi: {
@@ -19,12 +17,6 @@ export default fp(async (fastify) => {
         description: 'Dell DI the Fastify swagger API',
         version: '0.1.0'
       },
-      servers: [
-        {
-          url: 'http://localhost:3000',
-          description: 'Development server'
-        }
-      ],
       components: {
         securitySchemes: {
           apiKey: {
@@ -48,17 +40,9 @@ export default fp(async (fastify) => {
     uiConfig: {
       docExpansion: 'list',
       deepLinking: true,
-      // 指定自定义的 JSON URL 路径
-      url: `/${customJsonPath}`
     },
     staticCSP: true,
     transformStaticCSP: (header) => header
-  })
-
-  // 自定义 Swagger JSON 路径
-  // 这会覆盖默认的 /documentation/json 路径
-  fastify.get(`/${customJsonPath}`, {}, (req, reply) => {
-    reply.send(fastify.swagger())
   })
 
   fastify.log.info('成功注册 Swagger UI')
@@ -69,8 +53,6 @@ export default fp(async (fastify) => {
     configuration: {
       theme: 'purple',
       title: 'Dell DI 的API文档',
-      // 指向自定义的 JSON 路径
-      url: `/${customJsonPath}`
     },
   })
   fastify.log.info('成功注册 Scalar API Reference')
