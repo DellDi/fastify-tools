@@ -7,8 +7,23 @@ import { baseFetch } from './baseFetch'
  * @returns 响应数据
  */
 export const fetchBase = async (url: string, options: RequestInit = {}) => {
-  // 客户端环境直接使用相对URL
-  return baseFetch(url, '', options)
+  const isServer = typeof window === 'undefined'
+  
+  // 获取 basePath 前缀
+  let basePath = ''
+  
+  // 客户端环境下需要考虑 basePath
+  if (!isServer) {
+    basePath = (window as any).__NEXT_DATA__?.basePath || process.env.NEXT_PUBLIC_BASE_PATH || ''
+  } 
+  // 服务端环境下，对内部 API 路由不需要 basePath
+  else if (!url.startsWith('/api/')) {
+    // 非内部 API 路由可能需要 basePath
+    basePath = process.env.NEXT_PUBLIC_BASE_PATH || ''
+  }
+  
+  // 确保 URL 正确拼接 basePath
+  return baseFetch(url, basePath, options)
 }
 
 /**

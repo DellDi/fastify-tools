@@ -31,7 +31,7 @@ closeWithGrace(
 )
 
 // Start listening.
-app.listen({ host: '0.0.0.0', port: parseInt(process.env.PORT || '8888') }, (err) => {
+app.listen({ host: '0.0.0.0', port: parseInt(process.env.PORT || '3100') }, (err) => {
   if (err) {
     app.log.error(err)
     process.exit(1)

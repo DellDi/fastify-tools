@@ -42,12 +42,14 @@ ARG BASE_FASTIFY_API_URL
 ENV BASE_FASTIFY_API_URL=${BASE_FASTIFY_API_URL}
 ARG NEXT_PUBLIC_FAST_API_URL
 ENV NEXT_PUBLIC_FAST_API_URL=${NEXT_PUBLIC_FAST_API_URL}
+ARG NEXT_PUBLIC_FAST_API_KEY
+ENV NEXT_PUBLIC_FAST_API_KEY=${NEXT_PUBLIC_FAST_API_KEY}
 
 # Build the application
 RUN pnpm run build
 
 # Expose the port the app runs on
-EXPOSE 3001
+EXPOSE 3200
 
 # Command to run the application
 CMD ["sh", "/app/packages/shadcn-next/docker-start.sh"]

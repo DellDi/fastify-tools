@@ -37,9 +37,10 @@ services:
     container_name: fastify-service
     restart: unless-stopped
     ports:
-      - '${FASTIFY_PORT:-4000}:3000'
+      - '${EXPORT_FASTIFY_PORT:-4000}:3100'
     environment:
       - NODE_ENV=${NODE_ENV:-production}
+      - PORT=3100
       # 数据库连接配置
       - DATABASE_URL=${FASTIFY_DATABASE_URL:-postgresql://postgres:postgres@postgres:5432/fastify_db}
       - POSTGRES_HOST=postgres
@@ -59,13 +60,14 @@ services:
         NEXT_PUBLIC_BASE_PATH: /next
         NEXT_PUBLIC_API_URL: /fastify
         NEXT_PUBLIC_FAST_API_URL: https://poc.new-see.com:88
+        NEXT_PUBLIC_FAST_API_KEY: ${NEXT_PUBLIC_FAST_API_KEY:-your_fastapi_key}
     container_name: shadcn-next
     restart: unless-stopped
     ports:
-      - '${NEXT_PORT:-4001}:3001'
+      - '${EXPORT_NEXT_PORT:-4001}:3200'
     environment:
       - NODE_ENV=${NODE_ENV:-production}
-      - BASE_FASTIFY_API_URL=http://fastify:3000
+      - BASE_FASTIFY_API_URL=http://fastify:3100
       # 数据库连接配置
       - DATABASE_URL=${NEXT_DATABASE_URL:-postgresql://postgres:postgres@postgres:5432/shadcn_next}
       - JWT_SECRET=${JWT_SECRET:?JWT_SECRET is required}

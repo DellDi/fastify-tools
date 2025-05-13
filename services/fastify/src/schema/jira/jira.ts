@@ -293,15 +293,22 @@ const JiraSearchResponse = Type.Object({
   ),
 })
 
+// 定义更详细的错误响应类型
+const JiraErrorResponse = Type.Object({
+  error: Type.String(),
+  message: Type.Optional(Type.String()),
+  statusCode: Type.Optional(Type.Number()),
+  details: Type.Optional(Type.Any())
+})
+
 export const JiraSearchSchema = {
   description: 'Search Jira tickets',
   tags: ['jira'],
   body: JiraSearchBody,
   response: {
     200: JiraSearchResponse,
-    500: Type.Object({
-      error: Type.Any(),
-    }),
+    500: JiraErrorResponse,
+    502: JiraErrorResponse
   },
 }
 
