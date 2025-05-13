@@ -1,3 +1,5 @@
+"use server"
+
 import { prisma } from '../prisma'
 import type { HomeSection } from '../../generated/client'
 
@@ -15,7 +17,7 @@ export async function getAllSections(): Promise<Section[]> {
     })
     return sections
   } catch (error) {
-    console.error('获取区块数据失败:', error)
+    console.error('⛔⛔⛔⛔⛔⛔⛔⛔⛔⛔⛔⛔⛔⛔⛔⛔获取区块数据失败:⛔⛔⛔⛔⛔⛔⛔⛔⛔⛔⛔⛔', error)
     return []
   }
 }
@@ -30,7 +32,7 @@ export async function getSectionById(id: bigint): Promise<Section | null> {
     })
     return section
   } catch (error) {
-    console.error(`获取区块(ID: ${id})失败:`, error)
+    console.error(`⛔⛔⛔⛔⛔⛔⛔⛔⛔⛔⛔⛔⛔⛔⛔⛔获取区块(ID: ${id})失败:⛔⛔⛔⛔⛔⛔⛔⛔⛔⛔⛔⛔`, error)
     return null
   }
 }
@@ -45,7 +47,7 @@ export async function createSection(data: Omit<Section, 'id' | 'createdAt' | 'up
     })
     return section
   } catch (error) {
-    console.error('创建区块失败:', error)
+    console.error('⛔⛔⛔⛔⛔⛔⛔⛔⛔⛔⛔⛔⛔⛔⛔⛔创建区块失败:⛔⛔⛔⛔⛔⛔⛔⛔⛔⛔⛔⛔', error)
     return null
   }
 }
@@ -61,7 +63,7 @@ export async function updateSection(id: bigint, data: Partial<Omit<Section, 'id'
     })
     return section
   } catch (error) {
-    console.error(`更新区块(ID: ${id})失败:`, error)
+    console.error(`⛔⛔⛔⛔⛔⛔⛔⛔⛔⛔⛔⛔⛔⛔⛔⛔更新区块(ID: ${id})失败:⛔⛔⛔⛔⛔⛔⛔⛔⛔⛔⛔⛔`, error)
     return null
   }
 }
@@ -77,7 +79,7 @@ export async function deleteSection(id: bigint): Promise<boolean> {
     })
     return true
   } catch (error) {
-    console.error(`删除区块(ID: ${id})失败:`, error)
+    console.error(`⛔⛔⛔⛔⛔⛔⛔⛔⛔⛔⛔⛔⛔⛔⛔⛔删除区块(ID: ${id})失败:⛔⛔⛔⛔⛔⛔⛔⛔⛔⛔⛔⛔`, error)
     return false
   }
 }
@@ -93,7 +95,7 @@ export async function createManySections(data: Omit<Section, 'id' | 'createdAt' 
     })
     return result.count
   } catch (error) {
-    console.error('批量创建区块失败:', error)
+    console.error('⛔⛔⛔⛔⛔⛔⛔⛔⛔⛔⛔⛔⛔⛔⛔⛔批量创建区块失败:⛔⛔⛔⛔⛔⛔⛔⛔⛔⛔⛔⛔', error)
     return 0
   }
 }

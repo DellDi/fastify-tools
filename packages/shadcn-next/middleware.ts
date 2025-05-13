@@ -1,81 +1,98 @@
 import { type NextRequest, NextResponse } from 'next/server'
-import { forbidden } from 'next/navigation'
 import { updateSession, verifyAuth } from '@/utils/auth/middleware'
 import {
   isWhiteRoute,
   isUpSessionRoute,
   isPublicApiRoute,
-  isUserApiRoute
+  isUserApiRoute,
+  isAdminApiRoute
 } from '@/utils/auth/config'
-import { checkRoutePermission } from './app/actions/menu-actions'
+
+// 用户认证信息类型
+interface AuthResult {
+  id: string
+  email: string
+  role?: string
+  [key: string]: any
+}
 
 export async function middleware(req: NextRequest) {
   try {
     const { pathname } = req.nextUrl
+    const basePath = process.env.NEXT_PUBLIC_BASE_PATH || ''
 
-    // 输出详细的请求信息便于调试
-    console.log(`
-🔍 中间件收到请求: ${pathname}`)
-    console.log(`🍪 Cookies: ${req.cookies.getAll().map(c => c.name).join(', ') || '无'}`)
-    console.log(`🔒 Auth Cookie: ${req.cookies.get('auth_token')?.value ? '存在' : '不存在'}`)
-    console.log(`📣 Headers: ${JSON.stringify([...req.headers.entries()].slice(0, 5))}`)
+    // 判断是否是数据请求
+    const isDataRequest = () => {
+      const accept = req.headers.get('accept') || ''
+      return (
+        accept.includes('application/json') ||
+        req.headers.get('x-requested-with') === 'XMLHttpRequest' ||
+        pathname.startsWith('/api/') ||
+        pathname.includes('.json') ||
+        pathname.includes('/_next/data/')
+      )
+    }
 
-    // 1. 检查白名单路由 - 直接放行
+    // 日志过滤
+    const shouldLog = !['/.well-known', '/_next', '/favicon.ico', '/images', '/assets', '/fonts']
+      .some(p => pathname.startsWith(p))
+
+    if (shouldLog) {
+      console.log(`🔍 请求: ${pathname} ${isDataRequest() ? '[数据]' : '[页面]'}`)
+    }
+
+    // 1. 白名单路由直接放行
     if (isWhiteRoute(pathname)) {
-      console.log(`✅ 白名单路由放行: ${pathname}`)
+      shouldLog && console.log(`✅ 白名单路由: ${pathname}`)
       return NextResponse.next()
     }
 
-    // 2. 检查公共 API 路由 - 直接放行
+    // 2. 公共API路由直接放行
     if (isPublicApiRoute(pathname)) {
-      console.log(`✅ 公共API路由放行: ${pathname}`)
+      shouldLog && console.log(`✅ 公共API: ${pathname}`)
       return NextResponse.next()
     }
 
-    // 3. 检查是否需要更新 session
+    // 3. 更新会话路由
     if (isUpSessionRoute(pathname)) {
-      console.log(`🔄 更新Session路由: ${pathname}`)
+      shouldLog && console.log(`🔄 更新会话: ${pathname}`)
       return updateSession(req)
     }
 
-    // 4. 验证用户身份 - 所有需要认证的路由
-    const authResult = await verifyAuth(req)
-    console.log(`🔑 认证结果: ${authResult ? '成功' : '失败'}`)
+    // 4. 用户认证
+    const authResult = await verifyAuth(req) as AuthResult | false
+    shouldLog && console.log(`🔑 认证: ${authResult ? '成功' : '失败'}`)
 
     if (!authResult) {
       // 认证失败处理
-      if (isUserApiRoute(pathname)) {
-        // API 路由返回 JSON 错误
-        console.log(`⛔ API认证失败，返回401状态码`)
-        return NextResponse.json(
-          { error: '未授权访问', code: 401 },
-          { status: 401 }
-        )
+      if (isDataRequest() || isUserApiRoute(pathname)) {
+        // 数据请求返回JSON错误
+        return NextResponse.json({ error: '未授权', code: 401 }, { status: 401 })
       } else {
-        // 非 API 路由重定向到登录页
-        const loginUrl = new URL('/login', req.url)
+        // 页面请求重定向到登录页
+        const loginUrl = new URL(`${basePath}/login`, req.url)
         loginUrl.searchParams.set('from', pathname)
-        console.log(`⛔ 认证失败，重定向到: ${loginUrl.toString()}`)
-        return NextResponse.redirect(loginUrl)
+
+        const response = NextResponse.redirect(loginUrl)
+        response.headers.set('Cache-Control', 'no-store')
+        return response
       }
     }
 
-    // 5. 认证成功，检查权限（如果需要）
-    console.log(`✅ 认证成功: ${authResult}`)
+    // 5. 权限检查
+    if (isAdminApiRoute(pathname)) {
+      const isAdmin = authResult.role === '管理员' || authResult.role === 'admin'
 
-    // 如果不是 API 路由，可以在这里检查菜单权限
-    if (!pathname.startsWith('/api/')) {
-      // 简化版本不检查具体权限，只要用户已登录就放行
-      // 实际权限检查可以在这里实现
+      if (!isAdmin) {
+        shouldLog && console.log(`⛔ 禁止访问: 需要管理员权限`)
+        return NextResponse.json({ error: '无权限', code: 403 }, { status: 403 })
+      }
     }
 
     // 放行请求
     return NextResponse.next()
-
   } catch (error) {
-    // 错误处理
-    console.error(`❌ 中间件错误:`, error)
-    // 发生错误时返回默认响应，避免完全阻止访问
+    console.error(`❗ 中间件错误:`, error)
     return NextResponse.next()
   }
 }

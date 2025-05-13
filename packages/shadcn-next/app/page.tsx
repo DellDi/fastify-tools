@@ -1,3 +1,5 @@
+"use server"
+
 import ClientHeader from '@/components/custom/ClientHeader'
 import { MarqueeDemoVertical } from '@/components/custom/base/banner-list'
 import {
@@ -7,6 +9,7 @@ import {
   MotionSection,
 } from '@/components/custom/base/motion-list'
 import { getAllSections, type Section } from '@/lib/db'
+import { toast } from 'sonner'
 
 // 静态渲染
 async function getData(): Promise<{ data: Section[]; error: string | null }> {
@@ -14,8 +17,9 @@ async function getData(): Promise<{ data: Section[]; error: string | null }> {
     const sections = await getAllSections()
     return { data: sections, error: null }
   } catch (error) {
-    console.error('获取首页数据失败:', error)
-    return { data: [], error: '获取数据失败，请稍后再试' }
+    console.error('⛔⛔⛔⛔⛔⛔⛔⛔⛔⛔⛔⛔⛔⛔⛔⛔获取首页数据失败:⛔⛔⛔⛔⛔⛔⛔⛔⛔⛔⛔⛔', error)
+    toast.error(`⛔获取数据失败，请稍后再试${error}`)
+    return { data: [], error: '⛔⛔⛔⛔⛔⛔⛔⛔⛔⛔⛔⛔⛔⛔⛔⛔获取数据失败，请稍后再试' }
   }
 }
 
@@ -38,8 +42,8 @@ export default async function Home() {
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
             {sections.map((section) => (
-              <MotionSection 
-                key={String(section.id)} 
+              <MotionSection
+                key={String(section.id)}
                 className={`p-6 rounded-lg ${section.gradient}`}
               >
                 <MotionHeading className="text-2xl font-bold mb-4">

@@ -15,7 +15,11 @@ const navLinks = [
   { href: '#', label: '模型实例' },
   { href: '/changelog/list', label: '更新日志' },
   { href: '/password/newsee', label: '解密' },
-  { href: 'https://github.com/DellDi', label: 'GitHub', icon: <GithubIcon className="h-5 w-5 dark:border-2 bg-white rounded-xl"/> },
+  {
+    href: 'https://github.com/DellDi',
+    label: 'GitHub',
+    icon: <GithubIcon className="h-5 w-5 dark:border-2 bg-white rounded-xl" />,
+  },
 ]
 
 export default function ClientHeader() {
@@ -31,13 +35,17 @@ export default function ClientHeader() {
   }
 
   return (
-    <header
-      className="sticky top-0 z-50 w-full backdrop-blur-md bg-white/50 dark:bg-gray-900/50 border-b border-gray-200 dark:border-gray-800">
+    <header className="sticky top-0 z-50 w-full backdrop-blur-md bg-white/50 dark:bg-gray-900/50 border-b border-gray-200 dark:border-gray-800">
       <div className="container mx-auto px-4">
         <div className="flex justify-between items-center py-4">
           <Link href="/" className="flex items-center space-x-2">
-            <Image src="https://avatars.githubusercontent.com/u/40460351?v=4" width={32}
-                   height={32} alt="Next Full Stack" className="h-8 w-8 rounded-full"/>
+            <Image
+              src="/public/img/delldi-logo.png"
+              width={32}
+              height={32}
+              alt="Next Full Stack"
+              className="h-8 w-8 rounded-full"
+            />
             <span className="text-xl font-bold bg-clip-text text-transparent bg-linear-to-r from-blue-500 to-purple-600">
               Next Full Stack
             </span>
@@ -63,14 +71,18 @@ export default function ClientHeader() {
           </nav>
 
           <div className="flex items-center space-x-2">
-            <ToggleTheme/>
+            <ToggleTheme />
             <Button
               variant="ghost"
               size="icon"
               className="md:hidden"
               onClick={() => setMenuOpen(!menuOpen)}
             >
-              {menuOpen ? <X className="h-5 w-5"/> : <Menu className="h-5 w-5"/>}
+              {menuOpen ? (
+                <X className="h-5 w-5" />
+              ) : (
+                <Menu className="h-5 w-5" />
+              )}
             </Button>
           </div>
         </div>

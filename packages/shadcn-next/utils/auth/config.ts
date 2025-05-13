@@ -10,12 +10,16 @@ export const whiteRoutes = [
   '/auth',
   '/auth/callback',
 
-  // 静态资源
-  '/_next',
-  '/fonts',
+  // 静态资源 - 使用通配符表示前缀匹配
+  '/_next/*',
+  '/fonts/*',
   '/favicon.ico',
-  '/images',
-  '/assets',
+  '/images/*',
+  '/assets/*',
+  '/.well-known/*',
+
+  // 测试路由
+  '/test/*'
 ]
 
 // 公共 API 端点，无需身份验证
@@ -50,29 +54,45 @@ export const sessionUpdateRoutes = [
   '/api/auth/logout',
 ]
 
+// 通用路由匹配函数
+function matchRoute(pathname: string, routes: string[]): boolean {
+  return routes.some(route => {
+    // 通配符路径匹配
+    if (route.endsWith('*')) {
+      return pathname.startsWith(route.slice(0, -1))
+    }
+    // 根路径匹配
+    if (route === '/' && pathname === '/') {
+      return true
+    }
+    // 精确匹配
+    return pathname === route
+  })
+}
+
 // 检查是否为白名单路由
 export function isWhiteRoute(pathname: string): boolean {
-  return whiteRoutes.some(route => pathname.endsWith(route))
+  return matchRoute(pathname, whiteRoutes)
 }
 
 // 检查是否为公共 API 路由
 export function isPublicApiRoute(pathname: string): boolean {
-  return publicApiRoutes.some(route => pathname.endsWith(route))
+  return matchRoute(pathname, publicApiRoutes)
 }
 
 // 检查是否为需要用户认证的 API 路由
 export function isUserApiRoute(pathname: string): boolean {
-  return userApiRoutes.some(route => pathname.endsWith(route))
+  return matchRoute(pathname, userApiRoutes)
 }
 
 // 检查是否为需要管理员权限的 API 路由
 export function isAdminApiRoute(pathname: string): boolean {
-  return adminApiRoutes.some(route => pathname.endsWith(route))
+  return matchRoute(pathname, adminApiRoutes)
 }
 
 // 检查是否为需要更新 session 的路由
 export function isUpSessionRoute(pathname: string): boolean {
-  return sessionUpdateRoutes.some(route => pathname.endsWith(route))
+  return matchRoute(pathname, sessionUpdateRoutes)
 }
 
 // JWT配置
