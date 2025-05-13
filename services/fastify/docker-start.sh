@@ -12,8 +12,13 @@ echo "🔄 执行数据库迁移..."
 npx prisma migrate deploy
 
 # 生成 Prisma Client
-echo "🔧 生成 Prisma Client..."
-npx prisma generate
+# 只检查客户端目录是否存在
+if [ ! -d "./generated/client" ]; then
+  echo "🔧 生成 Prisma Client..."
+  npx prisma generate
+else
+  echo "🔧 Prisma Client 已存在，跳过生成步骤..."
+fi
 
 # 执行种子数据
 echo "🌱 执行种子数据..."

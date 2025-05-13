@@ -26,6 +26,9 @@ RUN test -f /app/services/fastify/docker-start.sh && echo "Script exists" || ech
 # 安装依赖
 RUN pnpm install
 
+# 生成 Prisma 客户端
+RUN npx prisma generate
+
 # 添加执行权限到启动脚本
 RUN chmod +x services/fastify/docker-start.sh
 

@@ -45,6 +45,9 @@ ENV NEXT_PUBLIC_FAST_API_URL=${NEXT_PUBLIC_FAST_API_URL}
 ARG NEXT_PUBLIC_FAST_API_KEY
 ENV NEXT_PUBLIC_FAST_API_KEY=${NEXT_PUBLIC_FAST_API_KEY}
 
+# 生成 Prisma 客户端
+RUN npx prisma generate
+
 # Build the application
 RUN pnpm run build
 
