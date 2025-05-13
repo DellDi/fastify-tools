@@ -9,7 +9,7 @@
   "scripts": {
     "dev": "concurrently -n \"NEXT,ANOTHER\" -c \"blue,green\" \"next dev -p 3001 --turbopack\"",
     "build": "next build",
-    "start": "next start -p 3001",
+    "start": "next start -p 3200",
     "lint": "next lint",
     "prisma:generate": "npx prisma generate",
     "prisma:migrate:dev": "npx prisma migrate dev",

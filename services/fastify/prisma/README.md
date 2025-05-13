@@ -26,7 +26,7 @@ npx prisma init
 在 `.env` 文件中添加 Prisma 数据库连接 URL：
 
 ```
-DATABASE_URL="postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@${POSTGRES_HOST}:${POSTGRES_PORT}/${POSTGRES_DB}"
+DATABASE_URL="postgresql://postgres:postgres@localhost:5432/fastify_db"
 ```
 
 ### 4. 创建 Prisma 模型

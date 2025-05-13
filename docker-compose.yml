@@ -37,9 +37,12 @@ services:
     container_name: fastify-service
     restart: unless-stopped
     ports:
-      - '${FASTIFY_PORT:-4000}:3000'
+      - '${EXPORT_FASTIFY_PORT:-4000}:3100'
     environment:
       - NODE_ENV=${NODE_ENV:-production}
+      - PORT=3100
+      # API 前缀配置（生产环境使用 /fastify，开发环境留空）
+      - API_PREFIX=${API_PREFIX:-/fastify}
       # 数据库连接配置
       - DATABASE_URL=${FASTIFY_DATABASE_URL:-postgresql://postgres:postgres@postgres:5432/fastify_db}
       - POSTGRES_HOST=postgres
@@ -57,12 +60,13 @@ services:
       dockerfile: packages/shadcn-next/Dockerfile
       args:
         NEXT_PUBLIC_BASE_PATH: /next
-        NEXT_PUBLIC_API_URL: /fastify
+        NEXT_PUBLIC_API_URL: ${API_PREFIX:-/fastify}
         NEXT_PUBLIC_FAST_API_URL: https://poc.new-see.com:88
+        NEXT_PUBLIC_FAST_API_KEY: ${NEXT_PUBLIC_FAST_API_KEY:-your_fastapi_key}
     container_name: shadcn-next
     restart: unless-stopped
     ports:
-      - '${NEXT_PORT:-4001}:3001'
+      - '${EXPORT_NEXT_PORT:-4001}:3200'
     environment:
       - NODE_ENV=${NODE_ENV:-production}
       - NEXT_PUBLIC_FASTIFY_API=http://fastify:3000
@@ -73,6 +77,12 @@ services:
       - JIRA_PASSWORD=${JIRA_PASSWORD:?JIRA_PASSWORD is required}
       - POSTGRES_HOST=postgres
       - POSTGRES_PORT=5432
+      # 邮箱服务
+      - SMTP_HOST=${SMTP_HOST}
+      - SMTP_PORT=${SMTP_PORT}
+      - SMTP_USER=${SMTP_USER}
+      - SMTP_PASS=${SMTP_PASS}
+      - SMTP_SECURE=${SMTP_SECURE}
     depends_on:
       - postgres
       - fastify
