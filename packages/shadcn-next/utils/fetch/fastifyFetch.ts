@@ -8,21 +8,21 @@ import { baseFetch, isServerEnvironment } from './baseFetch'
  */
 export const fastifyFetch = async (url: string, options: RequestInit = {}) => {
     // 后端调用地址
-    const baseFastifyApiUrl = process.env.BASE_FASTIFY_API_URL || ''
+    const baseFastifyApiUrl = process.env.NEXT_PUBLIC_FASTIFY_API || ''
     // 前端调用地址
     const baseApiUrl = process.env.NEXT_PUBLIC_API_URL || ''
-    
+
     // 根据环境选择基础URL
     const baseUrl = isServerEnvironment() ? baseFastifyApiUrl : baseApiUrl
-    
+
     // 判断是否是 FormData 类型的请求体
     const isFormData = options.body instanceof FormData
-    
+
     // 只有当请求体不是 FormData 时，才添加 JSON 内容类型头
-    const defaultHeaders: Record<string, string> = isFormData 
+    const defaultHeaders: Record<string, string> = isFormData
         ? {} // FormData 类型不设置 Content-Type，让浏览器自动设置带边界的值
         : { 'Content-Type': 'application/json' }
-    
+
     return baseFetch(url, baseUrl, options, defaultHeaders)
 }
 
@@ -34,11 +34,11 @@ export const createFastifySWRFetcher = (defaultOptions: RequestInit = {}) => {
         // 支持 useSWR 的键值对形式，如 [url, params]
         let url: string
         let options = { ...defaultOptions }
-        
+
         if (Array.isArray(key)) {
             url = key[0]
             const params = key[1]
-            
+
             // 如果第二个参数是对象，将其作为请求体或查询参数
             if (params && typeof params === 'object') {
                 if (options.method === 'GET' || !options.method) {
@@ -65,7 +65,7 @@ export const createFastifySWRFetcher = (defaultOptions: RequestInit = {}) => {
         } else {
             url = key
         }
-        
+
         return fastifyFetch(url, options)
     }
 }
