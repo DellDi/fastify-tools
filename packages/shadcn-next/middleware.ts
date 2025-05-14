@@ -20,6 +20,12 @@ export async function middleware(req: NextRequest) {
   try {
     const { pathname } = req.nextUrl
     const basePath = process.env.NEXT_PUBLIC_BASE_PATH || ''
+    
+    // 移除 basePath 前缀，确保路径匹配正确
+    const normalizedPath = basePath ? pathname.replace(new RegExp(`^${basePath}`), '') : pathname
+    
+    // 调试日志
+    console.log(`🔍 中间件处理: 原始路径=${pathname}, 基础路径=${basePath}, 规范化路径=${normalizedPath}`)
 
     // 判断是否是数据请求
     const isDataRequest = () => {
@@ -35,27 +41,27 @@ export async function middleware(req: NextRequest) {
 
     // 日志过滤
     const shouldLog = !['/.well-known', '/_next', '/favicon.ico', '/images', '/assets', '/fonts']
-      .some(p => pathname.startsWith(p))
+      .some(p => normalizedPath.startsWith(p))
 
     if (shouldLog) {
       console.log(`🔍 请求: ${pathname} ${isDataRequest() ? '[数据]' : '[页面]'}`)
     }
 
     // 1. 白名单路由直接放行
-    if (isWhiteRoute(pathname)) {
-      shouldLog && console.log(`✅ 白名单路由: ${pathname}`)
+    if (isWhiteRoute(normalizedPath)) {
+      shouldLog && console.log(`✅ 白名单路由: ${normalizedPath} (原始: ${pathname})`)
       return NextResponse.next()
     }
 
     // 2. 公共API路由直接放行
-    if (isPublicApiRoute(pathname)) {
-      shouldLog && console.log(`✅ 公共API: ${pathname}`)
+    if (isPublicApiRoute(normalizedPath)) {
+      shouldLog && console.log(`✅ 公共API: ${normalizedPath} (原始: ${pathname})`)
       return NextResponse.next()
     }
 
     // 3. 更新会话路由
-    if (isUpSessionRoute(pathname)) {
-      shouldLog && console.log(`🔄 更新会话: ${pathname}`)
+    if (isUpSessionRoute(normalizedPath)) {
+      shouldLog && console.log(`🔄 更新会话: ${normalizedPath} (原始: ${pathname})`)
       return updateSession(req)
     }
 
@@ -65,13 +71,13 @@ export async function middleware(req: NextRequest) {
 
     if (!authResult) {
       // 认证失败处理
-      if (isDataRequest() || isUserApiRoute(pathname)) {
+      if (isDataRequest() || isUserApiRoute(normalizedPath)) {
         // 数据请求返回JSON错误
         return NextResponse.json({ error: '未授权', code: 401 }, { status: 401 })
       } else {
         // 页面请求重定向到登录页
         const loginUrl = new URL(`${basePath}/login`, req.url)
-        loginUrl.searchParams.set('from', pathname)
+        loginUrl.searchParams.set('from', normalizedPath)
 
         const response = NextResponse.redirect(loginUrl)
         response.headers.set('Cache-Control', 'no-store')
@@ -80,7 +86,7 @@ export async function middleware(req: NextRequest) {
     }
 
     // 5. 权限检查
-    if (isAdminApiRoute(pathname)) {
+    if (isAdminApiRoute(normalizedPath)) {
       const isAdmin = authResult.role === '管理员' || authResult.role === 'admin'
 
       if (!isAdmin) {

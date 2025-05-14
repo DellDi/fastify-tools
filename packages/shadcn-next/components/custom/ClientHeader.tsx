@@ -12,7 +12,7 @@ import { GithubIcon } from '@/components/custom/base/custom-icon'
 const navLinks = [
   { href: '/dashboard', label: '首页' },
   { href: '/login', label: '登录' },
-  { href: '#', label: '模型实例' },
+  { href: '/aigc/model', label: '模型调优' },
   { href: '/changelog/list', label: '更新日志' },
   { href: '/password/newsee', label: '解密' },
   {
@@ -40,7 +40,7 @@ export default function ClientHeader() {
         <div className="flex justify-between items-center py-4">
           <Link href="/" className="flex items-center space-x-2">
             <Image
-              src="/public/img/delldi-logo.png"
+              src="/img/delldi-logo.png"
               width={32}
               height={32}
               alt="Next Full Stack"
