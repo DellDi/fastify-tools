@@ -69,12 +69,12 @@ export async function POST(request: Request) {
     // 在开发环境中使用最宽松的 cookies 设置，确保可以正常工作
     // 添加详细调试信息
     console.log('登录成功，准备设置 cookies，令牌值：', token)
-    
+
     // 判断环境
     const isProduction = process.env.NODE_ENV === 'production'
-    
+
     // 使用三种方式设置 cookies，确保至少有一种能成功
-    
+
     // 1. 使用 NextResponse cookies API
     response.cookies.set({
       name: 'auth_token',
@@ -85,11 +85,11 @@ export async function POST(request: Request) {
       path: '/',
       maxAge: 60 * 60 * 24 * 7 // 7 天
     })
-    
+
     // 2. 使用原生 Set-Cookie 头
     const cookieValue = `auth_token=${String(token)}; Path=/; Max-Age=${60 * 60 * 24 * 7}; SameSite=Lax; ${isProduction ? 'Secure;' : ''} HttpOnly=false`
     response.headers.set('Set-Cookie', cookieValue)
-    
+
     // 3. 在响应中包含 token，供前端手动存储
     console.log('已设置 cookies，请检查浏览器 cookies 存储')
     return response
