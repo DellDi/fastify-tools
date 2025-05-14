@@ -1,4 +1,6 @@
-'use server'
+export const revalidate = 60 // 每60秒重新验证数据
+export const dynamic = 'force-dynamic'
+
 
 import ClientHeader from '@/components/custom/ClientHeader'
 import { MarqueeDemoVertical } from '@/components/custom/base/banner-list'
@@ -13,10 +15,7 @@ import { toast } from 'sonner'
 
 // 静态渲染
 async function getData(): Promise<{ data: Section[]; error: string | null }> {
-  console.log(
-    'getData 函数被调用，当前 URL:',
-    process.env.NEXT_PUBLIC_BASE_PATH
-  )
+  'use server'
   try {
     console.log('开始获取 sections 数据...')
     const sections = await getAllSections()
