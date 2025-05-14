@@ -7,6 +7,9 @@ echo "🔄 正在启动应用..."
 echo "⏳ 等待数据库连接..."
 npx wait-on -t 60000 tcp:${POSTGRES_HOST:-localhost}:${POSTGRES_PORT:-5432}
 
+# 检查对应的库名是否存在
+
+
 # 执行数据库迁移
 echo "🔄 执行数据库迁移..."
 npx prisma migrate deploy
