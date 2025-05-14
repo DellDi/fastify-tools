@@ -26,6 +26,10 @@ fi
 echo "🌱 执行种子数据..."
 npx prisma db seed
 
+# 构建应用
+echo "🔄 构建应用..."
+npx pnpm run build
+
 # 启动应用
 echo "🚀 启动应用..."
 if [ "$NODE_ENV" = "production" ]; then

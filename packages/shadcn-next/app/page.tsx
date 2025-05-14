@@ -1,6 +1,4 @@
 export const revalidate = 60 // 每60秒重新验证数据
-export const dynamic = 'force-dynamic'
-
 
 import ClientHeader from '@/components/custom/ClientHeader'
 import { MarqueeDemoVertical } from '@/components/custom/base/banner-list'
@@ -17,18 +15,9 @@ import { toast } from 'sonner'
 async function getData(): Promise<{ data: Section[]; error: string | null }> {
   'use server'
   try {
-    console.log('开始获取 sections 数据...')
     const sections = await getAllSections()
-    console.log(
-      '获取到的 sections 数据:',
-      sections.length ? '有数据' : '无数据'
-    )
     return { data: sections, error: null }
   } catch (error) {
-    console.error(
-      '⛔⛔⛔⛔⛔⛔⛔⛔⛔⛔⛔⛔⛔⛔⛔⛔获取首页数据失败:⛔⛔⛔⛔⛔⛔⛔⛔⛔⛔⛔⛔',
-      error
-    )
     toast.error(`⛔获取数据失败，请稍后再试${error}`)
     return {
       data: [],

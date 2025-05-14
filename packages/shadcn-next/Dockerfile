@@ -48,9 +48,6 @@ ENV NEXT_PUBLIC_FAST_API_KEY=${NEXT_PUBLIC_FAST_API_KEY}
 # 生成 Prisma 客户端
 RUN npx prisma generate
 
-# Build the application
-RUN pnpm run build
-
 # Expose the port the app runs on
 EXPOSE 3200
 

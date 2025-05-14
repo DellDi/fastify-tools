@@ -23,6 +23,8 @@ const navLinks = [
 ]
 
 export default function ClientHeader() {
+  const basePath = process.env.NEXT_PUBLIC_BASE_PATH || ''
+
   const [menuOpen, setMenuOpen] = useState(false)
   const [mounted, setMounted] = useState(false)
 
@@ -40,7 +42,7 @@ export default function ClientHeader() {
         <div className="flex justify-between items-center py-4">
           <Link href="/" className="flex items-center space-x-2">
             <Image
-              src="/img/delldi-logo.png"
+              src={`${basePath}/img/delldi-logo.png`}
               width={32}
               height={32}
               alt="Next Full Stack"
