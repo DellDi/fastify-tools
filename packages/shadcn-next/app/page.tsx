@@ -1,4 +1,4 @@
-"use server"
+'use server'
 
 import ClientHeader from '@/components/custom/ClientHeader'
 import { MarqueeDemoVertical } from '@/components/custom/base/banner-list'
@@ -13,13 +13,28 @@ import { toast } from 'sonner'
 
 // 静态渲染
 async function getData(): Promise<{ data: Section[]; error: string | null }> {
+  console.log(
+    'getData 函数被调用，当前 URL:',
+    process.env.NEXT_PUBLIC_BASE_PATH
+  )
   try {
+    console.log('开始获取 sections 数据...')
     const sections = await getAllSections()
+    console.log(
+      '获取到的 sections 数据:',
+      sections.length ? '有数据' : '无数据'
+    )
     return { data: sections, error: null }
   } catch (error) {
-    console.error('⛔⛔⛔⛔⛔⛔⛔⛔⛔⛔⛔⛔⛔⛔⛔⛔获取首页数据失败:⛔⛔⛔⛔⛔⛔⛔⛔⛔⛔⛔⛔', error)
+    console.error(
+      '⛔⛔⛔⛔⛔⛔⛔⛔⛔⛔⛔⛔⛔⛔⛔⛔获取首页数据失败:⛔⛔⛔⛔⛔⛔⛔⛔⛔⛔⛔⛔',
+      error
+    )
     toast.error(`⛔获取数据失败，请稍后再试${error}`)
-    return { data: [], error: '⛔⛔⛔⛔⛔⛔⛔⛔⛔⛔⛔⛔⛔⛔⛔⛔获取数据失败，请稍后再试' }
+    return {
+      data: [],
+      error: '⛔⛔⛔⛔⛔⛔⛔⛔⛔⛔⛔⛔⛔⛔⛔⛔获取数据失败，请稍后再试',
+    }
   }
 }
 

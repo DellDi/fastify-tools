@@ -15,6 +15,7 @@ export async function getAllSections(): Promise<Section[]> {
       where: { status: '在用' },
       orderBy: { createdAt: 'asc' }
     })
+    console.log('获取到的区块数据:', sections.length ? '有数据' : '无数据')
     return sections
   } catch (error) {
     console.error('⛔⛔⛔⛔⛔⛔⛔⛔⛔⛔⛔⛔⛔⛔⛔⛔获取区块数据失败:⛔⛔⛔⛔⛔⛔⛔⛔⛔⛔⛔⛔', error)
