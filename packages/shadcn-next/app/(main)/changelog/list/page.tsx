@@ -1,9 +1,8 @@
 "use client"
 
-import { useState, useEffect, useCallback } from 'react'
-import { motion, AnimatePresence } from 'framer-motion'
-import { ChevronDown, Search, Calendar, Tag } from 'lucide-react'
-import { format, parse, isAfter, isBefore } from 'date-fns'
+import { Timeline } from "@/components/ui/timeline"
+import { format } from 'date-fns'
+import { cn } from "@/lib/utils"
 
 interface ChangelogItem {
   version: string
@@ -48,164 +47,86 @@ const changelogData: ChangelogItem[] = [
     date: "2023-10-15",
     changes: [
       "修复了登录页面的一个bug",
-      "改进了错误处理机制",
+      "改进了错误处理机制"
+    ],
+    color: "from-blue-400 to-indigo-500"
+  },
+  {
+    version: "1.4.0",
+    date: "2023-10-01",
+    changes: [
+      "新增了用户个人资料页面",
+      "添加了暗黑模式切换",
+      "优化了移动端导航"
+    ],
+    color: "from-red-400 to-pink-500"
+  },
+  {
+    version: "1.3.0",
+    date: "2023-09-15",
+    changes: [
+      "新增了通知中心",
+      "改进了搜索功能",
+      "修复了一些UI问题",
       "更新了依赖包"
     ],
-    color: "from-blue-500 to-indigo-500"
+    color: "from-purple-400 to-indigo-500"
   },
   // 添加更多的更新日志项...
 ]
 
-export default function EnhancedChangelog() {
-  const [expandedVersion, setExpandedVersion] = useState<string | null>(null)
-  const [visibleItems, setVisibleItems] = useState<ChangelogItem[]>([])
-  const [page, setPage] = useState(1)
-  const [hasMore, setHasMore] = useState(true)
-  const [searchTerm, setSearchTerm] = useState("")
-  const [startDate, setStartDate] = useState("")
-  const [endDate, setEndDate] = useState("")
-  const [versionFilter, setVersionFilter] = useState("")
-
-  const itemsPerPage = 5
-
-  const filterItems = useCallback(() => {
-    return changelogData.filter(item => {
-      const matchesSearch = item.changes.some(change =>
-        change.toLowerCase().includes(searchTerm.toLowerCase())
-      ) || item.version.toLowerCase().includes(searchTerm.toLowerCase())
-
-      const matchesDate = (!startDate || isAfter(parse(item.date, 'yyyy-MM-dd', new Date()), parse(startDate, 'yyyy-MM-dd', new Date()))) &&
-        (!endDate || isBefore(parse(item.date, 'yyyy-MM-dd', new Date()), parse(endDate, 'yyyy-MM-dd', new Date())))
-
-      const matchesVersion = !versionFilter || item.version.includes(versionFilter)
-
-      return matchesSearch && matchesDate && matchesVersion
-    })
-  }, [searchTerm, startDate, endDate, versionFilter])
-
-  const loadMore = useCallback(() => {
-    const filteredItems = filterItems()
-    const newItems = filteredItems.slice((page - 1) * itemsPerPage, page * itemsPerPage)
-    setVisibleItems(prev => [...prev, ...newItems])
-    setHasMore(page * itemsPerPage < filteredItems.length)
-    setPage(prev => prev + 1)
-  }, [filterItems, page])
-
-  useEffect(() => {
-    setVisibleItems([])
-    setPage(1)
-    setHasMore(true)
-  }, [searchTerm, startDate, endDate, versionFilter])
-
-  useEffect(() => {
-    loadMore()
-  }, [loadMore])
+const ChangeLogPage = () => {
+  // 转换数据格式以适配 Timeline 组件
+  const timelineData = changelogData.map(item => ({
+    title: `${item.version} - ${item.date}`,
+    content: (
+      <div className="space-y-4">
+        <div className={cn(
+          "inline-flex items-center rounded-full px-3 py-1 text-sm font-medium",
+          `bg-gradient-to-r ${item.color} text-white`
+        )}>
+          {item.version}
+        </div>
+        <ul className="space-y-2">
+          {item.changes.map((change, idx) => (
+            <li key={idx} className="flex items-start">
+              <span className="mr-2 mt-1 h-1.5 w-1.5 shrink-0 rounded-full bg-primary" />
+              <span className="text-foreground">{change}</span>
+            </li>
+          ))}
+        </ul>
+      </div>
+    )
+  }));
 
   return (
-    <div className="min-h-screen bg-linear-to-br from-violet-500 to-fuchsia-500 p-8">
-      <div className="max-w-4xl mx-auto">
-        <h1 className="text-6xl font-bold text-white mb-12 text-center">
-          更新日志
-        </h1>
-        <div className="bg-white rounded-lg shadow-lg p-6 mb-8">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="relative">
-              <input
-                type="text"
-                placeholder="搜索更新内容..."
-                className="w-full pl-10 pr-4 py-2 rounded-lg border focus:outline-hidden focus:ring-2 focus:ring-purple-600"
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-              />
-              <Search className="absolute left-3 top-2.5 text-gray-400" size={20} />
-            </div>
-            <div className="relative">
-              <input
-                type="text"
-                placeholder="按版本筛选..."
-                className="w-full pl-10 pr-4 py-2 rounded-lg border focus:outline-hidden focus:ring-2 focus:ring-purple-600"
-                value={versionFilter}
-                onChange={(e) => setVersionFilter(e.target.value)}
-              />
-              <Tag className="absolute left-3 top-2.5 text-gray-400" size={20} />
-            </div>
-            <div className="relative">
-              <input
-                type="date"
-                className="w-full pl-10 pr-4 py-2 rounded-lg border focus:outline-hidden focus:ring-2 focus:ring-purple-600"
-                value={startDate}
-                onChange={(e) => setStartDate(e.target.value)}
-              />
-              <Calendar className="absolute left-3 top-2.5 text-gray-400" size={20} />
-            </div>
-            <div className="relative">
-              <input
-                type="date"
-                className="w-full pl-10 pr-4 py-2 rounded-lg border focus:outline-hidden focus:ring-2 focus:ring-purple-600"
-                value={endDate}
-                onChange={(e) => setEndDate(e.target.value)}
-              />
-              <Calendar className="absolute left-3 top-2.5 text-gray-400" size={20} />
-            </div>
-          </div>
+    <div className="min-h-screen bg-background">
+      <div className="container mx-auto px-4 py-12">
+        <div className="mb-12 text-center">
+          <h1 className="text-4xl font-bold mb-4 bg-clip-text text-transparent bg-gradient-to-r from-primary to-primary/60">
+            更新日志
+          </h1>
+          <p className="text-muted-foreground max-w-2xl mx-auto">
+            了解我们产品的最新更新和改进
+          </p>
         </div>
-        <AnimatePresence>
-          {visibleItems.map((item) => (
-            <motion.div
-              key={item.version}
-              className={`bg-white rounded-lg shadow-lg overflow-hidden mb-8`}
-              initial={{ opacity: 0, y: 50 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -50 }}
-              transition={{ duration: 0.5 }}
-            >
-              <div
-                className={`bg-linear-to-r ${item.color} p-6 cursor-pointer`}
-                onClick={() => setExpandedVersion(expandedVersion === item.version ? null : item.version)}
-              >
-                <div className="flex justify-between items-center">
-                  <h2 className="text-3xl font-bold text-white">版本 {item.version}</h2>
-                  <motion.div
-                    animate={{ rotate: expandedVersion === item.version ? 180 : 0 }}
-                    transition={{ duration: 0.3 }}
-                  >
-                    <ChevronDown className="w-8 h-8 text-white" />
-                  </motion.div>
-                </div>
-                <p className="text-white opacity-75 mt-2">{format(parse(item.date, 'yyyy-MM-dd', new Date()), 'yyyy年MM月dd日')}</p>
-              </div>
-              <AnimatePresence>
-                {expandedVersion === item.version && (
-                  <motion.div
-                    initial={{ opacity: 0, height: 0 }}
-                    animate={{ opacity: 1, height: 'auto' }}
-                    exit={{ opacity: 0, height: 0 }}
-                    transition={{ duration: 0.3 }}
-                    className="p-6"
-                  >
-                    <ul className="list-disc pl-5 space-y-2">
-                      {item.changes.map((change, index) => (
-                        <li key={index} className="text-gray-700">{change}</li>
-                      ))}
-                    </ul>
-                  </motion.div>
-                )}
-              </AnimatePresence>
-            </motion.div>
-          ))}
-        </AnimatePresence>
-        {hasMore && (
-          <div className="text-center">
-            <button
-              onClick={loadMore}
-              className="bg-white text-purple-600 px-6 py-3 rounded-full font-semibold hover:bg-purple-100 transition-colors"
-            >
-              加载更多
-            </button>
-          </div>
-        )}
+
+        <div className="relative w-full overflow-clip
+          [--primary:0,0%,50%]
+          [--secondary:0,0%,60%]
+          [--accent:0,0%,40%]
+          [--background:0,0%,100%]
+          [--foreground:0,0%,10%]
+          dark:[--primary:0,0%,80%]
+          dark:[--secondary:0,0%,70%]
+          dark:[--accent:0,0%,90%]
+          dark:[--background:0,0%,5%]
+          dark:[--foreground:0,0%,95%]">
+          <Timeline data={timelineData} />
+        </div>
       </div>
     </div>
   )
 }
 
+export default ChangeLogPage

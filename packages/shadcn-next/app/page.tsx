@@ -2,14 +2,11 @@ export const revalidate = 60 // 每60秒重新验证数据
 
 import ClientHeader from '@/components/custom/ClientHeader'
 import { MarqueeDemoVertical } from '@/components/custom/base/banner-list'
-import {
-  MotionHeading,
-  MotionParagraph,
-  MotionButtonGroup,
-  MotionSection,
-} from '@/components/custom/base/motion-list'
+import { SparklesPreview } from '@/components/custom/SparklesPreview'
+
 import { getAllSections, type Section } from '@/lib/db'
 import { toast } from 'sonner'
+import { SectionCard } from '@/components/custom/SectionCard'
 
 // 静态渲染
 async function getData(): Promise<{ data: Section[]; error: string | null }> {
@@ -30,42 +27,34 @@ export default async function Home() {
   const { data: sections, error } = await getData()
 
   return (
-    <main className="flex min-h-screen flex-col items-center justify-between">
+    <main className="flex min-h-screen flex-col items-center gap-12">
       <ClientHeader />
+      <div className="text-2xl font-bold">
+        <SparklesPreview />
+      </div>
       <div className="w-full">
         <MarqueeDemoVertical />
       </div>
-
-      <div className="container mx-auto px-4 py-8">
+      <div className="container mx-auto px-4 py-2">
         {error ? (
           <div className="text-center py-10">
             <h2 className="text-2xl font-bold mb-4">数据加载失败</h2>
             <p>{error}</p>
           </div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-            {sections.map((section) => (
-              <MotionSection
-                key={String(section.id)}
-                className={`p-6 rounded-lg ${section.gradient}`}
-              >
-                <MotionHeading className="text-2xl font-bold mb-4">
-                  {section.title}
-                </MotionHeading>
-                <MotionParagraph className="mb-6 h-10">
-                  {section.description}
-                </MotionParagraph>
-                <MotionButtonGroup
-                  buttons={[
-                    {
-                      text: section.linkText,
-                      href: section.linkHref,
-                      variant: 'outline',
-                    },
-                  ]}
+          <div className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {sections.map((section) => (
+                <SectionCard
+                  key={section.id}
+                  id={section.id}
+                  title={section.title}
+                  description={section.description}
+                  linkText={section.linkText}
+                  linkHref={section.linkHref}
                 />
-              </MotionSection>
-            ))}
+              ))}
+            </div>
           </div>
         )}
       </div>

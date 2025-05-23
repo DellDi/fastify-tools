@@ -1,14 +1,17 @@
 import { NextResponse } from 'next/server'
 import { parseCookies } from '@/lib/utils'
 import { serviceCache } from '@/store/service'
+import { fastifyFetch } from '@/utils/fetch/fastifyFetch'
 
 export async function POST() {
-  const loginUrl = "http://bug.new-see.com:8088/rest/gadget/1.0/login"
   const username = process.env.JIRA_USERNAME
   const password = process.env.JIRA_PASSWORD
 
-  if (!loginUrl || !username || !password) {
-    return NextResponse.json({ message: 'Missing Jira login credentials' }, { status: 400 })
+  if (!username || !password) {
+    return NextResponse.json(
+      { message: 'Missing Jira login credentials' },
+      { status: 400 }
+    )
   }
 
   try {
@@ -18,24 +21,22 @@ export async function POST() {
       return NextResponse.json(cachedResponse)
     }
 
-    const response = await fetch(loginUrl, {
+    const response = await fastifyFetch('/jira/login', {
       method: 'POST',
       headers: {
-        'Authorization': `Basic ${Buffer.from(`newsee:newsee`).toString('base64')}`,
-        'Content-Type': 'application/x-www-form-urlencoded',
+        'Content-Type': 'application/json',
       },
-      body: `os_username=${encodeURIComponent(username)}&os_password=${encodeURIComponent(password)}&os_cookie=true`,
+      body: JSON.stringify({
+        jiraUser: username,
+        jiraPassword: password,
+      }),
     })
-    if (!response.ok) {
-      return NextResponse.json({ message: 'Login failed' }, { status: 500 })
-    }
-    // 获取fetch接口成功后的headers
-    const setCookieHeader = response.headers.get('set-cookie') ?? []
-    const cookies = parseCookies(setCookieHeader)
 
-    const data = await response.json()
-    serviceCache.set('loginResponse', { cookies, data })
-    return NextResponse.json({ data, cookies }, { status: 200 })
+    const { cookies, atlToken } = response
+
+    serviceCache.set('loginResponse', { cookies, atlToken })
+
+    return NextResponse.json({ cookies, atlToken }, { status: 200 })
   } catch (error) {
     return NextResponse.json({ message: error }, { status: 500 })
   }

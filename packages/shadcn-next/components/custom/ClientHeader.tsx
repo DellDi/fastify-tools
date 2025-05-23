@@ -49,7 +49,7 @@ export default function ClientHeader() {
               className="h-8 w-8 rounded-full"
             />
             <span className="text-xl font-bold bg-clip-text text-transparent bg-linear-to-r from-blue-500 to-purple-600">
-              Next Full Stack
+              DellDi
             </span>
           </Link>
 

@@ -21,6 +21,7 @@ const fetchJiraData = async (page: number, pageSize: number, query: string): Pro
   try {
     // 获取 Jira 登录凭证
     const { cookies } = await jiraLogin()
+    console.log("🚀 ~ fetchJiraData ~ cookies:", cookies)
 
     // 获取 Jira 数据
     const response = await jiraSaaSFetch({
