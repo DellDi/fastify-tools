@@ -136,19 +136,31 @@ Tools 项目包含一些实用的工具脚本，如 Excel 数据处理、自动�
 
 项目使用 PostgreSQL 作为数据库，并通过 Prisma ORM 进行管理。
 
-### Prisma 迁移
+### 快速开始
 
 ```bash
-# 生成迁移文件
-cd services/fastify
-npx prisma migrate dev --name <migration-name>
+# 生成 Prisma 客户端（所有服务）
+pnpm prisma:generate:all
+
+# 创建并应用新的迁移（开发环境）
+pnpm -F fastify-service prisma:migrate:dev --name <迁移名称>
 
 # 应用迁移到生产环境
-npx prisma migrate deploy
-
-# 查看数据库
-npx prisma studio
+pnpm prisma:deploy:all
 ```
+
+### 数据库管理界面
+
+```bash
+# 启动 Prisma Studio
+pnpm -F fastify-service prisma:studio
+```
+
+访问 http://localhost:5555 查看和管理数据库内容。
+
+### 详细文档
+
+完整的数据库迁移和管理指南请参考：[数据库迁移文档](./docs/database/migrations.md)
 
 ## 依赖管理
 
@@ -162,19 +174,6 @@ npx prisma studio
 
 欢迎提交 Pull Requests 和 Issues！请查看 [贡献指南](./CONTRIBUTING.md) 了解更多信息。
 
-## 学习资源
-
-- [Fastify 文档](https://www.fastify.io/docs/latest/)
-- [TypeScript 文档](https://www.typescriptlang.org/docs/)
-- [Pnpm 文档](https://pnpm.io/)
-- [ESLint 文档](https://eslint.org/docs/user-guide/getting-started)
-- [Prettier 文档](https://prettier.io/docs/en/index.html)
-- [Docker 文档](https://docs.docker.com/)
-- [Swagger 文档](https://swagger.io/docs/)
-- [Next 文档](https://nextjs.org/docs)
-- [shadcn-ui 文档](https://shadcn-ui.vercel.app/)
-- [Prisma 文档](https://www.prisma.io/docs)
-- [PostgreSQL 文档](https://www.postgresql.org/docs/)
 
 ## 部署
 

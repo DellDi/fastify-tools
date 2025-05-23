@@ -5,7 +5,7 @@ import React, { useState, useCallback } from 'react'
  * @param {React.Dispatch<React.SetStateAction<File[]>>} setFiles - 设置文件状态的函数
  * @returns {function} 处理粘贴事件的回调函数
  */
-export function useHandlePaste(setFiles: React.Dispatch<React.SetStateAction<File[]>>): Function {
+export function useHandlePaste(setFiles: React.Dispatch<React.SetStateAction<File[]>>): (e: React.ClipboardEvent<HTMLDivElement>) => void {
   return useCallback((e: React.ClipboardEvent<HTMLDivElement>) => {
     if (e.clipboardData.files.length > 0) {
       setFiles(Array.from(e.clipboardData.files))
@@ -18,7 +18,7 @@ export function useHandlePaste(setFiles: React.Dispatch<React.SetStateAction<Fil
  * @param {React.Dispatch<React.SetStateAction<File[]>>} setFiles - 设置文件状态的函数
  * @returns {function} 处理文件改变事件的回调函数
  */
-export function useHandleFileChange(setFiles: React.Dispatch<React.SetStateAction<File[]>>): Function {
+export function useHandleFileChange(setFiles: React.Dispatch<React.SetStateAction<File[]>>): (e: React.ChangeEvent<HTMLInputElement>) => void {
   return useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files) {
       setFiles(Array.from(e.target.files))
@@ -32,7 +32,7 @@ export function useHandleFileChange(setFiles: React.Dispatch<React.SetStateActio
  * @param {React.Dispatch<React.SetStateAction<File[]>>} setFiles - 设置文件状态的函数
  * @returns {function} 处理拖拽事件的回调函数
  */
-export function useHandleDrop(setFiles: React.Dispatch<React.SetStateAction<File[]>>): Function {
+export function useHandleDrop(setFiles: React.Dispatch<React.SetStateAction<File[]>>): (e: React.DragEvent<HTMLDivElement>) => void {
   return useCallback((e: React.DragEvent<HTMLDivElement>) => {
     e.preventDefault()
     if (e.dataTransfer.files) {
