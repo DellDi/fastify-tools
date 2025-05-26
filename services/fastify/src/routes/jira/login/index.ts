@@ -38,7 +38,7 @@ const jira: FastifyPluginAsync = async (fastify, opts): Promise<void> => {
           }
           // 获取授权cookies
           const setCookieHeader = loginResponse.headers['set-cookie'] ?? []
-          fastify.log.info("🚀 ~ handler: ~ setCookieHeader:", setCookieHeader)
+          console.log("🚀 ~ handler: ~ setCookieHeader:", setCookieHeader)
 
           const cookies = Array.isArray(setCookieHeader)
             ? setCookieHeader

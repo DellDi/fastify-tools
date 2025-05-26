@@ -155,18 +155,18 @@ const JiraUpdateBody = Type.Object({
       description: 'jira密码-创建人',
     })
   ),
-  customfield_12600: Type.Optional(
-    Type.String({
-      default: '19960',
-      description: '自定义字段12600: 客户信息',
-    })
-  ),
-  'customfield_12600:1': Type.Optional(
-    Type.String({
-      default: '19961',
-      description: '自定义字段12600:1 客户信息-1',
-    })
-  ),
+  // customfield_12600: Type.Optional(
+  //   Type.String({
+  //     default: '19960',
+  //     description: '自定义字段12600: 客户信息',
+  //   })
+  // ),
+  // 'customfield_12600:1': Type.Optional(
+  //   Type.String({
+  //     default: '19961',
+  //     description: '自定义字段12600:1 客户信息-1',
+  //   })
+  // ),
   customfield_10000: Type.Optional(
     Type.String({
       default: '19962',

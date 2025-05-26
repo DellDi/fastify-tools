@@ -1,170 +1,133 @@
 import { FastifyPluginAsyncTypebox } from '@fastify/type-provider-typebox'
 import { request } from 'undici'
 import dayjs from 'dayjs'
-import qs from 'node:querystring'
+import { FastifyReply, FastifyRequest } from 'fastify'
 
 import {
   JiraAddResInfoType,
   jiraCreateExport,
   JiraLoginResponseType,
-  JiraUpdateResponseSchema,
+  JiraCreateExportBodyType,
 } from '../../schema/jira/jira.js'
-import { CustomerInfoResType } from '../../schema/dify/dify.js'
 
-const jiraBaseUrl = 'http://bug.new-see.com:8088'
+// 定义响应类型
+interface JiraCreateResponse {
+  id?: string
+  key?: string
+  self?: string
+  errors?: Record<string, string>
+  [key: string]: any
+}
 
 const jira: FastifyPluginAsyncTypebox = async (fastify): Promise<void> => {
-  fastify.post('/create-ticket', {
+  fastify.route({
+    method: 'POST',
+    url: '/create-ticket',
     schema: jiraCreateExport,
-    handler: async (req, reply) => {
+    handler: async (req: FastifyRequest<{ Body: JiraCreateExportBodyType }>, reply: FastifyReply) => {
       const {
         title,
         description,
-        labels,
         assignee,
-        customerName,
         jiraUser,
         jiraPassword,
         customAutoFields,
       } = req.body
+      
+      // Labels will be handled in a separate update if needed
+      // They are not included in the initial request due to Jira API restrictions
 
       try {
+        // 登录获取认证信息
         const resLogin = await fastify.inject({
           method: 'POST',
           url: '/jira/login',
-          body: {
-            jiraUser: jiraUser,
-            jiraPassword: jiraPassword,
-          },
+          body: { jiraUser, jiraPassword },
         })
-        const { cookies, atlToken } = resLogin.json() as JiraLoginResponseType
+        
+        const { cookies } = resLogin.json() as JiraLoginResponseType
 
-        const customAutoFieldsKeys = Object.keys(customAutoFields || {})
-
-        const jiraPostData = {
-          pid: '11450',
-          issuetype: '10604',
-          atl_token: atlToken,
-          summary: title,
-          components: '13676',
-          customfield_10000: '14169',
-          customfield_12600: '17714',
-          'customfield_12600:1': '21057',
-          customfield_10041: dayjs().format('YYYY-MM-DD'),
-          customfield_10070: '10270',
-          priority: '3',
-          description: description || title,
-          assignee: assignee,
-          labels: labels ? labels.split(',') : ['SaaS内部已评审'],
-          timetracking: '',
-          isCreateIssue: 'true',
-          hasWorkStarted: 'false',
-          ...(customAutoFields || {}),
-          fieldsToRetain: [
-            'project',
-            'issuetype',
-            'components',
-            'customfield_10000',
-            'customfield_12600',
-            'customfield_12600:1',
-            'customfield_10041',
-            'priority',
-            'assignee',
-            'labels',
-            ...customAutoFieldsKeys,
-          ],
+        // 构建符合 Jira REST API v2 的请求体
+        const issueData: {
+          fields: {
+            project: { key: string }
+            summary: string
+            issuetype: { id: string }
+            components: Array<{ id: string }>
+            customfield_10000: { value: string }
+            customfield_12600: { value: string }
+            customfield_10041: string
+            priority: { id: string }
+            description: string
+            assignee: { name: string } | null
+            labels?: Array<{ name: string }>
+            [key: string]: any
+          }
+        } = {
+          fields: {
+            project: { key: 'V10' }, // 项目 ID
+            summary: title,
+            issuetype: { id: '10604' }, // 问题类型 ID
+            components: [{ id: '13676' }], // 组件 ID
+            customfield_10000: { value: '14169' }, // 使用对象格式提供 ID
+            customfield_12600: { value: '17714' }, // 必填字段，使用对象格式
+            customfield_10041: dayjs().format('YYYY-MM-DD'),
+            priority: { id: '3' },
+            description: description || title,
+            assignee: assignee ? { name: assignee } : null,
+            labels: [{ name: '数据中台' }],
+            // Labels will be added in a separate update after issue creation if needed
+          },
         }
 
-        // Create Jira ticket
+        // 添加自定义字段
+        if (customAutoFields) {
+          Object.entries(customAutoFields).forEach(([key, value]) => {
+            issueData.fields[key] = value
+          })
+        }
+
+        // 创建 Jira 工单
         const createTicketResponse = await request(
-          `http://bug.new-see.com:8088/secure/QuickCreateIssue.jspa?decorator=none`,
+          'http://bug.new-see.com:8088/rest/api/2/issue',
           {
             method: 'POST',
             headers: {
-              Cookie: cookies,
-              Authorization: 'Basic bmV3c2VlOm5ld3NlZQ==',
-              'Content-Type': 'application/x-www-form-urlencoded',
+              'Content-Type': 'application/json',
+              'Authorization': 'Basic bmV3c2VlOm5ld3NlZQ==',
+              'X-Atlassian-Token': 'no-check', // 禁用 XSRF 检查
+              'Cookie': cookies
             },
-            body: qs.stringify(jiraPostData),
+            body: JSON.stringify(issueData),
           }
         )
 
-        const responseBody =
-          (await createTicketResponse.body.json()) as JiraAddResInfoType
+        const responseBody = await createTicketResponse.body.json() as JiraAddResInfoType
 
         // 检查是否有错误信息
-        if (createTicketResponse.statusCode >= 400 || responseBody.errors) {
-          // 将错误对象转换为格式化的字符串
-          const errorMsg = responseBody.errors
-            ? Object.entries(responseBody.errors)
+        if (createTicketResponse.statusCode >= 400 || (responseBody as JiraCreateResponse).errors) {
+          const errorMsg = (responseBody as JiraCreateResponse).errors
+            ? Object.entries((responseBody as JiraCreateResponse).errors!)
                 .map(([key, value]) => `${key}: ${value}`)
                 .join('\n')
-            : '未知错误'
-
-          fastify.log.error(`创建 Jira 工单失败: ${errorMsg}`)
-          return reply.status(400).send({
-            error: `创建 Jira 工单失败: ${errorMsg}`,
-            details: responseBody.errors,
-          })
-        }
-        // 调用查询客户信息接口
-        const resFields = responseBody.fields
-        const customerBase = resFields.find((a) => a.id === 'customfield_10000')
-        const customerAll = resFields.find((a) => a.id === 'customfield_12600')
-
-        const resBody = await fastify.inject({
-          method: 'POST',
-          url: '/dify/customer',
-          body: {
-            customerName: customerName,
-            htmlStr: customerBase?.editHtml,
-            htmlStrAll: customerAll?.editHtml,
-          },
-        })
-
-        const { customerNameId, customerInfoId, isSaaS } =
-          resBody.json() as CustomerInfoResType
-        const createdIssueDetails = responseBody.createdIssueDetails
-        const { id: issueId } = createdIssueDetails
-        const issueKey = responseBody.issueKey
-        const issueUrl = `${jiraBaseUrl}/browse/${issueKey}`
-        const tagCustom = isSaaS ? 'SaaS专项工作' : '快捷工单'
-        let oldLabels = labels ? labels.split(',') : []
-        const updateData = {
-          issueId,
-          singleFieldEdit: false,
-          labels: [tagCustom].concat(oldLabels),
-          customfield_10000: customerNameId,
-          customfield_12600: customerInfoId,
-          'customfield_12600:1': `${+customerInfoId + 1}`,
-          fieldsToForcePresent: [
-            'labels',
-            'customfield_10000',
-            'customfield_12600',
-          ],
+            : `HTTP ${createTicketResponse.statusCode}`
+          throw new Error(`创建 Jira 工单失败: ${errorMsg}`)
         }
 
-        // 调用更新单子接口
-        const updateIssueResponse = await fastify.inject({
-          method: 'POST',
-          url: '/jira/update',
-          body: { ...updateData, jiraUser, jiraPassword },
-        })
-        const updateIssueResponseBody =
-          updateIssueResponse.json() as JiraUpdateResponseSchema
-        fastify.log.info(updateIssueResponseBody)
-
-        return reply.send({
-          issueId,
-          issueKey,
-          issueUrl,
-          updateMsg: updateIssueResponseBody.message,
-        })
-      } catch (error) {
-        fastify.log.error(error)
-        return reply.status(500).send({ error: error })
+        // 返回创建成功的工单信息
+        const createdIssue = responseBody as JiraCreateResponse
+        return {
+          issueId: createdIssue.id || '',
+          issueKey: createdIssue.key || '',
+          issueUrl: `http://bug.new-see.com:8088/browse/${createdIssue.key || ''}`,
+          updateMsg: '工单创建成功'
+        }
+      } catch (error: unknown) {
+        const errorMessage = error instanceof Error ? error.message : 'Unknown error'
+        fastify.log.error('Jira API 错误:', errorMessage)
+        throw new Error(`创建 Jira 工单失败: ${errorMessage}`)
       }
-    },
+    }
   })
 }
 

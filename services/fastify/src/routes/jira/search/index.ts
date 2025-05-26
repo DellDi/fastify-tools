@@ -29,8 +29,6 @@ const jira: FastifyPluginAsyncTypebox = async (
           `Jira 搜索请求: startAt=${startAt}, maxResults=${maxResults}`
         )
         fastify.log.info(`JQL: ${jql}， cookies: ${jiraCookies}`)
-        // ajs_user_id=b855f69db6d93f0a1a50b21008c841d7416fc802; ajs_anonymous_id=1aa0c0e5-d076-48d2-b0d7-feaf4d1210bc;
-        
 
         try {
           const jiraRes = await request(
