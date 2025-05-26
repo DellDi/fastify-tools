@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
-import { motion } from 'framer-motion'
+import { motion } from 'motion/react'
 import { Loader2, CheckCircle, XCircle } from 'lucide-react'
 import { toast } from '@/components/ui/use-toast'
 import { fetchBase } from '@/utils/fetch/fetch'
