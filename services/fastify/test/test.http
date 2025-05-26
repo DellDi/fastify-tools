@@ -3,8 +3,18 @@ Authorization: Bearer zd-nb-19950428
 Content-Type: application/json
 
 {
-  "point": "ping",
+  "point": "app.create_jira_tool",
   "title": "【超级工单】新增测试工单",
   "description": "【超级工单】新增测试工单-我是工单的描述信息",
-  "assignee": "liufengxiao"
+  "assignee": "zengdi",
+  "jiraUser": "zengdi",
+  "jiraPassword": "1",
+  "customerName": "zengdi",
+  "labels": "Newsee",
+  "customAutoFields": {
+    "customfield_10601": "功能现状是必需的。",
+    "customfield_10602": "提交角色是必需的。",
+    "customfield_13401": "修改建议是必需的。",
+    "customfield_13400": "业务场景是必需的。",
+  }
 }

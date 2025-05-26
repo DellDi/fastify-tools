@@ -17,7 +17,6 @@ const customFieldProcessor: FastifyPluginAsync = async (fastify, opts) => {
             }
           })
         }
-        fastify.log.info('🚀 ~ Custom field processed')
         return JSON.stringify(data)
       }
     } catch (error) {

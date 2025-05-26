@@ -30,11 +30,8 @@ const jira: FastifyPluginAsyncTypebox = async (
         )
         fastify.log.info(`JQL: ${jql}， cookies: ${jiraCookies}`)
         // ajs_user_id=b855f69db6d93f0a1a50b21008c841d7416fc802; ajs_anonymous_id=1aa0c0e5-d076-48d2-b0d7-feaf4d1210bc;
+        
 
-        const cookies =
-          jiraCookies +
-          ';ajs_user_id=b855f69db6d93f0a1a50b21008c841d7416fc802;ajs_anonymous_id=1aa0c0e5-d076-48d2-b0d7-feaf4d1210bc;'
-        console.log('🚀 ~ handler: ~ cookies:', cookies)
         try {
           const jiraRes = await request(
             `http://bug.new-see.com:8088/rest/api/2/search`,
@@ -46,12 +43,12 @@ const jira: FastifyPluginAsyncTypebox = async (
                 jql,
               },
               headers: {
-                Cookie: cookies,
+                Cookie: jiraCookies,
                 Authorization: 'Basic bmV3c2VlOm5ld3NlZQ==',
               },
               // 添加超时设置
-              headersTimeout: 15000,
-              bodyTimeout: 30000,
+              headersTimeout: 30000,
+              bodyTimeout: 60000,
             }
           )
 

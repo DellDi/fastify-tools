@@ -151,7 +151,7 @@ export default function JiraForm() {
               <Input
                 id="assignee"
                 name="assignee"
-                placeholder="liufengxiao"
+                placeholder="zengdi"
                 value={formData.assignee}
                 onChange={handleChange}
                 required
@@ -163,7 +163,7 @@ export default function JiraForm() {
               <Input
                 id="jiraUser"
                 name="jiraUser"
-                placeholder="liufengxiao"
+                placeholder="zengdi"
                 value={formData.jiraUser}
                 onChange={handleChange}
                 required

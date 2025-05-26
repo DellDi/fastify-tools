@@ -15,6 +15,7 @@ const jira: FastifyPluginAsync = async (fastify, opts): Promise<void> => {
         const jiraUrl = 'http://bug.new-see.com:8088/rest/auth/1/session'
 
         const { jiraUser, jiraPassword } = req.body
+        console.log("🚀 ~ handler: ~ jiraUser, jiraPassword :", jiraUser, jiraPassword )
 
         try {
           const loginResponse = await request(
@@ -37,6 +38,7 @@ const jira: FastifyPluginAsync = async (fastify, opts): Promise<void> => {
           }
           // 获取授权cookies
           const setCookieHeader = loginResponse.headers['set-cookie'] ?? []
+          fastify.log.info("🚀 ~ handler: ~ setCookieHeader:", setCookieHeader)
 
           const cookies = Array.isArray(setCookieHeader)
             ? setCookieHeader
