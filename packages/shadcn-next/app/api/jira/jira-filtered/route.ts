@@ -53,7 +53,6 @@ export async function POST(req: NextRequest) {
     while (true) {
       const response = await fastifyFetch(`/jira/search`, {
         headers: {
-          Authorization: `Bearer bmV3c2VlOm5ld3NlZQ==`,
           'Content-Type': 'application/json',
         },
         method: 'POST',
