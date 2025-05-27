@@ -149,7 +149,7 @@ export class Cache<T = any> {
 }
 
 // 导出一个默认的缓存实例，方便直接使用
-export const cache = new Cache()
+export const fastifyCache = new Cache()
 
 // 导出类型定义
 export type { CacheOptions }

@@ -6,8 +6,8 @@ const app = Fastify({
   logger: {
     level: 'info',
     transport: {
-      // target: 'pino-pretty',
-      target: '@fastify/one-line-logger',
+      target: 'pino-pretty',
+      // target: '@fastify/one-line-logger',
       // options: {
       //     // translateTime: 'HH:MM:ss Z',
       //     // ignore: 'pid,hostname',
@@ -27,13 +27,16 @@ closeWithGrace(
       app.log.error({ signal, err, manual })
     }
     await app.close()
-  },
+  }
 )
 
 // Start listening.
-app.listen({ host: '0.0.0.0', port: parseInt(process.env.PORT || '3100') }, (err) => {
-  if (err) {
-    app.log.error(err)
-    process.exit(1)
+app.listen(
+  { host: '0.0.0.0', port: parseInt(process.env.PORT || '3100') },
+  (err) => {
+    if (err) {
+      app.log.error(err)
+      process.exit(1)
+    }
   }
-})
+)

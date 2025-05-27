@@ -1,13 +1,13 @@
 import auth from '@fastify/auth'
 import bearerAuth from '@fastify/bearer-auth'
-import { FastifyInstance, FastifyPluginAsync } from 'fastify'
-import {
-  DifyResponseType,
-  difySchema,
-  InputDataType,
-} from '../../schema/dify/dify.js'
+import { FastifyInstance } from 'fastify'
+import { FastifyPluginAsyncTypebox } from '@fastify/type-provider-typebox'
+import { difySchema, InputDataType } from '@/schema/dify/dify.js'
+import { JiraCreateExportResponseType } from '@/schema/jira/jira.js'
+import { JiraRestService } from '@/services/jira/jira-rest.service.js'
+import { fastifyCache } from '@/utils/cache.js'
 
-const dify: FastifyPluginAsync = async (fastify): Promise<void> => {
+const dify: FastifyPluginAsyncTypebox = async (fastify): Promise<void> => {
   fastify
     .register(auth)
     .register(bearerAuth, {
@@ -27,10 +27,7 @@ const dify: FastifyPluginAsync = async (fastify): Promise<void> => {
         return done(undefined)
       }
     )
-  fastify.post<{
-    Body: InputDataType
-    Response: DifyResponseType
-  }>('/create-jira', {
+  fastify.post('/create-jira', {
     schema: difySchema,
     preHandler: fastify.verifyBearerAuth,
     handler: async (request, reply) => {
@@ -70,49 +67,72 @@ async function handleAppExternalDataToolQuery(
   fastify: FastifyInstance,
   params: Omit<InputDataType, 'point'>
 ) {
+  const jiraService = new JiraRestService(fastify)
+
   const {
-    title,
-    description,
-    assignee,
+    // title,
+    // description,
+    // assignee,
     customerName,
     jiraUser,
     jiraPassword,
     labels,
-    customAutoFields,
+    // customAutoFields,
   } = params || {}
 
-  const res = await fastify.inject({
-    url: '/jira/create-ticket',
-    method: 'POST',
+  // const res = await fastify.inject({
+  //   url: '/jira/create-ticket',
+  //   method: 'POST',
+  //   body: {
+  //     title,
+  //     description,
+  //     jiraUser,
+  //     jiraPassword,
+  //     assignee,
+  //     customerName,
+  //     customAutoFields,
+  //   },
+  //   headers: {
+  //     'content-type': 'application/json',
+  //   },
+  // })
+
+  // 模拟
+  const res = {
+    statusCode: 200,
     body: {
-      title,
-      description,
-      jiraUser,
-      jiraPassword,
-      assignee,
-      labels,
-      customerName,
-      customAutoFields,
+      json() {
+        return {
+          issueId: '12345',
+          issueKey: 'TEST-123',
+          issueUrl: 'http://bug.new-see.com:8088/browse/TEST-123',
+          updateMsg: 'Jira 工单创建成功',
+        }
+      },
     },
-    headers: {
-      'content-type': 'application/json',
-    },
-  })
-  
+  }
+
   // 检查响应状态码
   if (res.statusCode >= 400) {
     fastify.log.error(`Jira API 错误: ${res.statusCode} - ${res.body}`)
     throw new Error(`创建 Jira 工单失败: ${res.body}`)
   }
-  
+
+  // 登录获取认证信息
+   await fastify.inject({
+    method: 'POST',
+    url: '/jira/login',
+    body: { jiraUser, jiraPassword },
+  })
+
   // 尝试解析 JSON 并验证必要字段
   try {
-    const jsonData = res.json()
-    
+    const jsonData = res.body.json() as JiraCreateExportResponseType
+
     // 检查是否包含错误信息
     if (jsonData.error) {
       fastify.log.error(`Jira API 返回错误: ${jsonData.error}`)
-      
+
       // 如果有详细错误信息，格式化并记录
       if (jsonData.details) {
         const detailsStr = Object.entries(jsonData.details)
@@ -120,15 +140,41 @@ async function handleAppExternalDataToolQuery(
           .join('\n')
         fastify.log.error(`错误详情:\n${detailsStr}`)
       }
-      
+
       throw new Error(jsonData.error)
     }
-    
+
     // 验证必要字段
     if (!jsonData.issueId || !jsonData.issueKey) {
       throw new Error('返回的 Jira 数据缺少必要字段')
     }
-    
+
+    const { values } = await jiraService.createMeta(
+      'V10',
+      '4',
+      fastifyCache.get('jira-session')?.cookies,
+      25,
+      0
+    )
+
+    const customInfo = jiraService.getCustomInfo(values, customerName || '')
+    const labelArr = labels?.split(',') || []
+    fastify.log.info(labelArr,  '🚀 ~ labelArr')
+    await fastify.inject({
+      url: '/jira/update',
+      method: 'POST',
+      body: {
+        issueIdOrKey: jsonData.issueKey,
+        fields: {
+          labels: labelArr,
+          ...customInfo,
+        },
+      },
+      headers: {
+        'content-type': 'application/json',
+      },
+    })
+
     return jsonData
   } catch (error) {
     fastify.log.error(`解析 Jira 响应失败: ${error}`)

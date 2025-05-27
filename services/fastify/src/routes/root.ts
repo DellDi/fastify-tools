@@ -1,5 +1,5 @@
 import { FastifyPluginAsync } from 'fastify'
-import { cache } from '../utils/cathe.js'
+import { fastifyCache } from '@/utils/cache.js'
 import { Type } from '@fastify/type-provider-typebox'
 
 const example: FastifyPluginAsync = async (fastify, opts): Promise<void> => {
@@ -24,7 +24,7 @@ const example: FastifyPluginAsync = async (fastify, opts): Promise<void> => {
       },
     },
     async function (request, reply) {
-      cache.clear()
+      fastifyCache.clear()
       return { success: true }
     }
   )
@@ -49,7 +49,7 @@ const example: FastifyPluginAsync = async (fastify, opts): Promise<void> => {
     },
     async function (request, reply) {
       const { key } = request.params as { key: string }
-      cache.delete(key)
+      fastifyCache.delete(key)
       return { success: true }
     }
   )

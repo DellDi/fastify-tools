@@ -1,5 +1,4 @@
 import { FastifyPluginAsyncTypebox } from '@fastify/type-provider-typebox'
-import { request } from 'undici'
 import { FastifyReply, FastifyRequest } from 'fastify'
 import { Type } from '@fastify/type-provider-typebox'
 
@@ -9,16 +8,7 @@ import {
   JiraCreateExportBodyType,
 } from '@/schema/jira/jira.js'
 import { JiraRestService } from '@/services/jira/jira-rest.service.js'
-import { JiraMeta, FieldMetaBean } from '@/schema/jira/meta.js'
-
-// 定义响应类型
-interface JiraCreateResponse {
-  id?: string
-  key?: string
-  self?: string
-  errors?: Record<string, string>
-  [key: string]: any
-}
+import { FieldMetaBean } from '@/schema/jira/meta.js'
 
 const jira: FastifyPluginAsyncTypebox = async (fastify): Promise<void> => {
   const jiraRestService = new JiraRestService(fastify)
@@ -55,22 +45,13 @@ const jira: FastifyPluginAsyncTypebox = async (fastify): Promise<void> => {
             title,
             description,
             assignee,
-            ...customAutoFields,
+            customAutoFields,
           },
           cookies
         )
 
-        // const metaInfo = await jiraRestService.createMeta(
-        //   req.body.projectKey,
-        //   req.body.issueTypeId
-        // )
-
-        // 添加自定义字段
-        if (customAutoFields) {
-        }
-
         // 返回创建成功的工单信息
-        const createdIssue = jiraCreateResponse as JiraCreateResponse
+        const createdIssue = jiraCreateResponse
         return {
           issueId: createdIssue.id || '',
           issueKey: createdIssue.key || '',
@@ -143,39 +124,13 @@ const jira: FastifyPluginAsyncTypebox = async (fastify): Promise<void> => {
 
       const metaInfo = await jiraRestService.createMeta(
         req.body.projectKey,
-        req.body.issueTypeId
+        req.body.issueTypeId,
+        cookies,
+        req.body.maxResults,
+        req.body.startAt
       )
-
-      // 获取创建工单的元数据
-      const requestCreateMeta = await request(
-        `http://bug.new-see.com:8088/rest/api/2/issue/createmeta/${metaInfo.projectKeys}/issuetypes/${metaInfo.issuetypeIds}`,
-        {
-          method: 'GET',
-          headers: {
-            Cookie: cookies,
-            Authorization: 'Basic bmV3c2VlOm5ld3NlZQ==',
-            'Content-Type': 'application/json',
-          },
-          query: {
-            maxResults: req.body.maxResults,
-            startAt: req.body.startAt,
-          },
-        }
-      )
-
-      const responseBody = await requestCreateMeta.body.json()
-
-      if (requestCreateMeta.statusCode !== 200) {
-        throw new Error(`HTTP ${requestCreateMeta.statusCode}`)
-      }
-      const metaRes = responseBody as {
-        maxResults: number
-        startAt: number
-        total: number
-        isLast: boolean
-        values: JiraMeta[]
-      }
-      return metaRes
+     
+      return metaInfo
     },
   })
 }

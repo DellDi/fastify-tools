@@ -1,64 +1,57 @@
-import { FastifyPluginAsync } from 'fastify'
 import { request } from 'undici'
-import qs from 'node:querystring'
 import {
   JiraLoginResponseType,
-  JiraUpdateResponseSchema,
-  JiraUpdateTicket,
   JiraUpdateTicketSchema,
-} from '../../../schema/jira/jira.js'
+} from '@/schema/jira/jira.js'
+import { FastifyPluginAsyncTypebox } from '@fastify/type-provider-typebox'
 
-const jira: FastifyPluginAsync = async (fastify, opts): Promise<void> => {
-  fastify.post<{
-    Body: JiraUpdateTicket
-    Response: JiraUpdateResponseSchema
-  }>('', {
+const jira: FastifyPluginAsyncTypebox = async (
+  fastify,
+  opts
+): Promise<void> => {
+  fastify.post('', {
     schema: JiraUpdateTicketSchema,
     handler: async (req, reply) => {
-      const { issueId, ...data } = req.body
+      const { issueIdOrKey, jiraUser, jiraPassword, ...data } = req.body
       try {
         const resLogin = await fastify.inject({
           method: 'POST',
           url: '/jira/login',
           body: {
-            jiraUser: data.jiraUser,
-            jiraPassword: data.jiraPassword,
+            jiraUser: jiraUser,
+            jiraPassword: jiraPassword,
           },
         })
-        const { cookies, atlToken } = resLogin.json() as JiraLoginResponseType
+        const { cookies } = resLogin.json() as JiraLoginResponseType
         // update Jira ticket
         const jiraRes = await request(
-            `http://bug.new-see.com:8088/secure/AjaxIssueAction.jspa`,
-            {
-              method: 'POST',
-              body: qs.stringify({
-                issueId: issueId.toString(),
-                ...data,
-                atl_token: atlToken,
-              }),
-              query: {
-                decorator: 'none',
-              },
-              headers: {
-                Cookie: cookies,
-                Authorization: 'Basic bmV3c2VlOm5ld3NlZQ==',
-                'Content-Type': 'application/x-www-form-urlencoded',
-              },
-            }
+          `http://bug.new-see.com:8088/rest/api/2/issue/${issueIdOrKey}`,
+          {
+            method: 'PUT',
+            headers: {
+              Cookie: cookies,
+              Authorization: 'Basic bmV3c2VlOm5ld3NlZQ==',
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              ...data,
+            }),
+          }
         )
 
-        if (jiraRes?.statusCode !== 200) {
+        if (jiraRes?.statusCode !== 204) {
           throw new Error(
-              qs.stringify({
-                issueId: issueId.toString(),
-                ...data,
-                atl_token: atlToken,
-              })
+            JSON.stringify({
+              issueIdOrKey,
+              ...data,
+            })
           )
         }
 
         return {
-          message: 'Jira ticket updated successfully',
+          message: `Jira 工单：${issueIdOrKey} 已经更新成功，涉及字段：${Object.keys(
+            data.fields
+          ).join(',')}`,
         }
       } catch (error) {
         fastify.log.error(error)

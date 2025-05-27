@@ -2,7 +2,7 @@ import { JiraMeta } from '@/schema/jira/meta.js'
 import { FastifyInstance } from 'fastify'
 import dayjs from 'dayjs'
 import { request } from 'undici'
-import { JiraAddResInfoType } from '@/schema/jira/jira.js'
+import { fastifyCache } from '@/utils/cache.js'
 
 type IssueData = {
   fields: {
@@ -26,16 +26,20 @@ type IssueData = {
 }
 
 interface JiraCreateResponse {
+  errors?: Record<string, string>
   id?: string
   key?: string
   self?: string
-  errors?: Record<string, string>
-  [key: string]: any
 }
 
 export class JiraRestService {
+  jiraUser: string
+  jiraPassword: string
+
   constructor(private fastify: FastifyInstance) {
     const { JIRA_USER = '', JIRA_PASSWORD = '' } = process.env
+    this.jiraUser = JIRA_USER
+    this.jiraPassword = JIRA_PASSWORD
     this.fastify.log.info(`Jira user: ${JIRA_USER}`)
     this.fastify.log.info(`Jira password: ${JIRA_PASSWORD}`)
   }
@@ -44,7 +48,7 @@ export class JiraRestService {
     const issueData: IssueData = {
       fields: {
         project: { key: 'V10' }, // 项目 ID
-        summary: restData.summary,
+        summary: restData.title,
         issuetype: { id: '4' }, // 问题类型 ID
         components: [{ id: '13676' }], // 组件 ID
         customfield_10000: { id: '13163' }, // 使用对象格式提供 ID
@@ -56,8 +60,9 @@ export class JiraRestService {
         },
         customfield_10041: dayjs().format('YYYY-MM-DD'),
         priority: { id: '3' },
-        description: restData.description || restData.summary,
+        description: restData.description || restData.title,
         assignee: restData.assignee ? { name: restData.assignee } : null,
+        ...restData.customAutoFields,
       },
     }
 
@@ -77,15 +82,12 @@ export class JiraRestService {
     )
 
     const responseBody =
-      (await createTicketResponse.body.json()) as JiraAddResInfoType
+      (await createTicketResponse.body.json()) as JiraCreateResponse
 
     // 检查是否有错误信息
-    if (
-      createTicketResponse.statusCode >= 400 ||
-      (responseBody as JiraCreateResponse).errors
-    ) {
-      const errorMsg = (responseBody as JiraCreateResponse).errors
-        ? Object.entries((responseBody as JiraCreateResponse).errors!)
+    if (createTicketResponse.statusCode >= 400 || responseBody?.errors) {
+      const errorMsg = responseBody.errors
+        ? Object.entries(responseBody.errors)
             .map(([key, value]) => `${key}: ${value}`)
             .join('\n')
         : `HTTP ${createTicketResponse.statusCode}`
@@ -95,12 +97,58 @@ export class JiraRestService {
     return responseBody
   }
 
-  createMeta(projectKey: string, issueTypeId: string) {
-    return {
-      projectKeys: projectKey,
-      issuetypeIds: issueTypeId,
-      expand: 'projects.issuetypes.fields',
+  async createMeta(
+    projectKey: string,
+    issueTypeId: string,
+    cookies: string,
+    maxResults: number,
+    startAt: number
+  ) {
+    const metaInfo = fastifyCache.get('jira-meta')
+    if (metaInfo) {
+      return metaInfo
     }
+    // 获取创建工单的元数据
+    const requestCreateMeta = await request(
+      `http://bug.new-see.com:8088/rest/api/2/issue/createmeta/${projectKey}/issuetypes/${issueTypeId}`,
+      {
+        method: 'GET',
+        headers: {
+          Cookie: cookies,
+          Authorization: 'Basic bmV3c2VlOm5ld3NlZQ==',
+          'Content-Type': 'application/json',
+          'X-Atlassian-Token': 'no-check', // 禁用 XSRF 检查
+        },
+        query: {
+          maxResults,
+          startAt,
+        },
+      }
+    )
+
+    if (requestCreateMeta.statusCode !== 200) {
+      throw new Error(`HTTP ${requestCreateMeta.statusCode}`)
+    }
+
+    const responseBody = (await requestCreateMeta.body.json()) as {
+      maxResults: number
+      startAt: number
+      total: number
+      isLast: boolean
+      values: JiraMeta[]
+    }
+
+    const result = {
+      maxResults,
+      startAt,
+      total: responseBody.total,
+      isLast: responseBody.isLast,
+      values: responseBody.values,
+    }
+
+    fastifyCache.set('jira-meta', result)
+
+    return result
   }
 
   getCustomInfo(values: JiraMeta[], cusstomName: string) {

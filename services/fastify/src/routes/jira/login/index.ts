@@ -5,7 +5,7 @@ import {
   JiraLoginResponseType,
   jiraLoginSchema,
 } from '../../../schema/jira/jira.js'
-import { cache } from '../../../utils/cathe.js'
+import { fastifyCache } from '@/utils/cache.js'
 
 const jira: FastifyPluginAsync = async (fastify, opts): Promise<void> => {
   fastify.post<{ Body: JiraLoginBodyType; Response: JiraLoginResponseType }>(
@@ -13,7 +13,7 @@ const jira: FastifyPluginAsync = async (fastify, opts): Promise<void> => {
     {
       schema: jiraLoginSchema,
       handler: async (req, reply) => {
-        const session = cache.get('jira-session') || {}
+        const session = fastifyCache.get('jira-session') || {}
         if (session.cookies && session.atlToken) {
           return { cookies: session.cookies, atlToken: session.atlToken }
         }
@@ -56,7 +56,7 @@ const jira: FastifyPluginAsync = async (fastify, opts): Promise<void> => {
               atlToken = xsrfCookie.split(';')[0].split('=')[1]
             }
           }
-          cache.set('jira-session', { cookies, atlToken })
+          fastifyCache.set('jira-session', { cookies, atlToken })
           return { cookies, atlToken }
         } catch (error) {
           fastify.log.error('error---->', error)

@@ -1,5 +1,76 @@
 import { Static, Type } from '@sinclair/typebox'
-import { JiraCreateExportResponse, JiraCreateExportBody } from '../jira/jira.js'
+import { JiraCreateExportResponse } from '../jira/jira.js'
+
+const DifyJiraCreateExportBody = Type.Object({
+  title: Type.String({
+    default: '【超级工单】新增测试工单',
+    description: '单子标题',
+  }),
+  description: Type.String({
+    default: '【超级工单】新增测试工单-我是工单的描述信息',
+    description: '单子描述',
+  }),
+  labels: Type.Optional(
+    Type.String({
+      default: 'SaaS内部已评审',
+      description: '单子标签',
+    })
+  ),
+  assignee: Type.Optional(
+    Type.String({
+      default: process.env.JIRA_ASSIGNEE_USER,
+      description: 'jira-经办人',
+    })
+  ),
+  jiraUser: Type.Optional(
+    Type.String({
+      default: process.env.JIRA_USER,
+      description: 'jira用户名-创建人',
+    })
+  ),
+  jiraPassword: Type.Optional(
+    Type.String({
+      default: process.env.JIRA_PASSWORD,
+      description: 'jira密码-创建人',
+    })
+  ),
+  customerName: Type.Optional(
+    Type.String({
+      description: '客户名称信息',
+      default: '新安明珠',
+    })
+  ),
+  customAutoFields: Type.Object(
+    {
+      customfield_10601: Type.String({
+        description: '功能现状是必需的。',
+        default: '功能现状是必需的。',
+      }),
+      customfield_10602: Type.String({
+        description: '提交角色是必需的。',
+        default: '提交角色是必需的。',
+      }),
+      customfield_13401: Type.String({
+        description: '修改建议是必需的。',
+        default: '修改建议是必需的。',
+      }),
+      customfield_13400: Type.String({
+        description: '业务场景是必需的。',
+        default: '业务场景是必需的。',
+      }),
+    },
+    {
+      default: {
+        customfield_10601: '功能现状是必需的。',
+        customfield_10602: '提交角色是必需的。',
+        customfield_13401: '修改建议是必需的。',
+        customfield_13400: '业务场景是必需的。',
+      },
+      // 允许用户添加额外的自定义属性，类型为任意
+      additionalProperties: Type.Any(),
+    }
+  ),
+})
 
 const InputData = Type.Intersect([
   Type.Object({
@@ -8,7 +79,7 @@ const InputData = Type.Intersect([
       description: "触发标识:'ping' | 触发接口: 'app.create_jira_tool'",
     }),
   }),
-  JiraCreateExportBody,
+  DifyJiraCreateExportBody,
 ])
 
 const InputCustomer = Type.Object({
@@ -58,6 +129,7 @@ const ErrorResponse = Type.Object({
 })
 
 export const difySchema = {
+  description: 'Dify create jira',
   tags: ['dify'],
   body: InputData,
   headers: DifyHeaders,
@@ -68,6 +140,7 @@ export const difySchema = {
 }
 
 export const difyCustomerSchema = {
+  description: 'Dify customer',
   tags: ['dify'],
   body: InputCustomer,
   response: {

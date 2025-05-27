@@ -31,12 +31,6 @@ export const JiraCreateExportBody = Type.Object({
     default: '【超级工单】新增测试工单-我是工单的描述信息',
     description: '单子描述',
   }),
-  labels: Type.Optional(
-    Type.String({
-      default: 'SaaS内部已评审',
-      description: '单子标签',
-    })
-  ),
   assignee: Type.Optional(
     Type.String({
       default: process.env.JIRA_ASSIGNEE_USER,
@@ -53,12 +47,6 @@ export const JiraCreateExportBody = Type.Object({
     Type.String({
       default: process.env.JIRA_PASSWORD,
       description: 'jira密码-创建人',
-    })
-  ),
-  customerName: Type.Optional(
-    Type.String({
-      description: '客户名称信息',
-      default: '新安明珠',
     })
   ),
   customAutoFields: Type.Object(
@@ -109,6 +97,8 @@ export const JiraCreateExportBody = Type.Object({
 // })
 
 export const JiraCreateExportResponse = Type.Object({
+  error: Type.Optional(Type.String()),
+  details: Type.Optional(Type.Any()),
   issueKey: Type.String({
     description: '单子key',
   }),
@@ -155,40 +145,39 @@ const JiraUpdateBody = Type.Object({
       description: 'jira密码-创建人',
     })
   ),
-  customfield_12600: Type.Optional(
-    Type.String({
-      default: '19960',
-      description: '自定义字段12600: 客户信息',
-    })
+  fields: Type.Object(
+    {
+      customfield_12600: Type.Optional(
+        Type.String({
+          default: '19960',
+          description: '自定义字段12600: 客户信息',
+        })
+      ),
+      customfield_10000: Type.Optional(
+        Type.String({
+          default: '19962',
+          description: '自定义字段10000:1 : 客户名称',
+        })
+      ),
+      labels: Type.Optional(
+        Type.Array(
+          Type.String({
+            default: '数据中台',
+            description: 'labels: 单子标签',
+          })
+        )
+      ),
+    },
+    {
+      default: {
+        labels: ['AI单'],
+      },
+    }
   ),
-  customfield_10000: Type.Optional(
-    Type.String({
-      default: '19962',
-      description: '自定义字段10000:1 : 客户名称',
-    })
-  ),
-  labels: Type.Optional(
-    Type.Array(
-      Type.String({
-        default: '数据中台',
-        description: 'labels: 单子标签',
-      })
-    )
-  ),
-  issueId: Type.Number({
-    default: 123456,
-    description: 'Jira单子ID',
+  issueIdOrKey: Type.String({
+    default: 'V10-28154',
+    description: 'Jira单子keyOrId',
   }),
-  singleFieldEdit: Type.Boolean({
-    default: false,
-    description: '是否单字段编辑',
-  }),
-  fieldsToForcePresent: Type.Array(
-    Type.String({
-      default: 'labels',
-      description: '单子字段的标签',
-    })
-  ),
 })
 
 const responseUpdateSchema = Type.Object({
@@ -205,6 +194,9 @@ export const JiraUpdateTicketSchema = {
   tags: ['jira'],
   response: {
     200: responseUpdateSchema,
+    500: Type.Object({
+      error: Type.Any(),
+    }),
   },
 }
 
@@ -292,7 +284,7 @@ const JiraErrorResponse = Type.Object({
   error: Type.String(),
   message: Type.Optional(Type.String()),
   statusCode: Type.Optional(Type.Number()),
-  details: Type.Optional(Type.Any())
+  details: Type.Optional(Type.Any()),
 })
 
 export const JiraSearchSchema = {
@@ -302,7 +294,7 @@ export const JiraSearchSchema = {
   response: {
     200: JiraSearchResponse,
     500: JiraErrorResponse,
-    502: JiraErrorResponse
+    502: JiraErrorResponse,
   },
 }
 
