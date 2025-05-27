@@ -5,6 +5,7 @@ import {
   JiraLoginResponseType,
   jiraLoginSchema,
 } from '../../../schema/jira/jira.js'
+import { cache } from '../../../utils/cathe.js'
 
 const jira: FastifyPluginAsync = async (fastify, opts): Promise<void> => {
   fastify.post<{ Body: JiraLoginBodyType; Response: JiraLoginResponseType }>(
@@ -12,33 +13,33 @@ const jira: FastifyPluginAsync = async (fastify, opts): Promise<void> => {
     {
       schema: jiraLoginSchema,
       handler: async (req, reply) => {
+        const session = cache.get('jira-session') || {}
+        if (session.cookies && session.atlToken) {
+          return { cookies: session.cookies, atlToken: session.atlToken }
+        }
         const jiraUrl = 'http://bug.new-see.com:8088/rest/auth/1/session'
 
         const { jiraUser, jiraPassword } = req.body
-        console.log("🚀 ~ handler: ~ jiraUser, jiraPassword :", jiraUser, jiraPassword )
 
         try {
-          const loginResponse = await request(
-            jiraUrl,
-            {
-              method: 'POST',
-              headers: {
-                Authorization: 'Basic bmV3c2VlOm5ld3NlZQ==',
-                'Content-Type': 'application/json',
-              },
-              body: JSON.stringify({
-                username: jiraUser,
-                password: jiraPassword,
-              }),
-            }
-          )
+          const loginResponse = await request(jiraUrl, {
+            method: 'POST',
+            headers: {
+              Authorization: 'Basic bmV3c2VlOm5ld3NlZQ==',
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              username: jiraUser,
+              password: jiraPassword,
+            }),
+          })
 
           if (loginResponse.statusCode !== 200) {
             return reply.code(400).send({ error: 'Login failed' })
           }
           // 获取授权cookies
           const setCookieHeader = loginResponse.headers['set-cookie'] ?? []
-          console.log("🚀 ~ handler: ~ setCookieHeader:", setCookieHeader)
+          console.log('🚀 ~ handler: ~ setCookieHeader:', setCookieHeader)
 
           const cookies = Array.isArray(setCookieHeader)
             ? setCookieHeader
@@ -55,6 +56,7 @@ const jira: FastifyPluginAsync = async (fastify, opts): Promise<void> => {
               atlToken = xsrfCookie.split(';')[0].split('=')[1]
             }
           }
+          cache.set('jira-session', { cookies, atlToken })
           return { cookies, atlToken }
         } catch (error) {
           fastify.log.error('error---->', error)

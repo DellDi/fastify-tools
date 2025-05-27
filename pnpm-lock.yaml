@@ -283,6 +283,9 @@ importers:
       fastify-plugin:
         specifier: ^5.0.1
         version: 5.0.1
+      lru-cache:
+        specifier: ^11.1.0
+        version: 11.1.0
       module-alias:
         specifier: ^2.2.3
         version: 2.2.3
@@ -299,6 +302,9 @@ importers:
       '@types/crypto-js':
         specifier: ^4.2.2
         version: 4.2.2
+      '@types/lru-cache':
+        specifier: ^7.10.10
+        version: 7.10.10
       '@types/nodemailer':
         specifier: ^6.4.17
         version: 6.4.17
@@ -331,7 +337,7 @@ importers:
         version: 4.4.0
       openai:
         specifier: ^4.69.0
-        version: 4.73.0(zod@3.24.3)
+        version: 4.73.0(zod@3.25.28)
       puppeteer:
         specifier: ^24.1.0
         version: 24.1.0(typescript@5.8.3)
@@ -340,7 +346,7 @@ importers:
         version: 6.21.0
       zod:
         specifier: ^3.24.1
-        version: 3.24.3
+        version: 3.25.28
 
 packages:
 
@@ -1784,6 +1790,10 @@ packages:
 
   '@types/jsonwebtoken@9.0.9':
     resolution: {integrity: sha512-uoe+GxEuHbvy12OUQct2X9JenKM3qAscquYymuQN4fMWG9DBQtykrQEFcAbVACF7qaLw9BePSodUL0kquqBJpQ==}
+
+  '@types/lru-cache@7.10.10':
+    resolution: {integrity: sha512-nEpVRPWW9EBmx2SCfNn3ClYxPL7IktPX12HhIoSc/H5mMjdeW3+YsXIpseLQ2xF35+OcpwKQbEUw5VtqE4PDNA==}
+    deprecated: This is a stub types definition. lru-cache provides its own type definitions, so you do not need this installed.
 
   '@types/ms@2.1.0':
     resolution: {integrity: sha512-GsCCIZDE/p3i96vtEqx+7dBUGXrc7zeSK3wwPHIaRThS+9OhWIXRqzs4d6k1SVU8g91DrNRWxWUGhp5KXQb2VA==}
@@ -4949,9 +4959,6 @@ packages:
   zod@3.24.1:
     resolution: {integrity: sha512-muH7gBL9sI1nciMZV67X5fTKKBLtwpZ5VBp1vsOQzj1MhrBZ4wlVCm3gedKZWLp0Oyel8sIGfeiz54Su+OVT+A==}
 
-  zod@3.24.3:
-    resolution: {integrity: sha512-HhY1oqzWCQWuUqvBFnsyrtZRhyPeR7SUGv+C4+MsisMuVfSPx8HpwWqH8tRahSlt6M3PiFAcoeFhZAqIXTxoSg==}
-
   zod@3.25.28:
     resolution: {integrity: sha512-/nt/67WYKnr5by3YS7LroZJbtcCBurDKKPBPWWzaxvVCGuG/NOsiKkrjoOhI8mJ+SQUXEbUzeB3S+6XDUEEj7Q==}
 
@@ -6426,6 +6433,10 @@ snapshots:
     dependencies:
       '@types/ms': 2.1.0
       '@types/node': 20.17.30
+
+  '@types/lru-cache@7.10.10':
+    dependencies:
+      lru-cache: 11.1.0
 
   '@types/ms@2.1.0': {}
 
@@ -8710,7 +8721,7 @@ snapshots:
     dependencies:
       wrappy: 1.0.2
 
-  openai@4.73.0(zod@3.24.3):
+  openai@4.73.0(zod@3.25.28):
     dependencies:
       '@types/node': 18.19.64
       '@types/node-fetch': 2.6.12
@@ -8720,7 +8731,7 @@ snapshots:
       formdata-node: 4.4.1
       node-fetch: 2.7.0
     optionalDependencies:
-      zod: 3.24.3
+      zod: 3.25.28
     transitivePeerDependencies:
       - encoding
 
@@ -10019,8 +10030,6 @@ snapshots:
   zod@3.23.8: {}
 
   zod@3.24.1: {}
-
-  zod@3.24.3: {}
 
   zod@3.25.28: {}
 

@@ -27,6 +27,7 @@ const detail: FastifyPluginAsync = async (fastify, opts): Promise<void> => {
           headers: {
             Cookie: cookies,
             Authorization: 'Basic bmV3c2VlOm5ld3NlZQ==',
+            'X-Atlassian-Token': 'no-check', // 禁用 XSRF 检查
           },
           query: {
             issueKey: id,

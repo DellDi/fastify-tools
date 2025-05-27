@@ -77,7 +77,7 @@ export async function POST(req: NextRequest) {
       }
       startAt += maxResults
     }
-    // Apply secondary filtering
+    // SaaS客户的ID范围是6000-7000
     const filteredIssues = allIssues.filter((issue) => {
       if (issue.fields?.customFieldCode) {
         return issue.fields.customFieldCode >= 6000 && issue.fields.customFieldCode <= 7000
