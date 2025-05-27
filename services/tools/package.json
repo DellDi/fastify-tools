@@ -21,9 +21,7 @@
     "openai": "^4.69.0",
     "undici": "^6.19.8",
     "@mendable/firecrawl-js": "^1.15.7",
-    "@types/puppeteer": "^5.4.7",
     "axios": "^1.7.9",
-    "puppeteer": "^24.1.0",
     "zod": "^3.24.1"
   }
 }

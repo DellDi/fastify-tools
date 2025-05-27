@@ -147,18 +147,6 @@ const JiraUpdateBody = Type.Object({
   ),
   fields: Type.Object(
     {
-      customfield_12600: Type.Optional(
-        Type.String({
-          default: '19960',
-          description: '自定义字段12600: 客户信息',
-        })
-      ),
-      customfield_10000: Type.Optional(
-        Type.String({
-          default: '19962',
-          description: '自定义字段10000:1 : 客户名称',
-        })
-      ),
       labels: Type.Optional(
         Type.Array(
           Type.String({

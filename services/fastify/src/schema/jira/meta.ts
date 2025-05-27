@@ -11,13 +11,15 @@ export const FieldMetaBean = Type.Object({
       value: Type.Optional(Type.String()),
       name: Type.Optional(Type.String()),
       iconUrl: Type.Optional(Type.String()),
-      child: Type.Optional(
-        Type.Object({
-          id: Type.String(),
-          value: Type.Optional(Type.String()),
-          self: Type.Optional(Type.String()),
-          iconUrl: Type.Optional(Type.String()),
-        })
+      children: Type.Optional(
+        Type.Array(
+          Type.Object({
+            id: Type.String(),
+            value: Type.Optional(Type.String()),
+            self: Type.Optional(Type.String()),
+            iconUrl: Type.Optional(Type.String()),
+          })
+        )
       ),
     })
   ),

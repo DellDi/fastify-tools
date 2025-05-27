@@ -70,47 +70,32 @@ async function handleAppExternalDataToolQuery(
   const jiraService = new JiraRestService(fastify)
 
   const {
-    // title,
-    // description,
-    // assignee,
+    title,
+    description,
+    assignee,
     customerName,
     jiraUser,
     jiraPassword,
     labels,
-    // customAutoFields,
+    customAutoFields,
   } = params || {}
 
-  // const res = await fastify.inject({
-  //   url: '/jira/create-ticket',
-  //   method: 'POST',
-  //   body: {
-  //     title,
-  //     description,
-  //     jiraUser,
-  //     jiraPassword,
-  //     assignee,
-  //     customerName,
-  //     customAutoFields,
-  //   },
-  //   headers: {
-  //     'content-type': 'application/json',
-  //   },
-  // })
-
-  // 模拟
-  const res = {
-    statusCode: 200,
+  const res = await fastify.inject({
+    url: '/jira/create-ticket',
+    method: 'POST',
     body: {
-      json() {
-        return {
-          issueId: '12345',
-          issueKey: 'TEST-123',
-          issueUrl: 'http://bug.new-see.com:8088/browse/TEST-123',
-          updateMsg: 'Jira 工单创建成功',
-        }
-      },
+      title,
+      description,
+      jiraUser,
+      jiraPassword,
+      assignee,
+      customerName,
+      customAutoFields,
     },
-  }
+    headers: {
+      'content-type': 'application/json',
+    },
+  })
 
   // 检查响应状态码
   if (res.statusCode >= 400) {
@@ -119,7 +104,7 @@ async function handleAppExternalDataToolQuery(
   }
 
   // 登录获取认证信息
-   await fastify.inject({
+  await fastify.inject({
     method: 'POST',
     url: '/jira/login',
     body: { jiraUser, jiraPassword },
@@ -127,7 +112,7 @@ async function handleAppExternalDataToolQuery(
 
   // 尝试解析 JSON 并验证必要字段
   try {
-    const jsonData = res.body.json() as JiraCreateExportResponseType
+    const jsonData = res.json() as JiraCreateExportResponseType
 
     // 检查是否包含错误信息
     if (jsonData.error) {
@@ -159,7 +144,6 @@ async function handleAppExternalDataToolQuery(
 
     const customInfo = jiraService.getCustomInfo(values, customerName || '')
     const labelArr = labels?.split(',') || []
-    fastify.log.info(labelArr,  '🚀 ~ labelArr')
     await fastify.inject({
       url: '/jira/update',
       method: 'POST',

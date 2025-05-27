@@ -1,11 +1,11 @@
 packages:
   - packages/*
   - services/*
-
+ignoredBuiltDependencies:
+  - '@tsparticles/engine'
 onlyBuiltDependencies:
   - '@prisma/client'
   - '@prisma/engines'
   - esbuild
   - prisma
-  - puppeteer
   - sharp

@@ -151,29 +151,41 @@ export class JiraRestService {
     return result
   }
 
-  getCustomInfo(values: JiraMeta[], cusstomName: string) {
+  getCustomInfo(
+    values: JiraMeta[],
+    cusstomName: string
+  ): {
+    [key: string]: any
+  } {
     const nameList = ['客户名称', '客户信息']
 
     const customInfo = values.filter((item) => nameList.includes(item.name))
 
-    const dynamicCustomField: Record<string, string | Record<string, string>> =
-      {}
+    const dynamicCustomField: {
+      [key: string]: any
+    } = {}
 
     customInfo.forEach((item) => {
       const valueInfo = item.allowedValues.find((obj) =>
         obj.value?.includes(cusstomName)
       )
-      if (valueInfo) {
-        dynamicCustomField[item.fieldId] = valueInfo.id
-      }
 
-      if (valueInfo?.child) {
+      if (valueInfo) {
         dynamicCustomField[item.fieldId] = {
           id: valueInfo.id,
-          child: valueInfo.child.id,
+        }
+      }
+
+      if (valueInfo && valueInfo.children) {
+        dynamicCustomField[item.fieldId] = {
+          id: valueInfo.id,
+          child: {
+            id: valueInfo.children[0].id,
+          },
         }
       }
     })
+
     return {
       ...dynamicCustomField,
     }
