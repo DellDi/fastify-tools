@@ -232,10 +232,10 @@ export type jiraOrgParams = {
 }
 
 export const jiraDetailSchema = {
-  description: 'jira detail',
+  description: '根据Jira单子keyOrId获取单子详情',
   tags: ['jira'],
   params: Type.Object({
-    id: Type.String(),
+    issueIdOrKey: Type.String({ default: 'V10-000' }),
   }),
   response: {
     200: JiraDetailRoot,

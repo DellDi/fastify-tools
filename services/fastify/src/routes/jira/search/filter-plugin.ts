@@ -2,7 +2,11 @@ import { FastifyPluginAsync } from 'fastify'
 import fp from 'fastify-plugin'
 import { JiraSearchResponseType } from '../../../schema/jira/jira.js'
 
-const customFieldProcessor: FastifyPluginAsync = async (fastify, opts) => {
+/**
+ * 自定义字段处理器, 只是为了验证装饰器，本质上没有其他的用处
+ * @param fastify Fastify 实例 
+ */
+const customFieldProcessor: FastifyPluginAsync = async (fastify) => {
   fastify.addHook('onSend', async (request, reply, payload) => {
     try {
       if (reply.getHeader('content-type')?.toString().includes('application/json')) {

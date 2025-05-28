@@ -151,6 +151,9 @@ export class JiraRestService {
     return result
   }
 
+  /**
+   * 获取自定义字段信息-动态遍历拼接，客户相关信息
+   */
   getCustomInfo(
     values: JiraMeta[],
     cusstomName: string
@@ -188,6 +191,157 @@ export class JiraRestService {
 
     return {
       ...dynamicCustomField,
+    }
+  }
+
+  private async callLLM(
+    messages: Array<{ role: string; content: string }>
+  ): Promise<string> {
+    try {
+      const response = await fetch(
+        'https://dashscope.aliyuncs.com/compatible-mode/v1/chat/completions',
+        {
+          method: 'POST',
+          headers: {
+            Authorization: `Bearer ${process.env.DASHSCOPE_API_KEY}`,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            model: 'qwen-turbo-latest',
+            messages,
+            temperature: 0.3, // 降低随机性，提高确定性
+            top_p: 0.5, // 限制候选词范围，提高一致性
+            response_format: { type: 'json_object' },
+          }),
+        }
+      )
+
+      if (!response.ok) {
+        const error = await response.text()
+        throw new Error(`LLM API error: ${response.status} - ${error}`)
+      }
+
+      const data = (await response.json()) as {
+        choices: Array<{ message: { content: string } }>
+      }
+      this.fastify.log.info(
+        data.choices[0],
+        'data.choices[0]?.message?.content?.trim()'
+      )
+
+      return data.choices[0]?.message?.content?.trim() || '{}'
+    } catch (error: any) {
+      this.fastify.log.error('LLM API call failed:', error)
+      throw new Error(`调用LLM接口失败: ${error?.message || String(error)}`)
+    }
+  }
+
+  async genCustomInfo(
+    values: JiraMeta[],
+    summary: string,
+    description: string
+  ): Promise<Record<string, string>> {
+    // 1. 筛选出必填的自定义字段 - 当前只处理字符串类型
+    const requiredCustomFields = values.filter((field) => {
+      const isCustomField = field.fieldId?.startsWith('customfield')
+      const isRequired = field.required
+      const isStringType = field.schema?.type === 'string'
+      return isCustomField && isRequired && isStringType && field.name
+    })
+
+    if (requiredCustomFields.length === 0) {
+      return {}
+    }
+
+    // 如果没有提供 API Key，直接返回字段名作为值
+    if (!process.env.DASHSCOPE_API_KEY) {
+      this.fastify.log.warn(
+        'DASHSCOPE_API_KEY not provided, using field names as values'
+      )
+      return Object.fromEntries(
+        requiredCustomFields.map((field) => [field.fieldId, field.name])
+      )
+    }
+
+    try {
+      // 2. 构建提示词
+      const fieldsInfo = requiredCustomFields.map((field) => ({
+        fieldId: field.fieldId,
+        name: field.name,
+        description:
+          'schema' in field &&
+          field.schema &&
+          typeof field.schema === 'object' &&
+          'custom' in field.schema
+            ? `字段类型：${field.schema.type}，控件类型:${field.schema.custom}`
+            : '无描述信息',
+      }))
+
+      const systemPrompt = `你是一个专业的JIRA问题助手，负责根据问题描述为必填字段生成合适的值。
+
+## 任务说明：
+- 请根据提供的"问题标题"和"问题描述"，为每个必填字段生成合适的值
+- 请确保生成的值符合字段的描述要求
+- 如果无法确定合适的值，也要返回一个值。一定要是明确的，不能出现可能相关字眼
+- 必须返回有效的JSON对象，键是字段ID，值是字符串
+- 不要包含任何解释性文字，只返回JSON对象
+
+## 必填字段信息：
+${JSON.stringify(fieldsInfo, null, 2)}`
+
+
+      const userPrompt = `## 问题标题：
+${summary}
+
+## 问题描述：
+${description}
+
+请为上述必填字段生成合适的值，直接返回JSON对象，格式如下：
+{
+  "customfield_xxxxx": "值1",
+  "customfield_yyyyy": "值2"
+}`
+
+      // 3. 调用LLM
+      const response = await this.callLLM([
+        { role: 'system', content: systemPrompt },
+        { role: 'user', content: userPrompt },
+      ])
+
+      // 4. 解析响应
+      let result: Record<string, string> = {}
+      try {
+        const parsed = JSON.parse(response)
+        // 验证响应格式
+        if (typeof parsed === 'object' && parsed !== null) {
+          result = Object.fromEntries(
+            Object.entries(parsed).filter(
+              ([key, value]) =>
+                typeof key === 'string' &&
+                key.startsWith('customfield') &&
+                typeof value === 'string'
+            )
+          ) as Record<string, string>
+        }
+      } catch (parseError) {
+        this.fastify.log.error('Failed to parse LLM response:', parseError)
+        throw new Error('解析LLM响应失败，返回的不是有效的JSON格式')
+      }
+
+      // 5. 确保所有必填字段都有值
+      for (const field of requiredCustomFields) {
+        if (!(field.fieldId in result)) {
+          result[field.fieldId] = ''
+        }
+      }
+
+      return result
+    } catch (error) {
+      this.fastify.log.error('Error in genCustomInfo:', error)
+      // 出错时返回包含所有必填字段的空对象
+      return Object.fromEntries(
+        requiredCustomFields.map((field) => [field.fieldId, ''])
+      )
     }
   }
 }

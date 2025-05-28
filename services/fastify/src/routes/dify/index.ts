@@ -68,7 +68,6 @@ async function handleAppExternalDataToolQuery(
   params: Omit<InputDataType, 'point'>
 ) {
   const jiraService = new JiraRestService(fastify)
-
   const {
     title,
     description,
@@ -77,8 +76,26 @@ async function handleAppExternalDataToolQuery(
     jiraUser,
     jiraPassword,
     labels,
-    customAutoFields,
   } = params || {}
+
+  // 登录获取认证信息
+  await fastify.inject({
+    method: 'POST',
+    url: '/jira/login',
+    body: { jiraUser, jiraPassword },
+  })
+
+  const { values } = await jiraService.createMeta(
+    'V10',
+    '4',
+    fastifyCache.get('jira-session')?.cookies,
+    25,
+    0
+  )
+
+  const genCustomInfo = await jiraService.genCustomInfo(values, params.title, params.description)
+
+  fastify.log.info(genCustomInfo, 'genCustomInfo')
 
   const res = await fastify.inject({
     url: '/jira/create-ticket',
@@ -90,25 +107,19 @@ async function handleAppExternalDataToolQuery(
       jiraPassword,
       assignee,
       customerName,
-      customAutoFields,
+      customAutoFields: genCustomInfo,
     },
     headers: {
       'content-type': 'application/json',
     },
   })
 
+
   // 检查响应状态码
   if (res.statusCode >= 400) {
     fastify.log.error(`Jira API 错误: ${res.statusCode} - ${res.body}`)
     throw new Error(`创建 Jira 工单失败: ${res.body}`)
   }
-
-  // 登录获取认证信息
-  await fastify.inject({
-    method: 'POST',
-    url: '/jira/login',
-    body: { jiraUser, jiraPassword },
-  })
 
   // 尝试解析 JSON 并验证必要字段
   try {
@@ -133,14 +144,6 @@ async function handleAppExternalDataToolQuery(
     if (!jsonData.issueId || !jsonData.issueKey) {
       throw new Error('返回的 Jira 数据缺少必要字段')
     }
-
-    const { values } = await jiraService.createMeta(
-      'V10',
-      '4',
-      fastifyCache.get('jira-session')?.cookies,
-      25,
-      0
-    )
 
     const customInfo = jiraService.getCustomInfo(values, customerName || '')
     const labelArr = labels?.split(',') || []

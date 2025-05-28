@@ -18,7 +18,7 @@
   "license": "MIT",
   "dependencies": {
     "exceljs": "^4.4.0",
-    "openai": "^4.69.0",
+    "openai": "^4.103.0",
     "undici": "^6.19.8",
     "@mendable/firecrawl-js": "^1.15.7",
     "axios": "^1.7.9",

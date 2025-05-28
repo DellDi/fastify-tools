@@ -40,43 +40,14 @@ const DifyJiraCreateExportBody = Type.Object({
       default: '新安明珠',
     })
   ),
-  customAutoFields: Type.Object(
-    {
-      customfield_10601: Type.String({
-        description: '功能现状是必需的。',
-        default: '功能现状是必需的。',
-      }),
-      customfield_10602: Type.String({
-        description: '提交角色是必需的。',
-        default: '提交角色是必需的。',
-      }),
-      customfield_13401: Type.String({
-        description: '修改建议是必需的。',
-        default: '修改建议是必需的。',
-      }),
-      customfield_13400: Type.String({
-        description: '业务场景是必需的。',
-        default: '业务场景是必需的。',
-      }),
-    },
-    {
-      default: {
-        customfield_10601: '功能现状是必需的。',
-        customfield_10602: '提交角色是必需的。',
-        customfield_13401: '修改建议是必需的。',
-        customfield_13400: '业务场景是必需的。',
-      },
-      // 允许用户添加额外的自定义属性，类型为任意
-      additionalProperties: Type.Any(),
-    }
-  ),
 })
 
 const InputData = Type.Intersect([
   Type.Object({
     point: Type.String({
       default: 'ping',
-      description: "触发标识:'ping' | 触发接口: 'app.create_jira_tool'",
+      description:
+        "测试使用的标识:'ping' | 报单触发接口: 'app.create_jira_tool'",
     }),
   }),
   DifyJiraCreateExportBody,

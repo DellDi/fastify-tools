@@ -72,8 +72,8 @@ const jira: FastifyPluginAsyncTypebox = async (fastify): Promise<void> => {
   fastify.post('/create-meta', {
     schema: {
       body: Type.Object({
-        jiraUser: Type.String({ default: process.env.JIRA_USER }),
-        jiraPassword: Type.String({ default: process.env.JIRA_PASSWORD }),
+        jiraUser: Type.Optional(Type.String({ default: process.env.JIRA_USER })),
+        jiraPassword: Type.Optional(Type.String({ default: process.env.JIRA_PASSWORD })),
         projectKey: Type.String({
           default: 'V10',
           description:
