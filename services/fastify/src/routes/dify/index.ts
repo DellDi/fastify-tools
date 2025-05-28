@@ -148,6 +148,8 @@ async function handleAppExternalDataToolQuery(
       url: '/jira/update',
       method: 'POST',
       body: {
+        jiraUser: jiraUser,
+        jiraPassword: jiraPassword,
         issueIdOrKey: jsonData.issueKey,
         fields: {
           labels: labelArr,

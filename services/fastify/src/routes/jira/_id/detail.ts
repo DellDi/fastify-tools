@@ -16,7 +16,10 @@ const detail: FastifyPluginAsync = async (fastify, opts): Promise<void> => {
       const resLogin = await fastify.inject({
         method: 'POST',
         url: '/jira/login',
-        body: {},
+        body: {
+          jiraUser: process.env.JIRA_USER,
+          jiraPassword: process.env.JIRA_PASSWORD,
+        },
       })
       const { cookies } = resLogin.json() as JiraLoginResponseType
       // Create Jira ticket

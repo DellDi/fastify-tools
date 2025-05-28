@@ -4,7 +4,7 @@ import { serviceCache } from '@/store/service'
 import { fastifyFetch } from '@/utils/fetch/fastifyFetch'
 
 export async function POST() {
-  const username = process.env.JIRA_USERNAME
+  const username = process.env.JIRA_USER
   const password = process.env.JIRA_PASSWORD
 
   if (!username || !password) {
