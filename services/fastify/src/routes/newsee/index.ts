@@ -8,7 +8,12 @@ const newsee: FastifyPluginAsyncTypebox = async (fastify): Promise<void> => {
   fastify.register(cors, {
     origin: (origin, cb) => {
       const hostname = new URL(origin || '').hostname
-      const allowedHostnames = ['localhost', '127.0.0.1']
+      const allowedHostnames = [
+        'localhost',
+        '127.0.0.1',
+        'dify.yswg360.com',
+        'poc.new-see.com',
+      ]
       if (allowedHostnames.includes(hostname)) {
         //  Request from localhost will pass
         cb(null, true)

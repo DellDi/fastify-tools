@@ -16,14 +16,13 @@ export function CopyButton({ text, className = '', ...props }: CopyButtonProps) 
   const copyToClipboard = async () => {
     try {
       await navigator.clipboard.writeText(text)
-      // alert('Copied to clipboard!')
       toast({
-        title: 'Copied to clipboard!',
-        description: 'You can now paste it anywhere you like.',
+        title: '复制成功',
+        description: '你可以现在粘贴了',
       })
       setIsCopy(true)
     } catch (error) {
-      console.error('Failed to copy text: ', error)
+      console.error('复制失败: ', error)
       setIsCopy(false)
     }
   }

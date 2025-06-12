@@ -80,16 +80,12 @@ export function PasswordComponent() {
           `${response.code}:${response.message}`
         ) : (
           <>
-            <pre className="mt-2 w-[340px] rounded-md bg-gray-900  p-4 overflow-auto">
-              <code className="text-white whitespace-pre-wrap break-words">
+            <pre className="mt-2 w-[340px] rounded-md p-4 overflow-auto">
+              <code className="whitespace-pre-wrap break-words">
                 {response.result}
               </code>
             </pre>
-            <CopyButton
-              text={response.message as string}
-              size="sm"
-              className=""
-            >
+            <CopyButton text={response.result as string} size="sm" className="">
               复制
             </CopyButton>
           </>
