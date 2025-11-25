@@ -207,7 +207,7 @@ export class JiraRestService {
             'Content-Type': 'application/json',
           },
           body: JSON.stringify({
-            model: 'qwen-turbo-latest',
+            model: 'qwen3-flash',
             messages,
             temperature: 0.3, // 降低随机性，提高确定性
             top_p: 0.5, // 限制候选词范围，提高一致性

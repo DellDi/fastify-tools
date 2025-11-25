@@ -3,9 +3,7 @@ import bearerAuth from '@fastify/bearer-auth'
 import { FastifyInstance } from 'fastify'
 import { FastifyPluginAsyncTypebox } from '@fastify/type-provider-typebox'
 import { difySchema, InputDataType } from '@/schema/dify/dify.js'
-import { JiraCreateExportResponseType } from '@/schema/jira/jira.js'
-import { JiraRestService } from '@/services/jira/jira-rest.service.js'
-import { fastifyCache } from '@/utils/cache.js'
+import { JiraService } from '@/services/jira/jira.service.js'
 
 const dify: FastifyPluginAsyncTypebox = async (fastify): Promise<void> => {
   fastify
@@ -62,12 +60,12 @@ const dify: FastifyPluginAsyncTypebox = async (fastify): Promise<void> => {
   })
 }
 
-// 修改 handleAppExternalDataToolQuery 函数，增加错误处理
+// 重构后的 handleAppExternalDataToolQuery 函数，使用 JiraService
 async function handleAppExternalDataToolQuery(
   fastify: FastifyInstance,
   params: Omit<InputDataType, 'point'>
 ) {
-  const jiraService = new JiraRestService(fastify)
+  const jiraService = new JiraService(fastify)
   const {
     title,
     description,
@@ -78,97 +76,23 @@ async function handleAppExternalDataToolQuery(
     labels,
   } = params || {}
 
-  // 登录获取认证信息
-  await fastify.inject({
-    method: 'POST',
-    url: '/jira/login',
-    body: { jiraUser, jiraPassword },
-  })
+  if (!jiraUser || !jiraPassword) {
+    throw new Error('缺少 Jira 登录凭据: jiraUser 和 jiraPassword')
+  }
 
-  const { values } = await jiraService.createMeta(
-    'V10',
-    '4',
-    fastifyCache.get('jira-session')?.cookies,
-    25,
-    0
-  )
-
-  const genCustomInfo = await jiraService.genCustomInfo(values, params.title, params.description)
-
-  fastify.log.info(genCustomInfo, 'genCustomInfo')
-
-  const res = await fastify.inject({
-    url: '/jira/create-ticket',
-    method: 'POST',
-    body: {
+  // 使用 JiraService 创建工单并处理标签
+  const result = await jiraService.createTicketWithLabels(
+    { jiraUser, jiraPassword },
+    {
       title,
       description,
-      jiraUser,
-      jiraPassword,
       assignee,
       customerName,
-      customAutoFields: genCustomInfo,
-    },
-    headers: {
-      'content-type': 'application/json',
-    },
-  })
-
-
-  // 检查响应状态码
-  if (res.statusCode >= 400) {
-    fastify.log.error(`Jira API 错误: ${res.statusCode} - ${res.body}`)
-    throw new Error(`创建 Jira 工单失败: ${res.body}`)
-  }
-
-  // 尝试解析 JSON 并验证必要字段
-  try {
-    const jsonData = res.json() as JiraCreateExportResponseType
-
-    // 检查是否包含错误信息
-    if (jsonData.error) {
-      fastify.log.error(`Jira API 返回错误: ${jsonData.error}`)
-
-      // 如果有详细错误信息，格式化并记录
-      if (jsonData.details) {
-        const detailsStr = Object.entries(jsonData.details)
-          .map(([key, value]) => `${key}: ${value}`)
-          .join('\n')
-        fastify.log.error(`错误详情:\n${detailsStr}`)
-      }
-
-      throw new Error(jsonData.error)
+      labels,
     }
+  )
 
-    // 验证必要字段
-    if (!jsonData.issueId || !jsonData.issueKey) {
-      throw new Error('返回的 Jira 数据缺少必要字段')
-    }
-
-    const customInfo = jiraService.getCustomInfo(values, customerName || '')
-    const labelArr = labels?.split(',') || []
-    await fastify.inject({
-      url: '/jira/update',
-      method: 'POST',
-      body: {
-        jiraUser: jiraUser,
-        jiraPassword: jiraPassword,
-        issueIdOrKey: jsonData.issueKey,
-        fields: {
-          labels: labelArr,
-          ...customInfo,
-        },
-      },
-      headers: {
-        'content-type': 'application/json',
-      },
-    })
-
-    return jsonData
-  } catch (error) {
-    fastify.log.error(`解析 Jira 响应失败: ${error}`)
-    throw new Error(`处理 Jira 响应时出错: ${error}`)
-  }
+  return result
 }
 
 export default dify

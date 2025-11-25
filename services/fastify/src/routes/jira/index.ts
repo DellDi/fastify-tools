@@ -4,14 +4,13 @@ import { Type } from '@fastify/type-provider-typebox'
 
 import {
   jiraCreateExport,
-  JiraLoginResponseType,
   JiraCreateExportBodyType,
 } from '@/schema/jira/jira.js'
-import { JiraRestService } from '@/services/jira/jira-rest.service.js'
+import { JiraService } from '@/services/jira/jira.service.js'
 import { FieldMetaBean } from '@/schema/jira/meta.js'
 
 const jira: FastifyPluginAsyncTypebox = async (fastify): Promise<void> => {
-  const jiraRestService = new JiraRestService(fastify)
+  const jiraService = new JiraService(fastify)
 
   fastify.route({
     method: 'POST',
@@ -31,40 +30,28 @@ const jira: FastifyPluginAsyncTypebox = async (fastify): Promise<void> => {
       } = req.body
 
       try {
-        // 登录获取认证信息
-        const resLogin = await fastify.inject({
-          method: 'POST',
-          url: '/jira/login',
-          body: { jiraUser, jiraPassword },
-        })
+        if (!jiraUser || !jiraPassword) {
+          reply.code(400).send({ error: 'Missing jiraUser or jiraPassword' })
+          return
+        }
 
-        const { cookies } = resLogin.json() as JiraLoginResponseType
-
-        const jiraCreateResponse = await jiraRestService.createIssue(
+        // 使用 JiraService 创建工单
+        const result = await jiraService.createTicket(
+          { jiraUser, jiraPassword },
           {
             title,
             description,
             assignee,
             customAutoFields,
-          },
-          cookies
+          }
         )
 
-        // 返回创建成功的工单信息
-        const createdIssue = jiraCreateResponse
-        return {
-          issueId: createdIssue.id || '',
-          issueKey: createdIssue.key || '',
-          issueUrl: `http://bug.new-see.com:8088/browse/${
-            createdIssue.key || ''
-          }`,
-          updateMsg: '工单创建成功',
-        }
+        return result
       } catch (error: unknown) {
         const errorMessage =
           error instanceof Error ? error.message : 'Unknown error'
         fastify.log.error('Jira API 错误:', errorMessage)
-        throw new Error(`创建 Jira 工单失败: ${errorMessage}`)
+        reply.code(400).send({ error: `创建 Jira 工单失败: ${errorMessage}` })
       }
     },
   })
@@ -107,30 +94,30 @@ const jira: FastifyPluginAsyncTypebox = async (fastify): Promise<void> => {
       },
     },
     handler: async (req, reply) => {
-      // 登录获取认证信息
-      const resLogin = await fastify.inject({
-        method: 'POST',
-        url: '/jira/login',
-        body: {
-          jiraUser: req.body.jiraUser,
-          jiraPassword: req.body.jiraPassword,
-        },
-      })
+      const { jiraUser, jiraPassword, projectKey, issueTypeId, maxResults, startAt } = req.body
 
-      const { cookies } = resLogin.json() as JiraLoginResponseType
+      try {
+        if (!jiraUser || !jiraPassword) {
+          reply.code(400).send({ error: 'Missing jiraUser or jiraPassword' })
+          return
+        }
 
-      // 创建 JiraRestService
-      const jiraRestService = new JiraRestService(fastify)
-
-      const metaInfo = await jiraRestService.createMeta(
-        req.body.projectKey,
-        req.body.issueTypeId,
-        cookies,
-        req.body.maxResults,
-        req.body.startAt
-      )
+        // 使用 JiraService 获取元数据
+        const metaInfo = await jiraService.getCreateMeta(
+          { jiraUser, jiraPassword },
+          projectKey,
+          issueTypeId,
+          maxResults,
+          startAt
+        )
      
-      return metaInfo
+        return metaInfo
+      } catch (error: unknown) {
+        const errorMessage =
+          error instanceof Error ? error.message : 'Unknown error'
+        fastify.log.error('Jira API 错误:', errorMessage)
+        reply.code(400).send({ error: `获取 Jira 元数据失败: ${errorMessage}` })
+      }
     },
   })
 }
