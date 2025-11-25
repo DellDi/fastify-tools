@@ -24,7 +24,7 @@ const DifyJiraCreateExportBody = Type.Object({
   ),
   jiraUser: Type.Optional(
     Type.String({
-      default: process.env.JIRA_USER,
+      default: process.env.JIRA_USERNAME,
       description: 'jira用户名-创建人',
     })
   ),

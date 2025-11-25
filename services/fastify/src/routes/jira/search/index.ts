@@ -6,11 +6,14 @@ import {
 } from '../../../schema/jira/jira.js'
 import cors from '@fastify/cors'
 import customFieldProcessor from './filter-plugin.js'
+import { getJiraConfig } from '@/utils/config-helpers.js'
 
 const jira: FastifyPluginAsyncTypebox = async (
   fastify,
   opts
 ): Promise<void> => {
+  const jiraConfig = getJiraConfig(fastify)
+  
   fastify.register(cors, {
     origin: '*',
     methods: ['GET', 'POST'],
@@ -32,7 +35,7 @@ const jira: FastifyPluginAsyncTypebox = async (
 
         try {
           const jiraRes = await request(
-            `http://bug.new-see.com:8088/rest/api/2/search`,
+            `${jiraConfig.baseUrl}/rest/api/2/search`,
             {
               method: 'GET',
               query: {
@@ -42,7 +45,7 @@ const jira: FastifyPluginAsyncTypebox = async (
               },
               headers: {
                 Cookie: jiraCookies,
-                Authorization: 'Basic bmV3c2VlOm5ld3NlZQ==',
+                Authorization: jiraConfig.auth.basicToken,
               },
               // 添加超时设置
               headersTimeout: 30000,

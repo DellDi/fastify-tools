@@ -20,6 +20,23 @@ const schema = Type.Object({
   SMTP_USER: Type.Optional(Type.String()),
   SMTP_PASS: Type.Optional(Type.String()),
   SMTP_SECURE: Type.Optional(Type.Boolean({ default: false })),
+
+  // Jira 配置
+  JIRA_USERNAME: Type.String(),
+  JIRA_PASSWORD: Type.String(),
+  JIRA_BASE_URL: Type.Optional(Type.String({ default: 'http://bug.new-see.com:8088' })),
+  JIRA_DEFAULT_PROJECT: Type.Optional(Type.String({ default: 'V10' })),
+  JIRA_DEFAULT_ISSUE_TYPE: Type.Optional(Type.String({ default: '4' })),
+  JIRA_DEFAULT_COMPONENT: Type.Optional(Type.String({ default: '13676' })),
+  JIRA_DEFAULT_PRIORITY: Type.Optional(Type.String({ default: '3' })),
+
+  // 认证配置
+  BEARER_TOKEN: Type.String(),
+
+  // LLM 配置（阿里云 DashScope）
+  DASHSCOPE_API_KEY: Type.Optional(Type.String()),
+  LLM_BASE_URL: Type.Optional(Type.String({ default: 'https://dashscope.aliyuncs.com/compatible-mode/v1/chat/completions' })),
+  LLM_MODEL: Type.Optional(Type.String({ default: 'qwen3-flash' })),
 })
 
 export default fp<FastifyEnvOptions>(async (fastify, opts) => {

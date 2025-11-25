@@ -3,6 +3,7 @@ import { FastifyInstance } from 'fastify'
 import dayjs from 'dayjs'
 import { request } from 'undici'
 import { fastifyCache } from '@/utils/cache.js'
+import { getJiraConfig, getLLMConfig, getCacheConfig } from '@/utils/config-helpers.js'
 
 type IssueData = {
   fields: {
@@ -33,24 +34,26 @@ interface JiraCreateResponse {
 }
 
 export class JiraRestService {
-  jiraUser: string
-  jiraPassword: string
+  private jiraConfig: ReturnType<typeof getJiraConfig>
+  private llmConfig: ReturnType<typeof getLLMConfig>
+  private cacheConfig: ReturnType<typeof getCacheConfig>
 
   constructor(private fastify: FastifyInstance) {
-    const { JIRA_USER = '', JIRA_PASSWORD = '' } = process.env
-    this.jiraUser = JIRA_USER
-    this.jiraPassword = JIRA_PASSWORD
-    this.fastify.log.info(`Jira user: ${JIRA_USER}`)
-    this.fastify.log.info(`Jira password: ${JIRA_PASSWORD}`)
+    this.jiraConfig = getJiraConfig(fastify)
+    this.llmConfig = getLLMConfig(fastify)
+    this.cacheConfig = getCacheConfig(fastify)
+    
+    // 移除敏感信息日志记录，只记录用户名
+    this.fastify.log.info(`Jira service initialized for user: ${this.jiraConfig.auth.username}`)
   }
 
   async createIssue(restData: { [key: string]: any }, cookies: string) {
     const issueData: IssueData = {
       fields: {
-        project: { key: 'V10' }, // 项目 ID
+        project: { key: this.jiraConfig.defaultProject },
         summary: restData.title,
-        issuetype: { id: '4' }, // 问题类型 ID
-        components: [{ id: '13676' }], // 组件 ID
+        issuetype: { id: this.jiraConfig.defaultIssueType },
+        components: [{ id: this.jiraConfig.defaultComponent }],
         customfield_10000: { id: '13163' }, // 使用对象格式提供 ID
         customfield_12600: {
           id: '15862', // This is the ID for the parent option
@@ -59,7 +62,7 @@ export class JiraRestService {
           },
         },
         customfield_10041: dayjs().format('YYYY-MM-DD'),
-        priority: { id: '3' },
+        priority: { id: this.jiraConfig.defaultPriority },
         description: restData.description || restData.title,
         assignee: restData.assignee ? { name: restData.assignee } : null,
         ...restData.customAutoFields,
@@ -68,12 +71,12 @@ export class JiraRestService {
 
     // 创建 Jira 工单
     const createTicketResponse = await request(
-      'http://bug.new-see.com:8088/rest/api/2/issue',
+      this.jiraConfig.endpoints.createIssue,
       {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          Authorization: 'Basic bmV3c2VlOm5ld3NlZQ==',
+          Authorization: this.jiraConfig.auth.basicToken,
           'X-Atlassian-Token': 'no-check', // 禁用 XSRF 检查
           Cookie: cookies,
         },
@@ -104,18 +107,18 @@ export class JiraRestService {
     maxResults: number,
     startAt: number
   ) {
-    const metaInfo = fastifyCache.get('jira-meta')
+    const metaInfo = fastifyCache.get(this.cacheConfig.metaPrefix)
     if (metaInfo) {
       return metaInfo
     }
     // 获取创建工单的元数据
     const requestCreateMeta = await request(
-      `http://bug.new-see.com:8088/rest/api/2/issue/createmeta/${projectKey}/issuetypes/${issueTypeId}`,
+      `${this.jiraConfig.endpoints.createMeta}/${projectKey}/issuetypes/${issueTypeId}`,
       {
         method: 'GET',
         headers: {
           Cookie: cookies,
-          Authorization: 'Basic bmV3c2VlOm5ld3NlZQ==',
+          Authorization: this.jiraConfig.auth.basicToken,
           'Content-Type': 'application/json',
           'X-Atlassian-Token': 'no-check', // 禁用 XSRF 检查
         },
@@ -146,7 +149,7 @@ export class JiraRestService {
       values: responseBody.values,
     }
 
-    fastifyCache.set('jira-meta', result)
+    fastifyCache.set(this.cacheConfig.metaPrefix, result)
 
     return result
   }
@@ -199,15 +202,15 @@ export class JiraRestService {
   ): Promise<string> {
     try {
       const response = await fetch(
-        'https://dashscope.aliyuncs.com/compatible-mode/v1/chat/completions',
+        this.llmConfig.baseUrl,
         {
           method: 'POST',
           headers: {
-            Authorization: `Bearer ${process.env.DASHSCOPE_API_KEY}`,
+            Authorization: `Bearer ${this.llmConfig.apiKey}`,
             'Content-Type': 'application/json',
           },
           body: JSON.stringify({
-            model: 'qwen3-flash',
+            model: this.llmConfig.model,
             messages,
             temperature: 0.3, // 降低随机性，提高确定性
             top_p: 0.5, // 限制候选词范围，提高一致性
@@ -254,7 +257,7 @@ export class JiraRestService {
     }
 
     // 如果没有提供 API Key，直接返回字段名作为值
-    if (!process.env.DASHSCOPE_API_KEY) {
+    if (!this.llmConfig.apiKey) {
       this.fastify.log.warn(
         'DASHSCOPE_API_KEY not provided, using field names as values'
       )

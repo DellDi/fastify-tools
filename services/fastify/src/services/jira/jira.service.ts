@@ -3,6 +3,14 @@ import { request } from 'undici'
 import { JiraRestService } from './jira-rest.service.js'
 import { fastifyCache } from '@/utils/cache.js'
 import { createHash } from 'crypto'
+import { getJiraConfig, getCacheConfig } from '@/utils/config-helpers.js'
+import { 
+  JiraLoginError, 
+  JiraCreateError, 
+  JiraUpdateError,
+  ValidationError,
+  JiraError
+} from '@/utils/errors.js'
 
 export interface JiraLoginCredentials {
   jiraUser: string
@@ -40,35 +48,43 @@ export interface JiraSession {
  */
 export class JiraService {
   private jiraRestService: JiraRestService
+  private jiraConfig: ReturnType<typeof getJiraConfig>
+  private cacheConfig: ReturnType<typeof getCacheConfig>
 
   constructor(private fastify: FastifyInstance) {
     this.jiraRestService = new JiraRestService(fastify)
+    this.jiraConfig = getJiraConfig(fastify)
+    this.cacheConfig = getCacheConfig(fastify)
   }
 
   /**
    * Generate user-specific cache key for session
    */
   private getSessionKey(jiraUser: string): string {
-    return `jira-session-${createHash('md5').update(jiraUser).digest('hex')}`
+    return `${this.cacheConfig.sessionPrefix}-${createHash('md5').update(jiraUser).digest('hex')}`
   }
 
   /**
    * Login to Jira and cache session information
    */
   async login(credentials: JiraLoginCredentials): Promise<JiraSession> {
+    if (!credentials.jiraUser || !credentials.jiraPassword) {
+      throw new ValidationError('缺少 Jira 登录凭据: jiraUser 和 jiraPassword')
+    }
+
     const sessionKey = this.getSessionKey(credentials.jiraUser)
     const session = fastifyCache.get(sessionKey) || {}
     if (session.cookies && session.atlToken) {
       return { cookies: session.cookies, atlToken: session.atlToken }
     }
 
-    const jiraUrl = 'http://bug.new-see.com:8088/rest/auth/1/session'
+    const jiraUrl = this.jiraConfig.endpoints.session
 
     try {
       const loginResponse = await request(jiraUrl, {
         method: 'POST',
         headers: {
-          Authorization: 'Basic bmV3c2VlOm5ld3NlZQ==',
+          Authorization: this.jiraConfig.auth.basicToken,
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
@@ -78,7 +94,7 @@ export class JiraService {
       })
 
       if (loginResponse.statusCode !== 200) {
-        throw new Error('Login failed')
+        throw new JiraLoginError(`登录失败，状态码: ${loginResponse.statusCode}`)
       }
 
       // Extract cookies from response
@@ -106,7 +122,10 @@ export class JiraService {
       return sessionData
     } catch (error) {
       this.fastify.log.error('Jira login error:', error)
-      throw new Error(`Jira 登录失败: ${error}`)
+      if (error instanceof JiraLoginError) {
+        throw error
+      }
+      throw new JiraLoginError(`Jira 登录失败: ${error}`)
     }
   }
 
@@ -129,6 +148,10 @@ export class JiraService {
     credentials: JiraLoginCredentials,
     data: JiraCreateTicketData
   ): Promise<JiraCreateTicketResponse> {
+    if (!data.title || !data.description) {
+      throw new ValidationError('缺少必需字段: title 和 description')
+    }
+
     try {
       // Login and get session
       const session = await this.getSession(credentials)
@@ -166,7 +189,7 @@ export class JiraService {
       )
 
       if (!createResponse.id || !createResponse.key) {
-        throw new Error('创建 Jira 工单返回数据缺少必要字段')
+        throw new JiraCreateError('创建 Jira 工单返回数据缺少必要字段')
       }
 
       // Update ticket with additional information if needed
@@ -187,12 +210,15 @@ export class JiraService {
       return {
         issueId: createResponse.id,
         issueKey: createResponse.key,
-        issueUrl: `http://bug.new-see.com:8088/browse/${createResponse.key}`,
+        issueUrl: `${this.jiraConfig.baseUrl}/browse/${createResponse.key}`,
         updateMsg: '工单创建成功',
       }
     } catch (error) {
       this.fastify.log.error('Create ticket error:', error)
-      throw new Error(`创建 Jira 工单失败: ${error}`)
+      if (error instanceof JiraCreateError || error instanceof ValidationError) {
+        throw error
+      }
+      throw new JiraCreateError(`创建 Jira 工单失败: ${error}`)
     }
   }
 
@@ -203,16 +229,20 @@ export class JiraService {
     credentials: JiraLoginCredentials,
     data: JiraUpdateTicketData
   ): Promise<{ message: string }> {
+    if (!data.issueIdOrKey || !data.fields) {
+      throw new ValidationError('缺少必需字段: issueIdOrKey 和 fields')
+    }
+
     try {
       const session = await this.getSession(credentials)
 
       const updateResponse = await request(
-        `http://bug.new-see.com:8088/rest/api/2/issue/${data.issueIdOrKey}`,
+        `${this.jiraConfig.endpoints.updateIssue}/${data.issueIdOrKey}`,
         {
           method: 'PUT',
           headers: {
             Cookie: session.cookies,
-            Authorization: 'Basic bmV3c2VlOm5ld3NlZQ==',
+            Authorization: this.jiraConfig.auth.basicToken,
             'Content-Type': 'application/json',
           },
           body: JSON.stringify({
@@ -222,9 +252,7 @@ export class JiraService {
       )
 
       if (updateResponse?.statusCode !== 204) {
-        throw new Error(
-          `更新失败: ${updateResponse?.statusCode} - ${JSON.stringify(data)}`
-        )
+        throw new JiraUpdateError(`更新失败: ${updateResponse?.statusCode}`)
       }
 
       return {
@@ -234,7 +262,10 @@ export class JiraService {
       }
     } catch (error) {
       this.fastify.log.error('Update ticket error:', error)
-      throw new Error(`更新 Jira 工单失败: ${error}`)
+      if (error instanceof JiraUpdateError || error instanceof ValidationError) {
+        throw error
+      }
+      throw new JiraUpdateError(`更新 Jira 工单失败: ${error}`)
     }
   }
 
@@ -260,7 +291,7 @@ export class JiraService {
       )
     } catch (error) {
       this.fastify.log.error('Get create meta error:', error)
-      throw new Error(`获取 Jira 元数据失败: ${error}`)
+      throw new JiraError(`获取 Jira 元数据失败: ${error}`)
     }
   }
 

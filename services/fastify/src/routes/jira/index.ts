@@ -20,46 +20,28 @@ const jira: FastifyPluginAsyncTypebox = async (fastify): Promise<void> => {
       req: FastifyRequest<{ Body: JiraCreateExportBodyType }>,
       reply: FastifyReply
     ) => {
-      const {
-        title,
-        description,
-        assignee,
-        jiraUser,
-        jiraPassword,
-        customAutoFields,
-      } = req.body
+      const { title, description, assignee, customAutoFields } = req.body
+      const { jiraUser, jiraPassword } = req.body
 
-      try {
-        if (!jiraUser || !jiraPassword) {
-          reply.code(400).send({ error: 'Missing jiraUser or jiraPassword' })
-          return
+      // 使用 JiraService 创建工单（验证和错误处理在服务层）
+      const result = await jiraService.createTicket(
+        { jiraUser: jiraUser || '', jiraPassword: jiraPassword || '' },
+        {
+          title,
+          description,
+          assignee: assignee || undefined,
+          customAutoFields,
         }
+      )
 
-        // 使用 JiraService 创建工单
-        const result = await jiraService.createTicket(
-          { jiraUser, jiraPassword },
-          {
-            title,
-            description,
-            assignee,
-            customAutoFields,
-          }
-        )
-
-        return result
-      } catch (error: unknown) {
-        const errorMessage =
-          error instanceof Error ? error.message : 'Unknown error'
-        fastify.log.error('Jira API 错误:', errorMessage)
-        reply.code(400).send({ error: `创建 Jira 工单失败: ${errorMessage}` })
-      }
+      return result
     },
   })
 
   fastify.post('/create-meta', {
     schema: {
       body: Type.Object({
-        jiraUser: Type.Optional(Type.String({ default: process.env.JIRA_USER })),
+        jiraUser: Type.Optional(Type.String({ default: process.env.JIRA_USERNAME })),
         jiraPassword: Type.Optional(Type.String({ default: process.env.JIRA_PASSWORD })),
         projectKey: Type.String({
           default: 'V10',
@@ -96,28 +78,16 @@ const jira: FastifyPluginAsyncTypebox = async (fastify): Promise<void> => {
     handler: async (req, reply) => {
       const { jiraUser, jiraPassword, projectKey, issueTypeId, maxResults, startAt } = req.body
 
-      try {
-        if (!jiraUser || !jiraPassword) {
-          reply.code(400).send({ error: 'Missing jiraUser or jiraPassword' })
-          return
-        }
-
-        // 使用 JiraService 获取元数据
-        const metaInfo = await jiraService.getCreateMeta(
-          { jiraUser, jiraPassword },
-          projectKey,
-          issueTypeId,
-          maxResults,
-          startAt
-        )
-     
-        return metaInfo
-      } catch (error: unknown) {
-        const errorMessage =
-          error instanceof Error ? error.message : 'Unknown error'
-        fastify.log.error('Jira API 错误:', errorMessage)
-        reply.code(400).send({ error: `获取 Jira 元数据失败: ${errorMessage}` })
-      }
+      // 使用 JiraService 获取元数据（验证和错误处理在服务层）
+      const metaInfo = await jiraService.getCreateMeta(
+        { jiraUser, jiraPassword },
+        projectKey,
+        issueTypeId,
+        maxResults,
+        startAt
+      )
+   
+      return metaInfo
     },
   })
 }

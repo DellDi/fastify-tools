@@ -1,7 +1,7 @@
 import { Type, Static } from '@sinclair/typebox'
 
 const JiraLoginBody = Type.Object({
-  jiraUser: Type.String({ default: process.env.JIRA_USER }),
+  jiraUser: Type.String({ default: process.env.JIRA_USERNAME }),
   jiraPassword: Type.String({ default: process.env.JIRA_PASSWORD }),
 })
 
@@ -39,7 +39,7 @@ export const JiraCreateExportBody = Type.Object({
   ),
   jiraUser: Type.Optional(
     Type.String({
-      default: process.env.JIRA_USER,
+      default: process.env.JIRA_USERNAME,
       description: 'jira用户名-创建人',
     })
   ),
@@ -135,7 +135,7 @@ export type JiraCreateExportResponseType = Static<
 const JiraUpdateBody = Type.Object({
   jiraUser: Type.Optional(
     Type.String({
-      default: process.env.JIRA_USER,
+      default: process.env.JIRA_USERNAME,
       description: 'jira用户名-创建人',
     })
   ),

@@ -4,13 +4,17 @@ import { FastifyInstance } from 'fastify'
 import { FastifyPluginAsyncTypebox } from '@fastify/type-provider-typebox'
 import { difySchema, InputDataType } from '@/schema/dify/dify.js'
 import { JiraService } from '@/services/jira/jira.service.js'
+import { getAuthConfig } from '@/utils/config-helpers.js'
+import { ValidationError } from '@/utils/errors.js'
 
 const dify: FastifyPluginAsyncTypebox = async (fastify): Promise<void> => {
+  const authConfig = getAuthConfig(fastify)
+  
   fastify
     .register(auth)
     .register(bearerAuth, {
       addHook: true,
-      keys: new Set(['zd-nb-19950428']),
+      keys: new Set([authConfig.bearerToken]),
     })
     .decorate(
       'allowAnonymous',
@@ -35,27 +39,22 @@ const dify: FastifyPluginAsyncTypebox = async (fastify): Promise<void> => {
         return { result: 'pong' }
       }
 
-      try {
-        if (point === 'app.create_jira_tool') {
-          if (!params.title || !params.description) {
-            reply
-              .code(400)
-              .send({ error: 'Missing required fields: title and description' })
-            return
-          }
-          const { issueId, issueKey, issueUrl, updateMsg } =
-            await handleAppExternalDataToolQuery(fastify, params)
-          reply.send({
-            result: `${Date.now()}`,
-            issueId,
-            issueKey,
-            issueUrl,
-            updateMsg,
-          })
+      if (point === 'app.create_jira_tool') {
+        // 验证必需字段 - 让服务层处理验证
+        const { issueId, issueKey, issueUrl, updateMsg } =
+          await handleAppExternalDataToolQuery(fastify, params)
+        
+        return {
+          result: `${Date.now()}`,
+          issueId,
+          issueKey,
+          issueUrl,
+          updateMsg,
         }
-      } catch (e) {
-        reply.code(400).send({ error: `Not implemented: ${e}` })
       }
+
+      // 处理未知的 point 值
+      throw new ValidationError(`未知的操作类型: ${point}`)
     },
   })
 }

@@ -74,7 +74,7 @@ services:
       # 数据库连接配置
       - DATABASE_URL=${NEXT_DATABASE_URL:-postgresql://postgres:postgres@postgres:5432/shadcn_next}
       - JWT_SECRET=${JWT_SECRET:?JWT_SECRET is required}
-      - JIRA_USER=${JIRA_USER:?JIRA_USER is required}
+      - JIRA_USERNAME=${JIRA_USERNAME:?JIRA_USERNAME is required}
       - JIRA_PASSWORD=${JIRA_PASSWORD:?JIRA_PASSWORD is required}
       - POSTGRES_HOST=postgres
       - POSTGRES_PORT=5432
