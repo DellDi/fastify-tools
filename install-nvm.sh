@@ -2,6 +2,7 @@
 
 { # this ensures the entire script is downloaded #
 
+# 检查是否安装了某个命令
 nvm_has() {
   type "$1" > /dev/null 2>&1
 }
@@ -16,14 +17,17 @@ if [ -z "${BASH_VERSION}" ] || [ -n "${ZSH_VERSION}" ]; then
   exit 1
 fi
 
+# 检查是否安装了某个命令
 nvm_grep() {
   GREP_OPTIONS='' command grep "$@"
 }
 
+# 获取默认的 nvm 安装目录
 nvm_default_install_dir() {
   [ -z "${XDG_CONFIG_HOME-}" ] && printf %s "${HOME}/.nvm" || printf %s "${XDG_CONFIG_HOME}/nvm"
 }
 
+# 获取 nvm 安装目录
 nvm_install_dir() {
   if [ -n "$NVM_DIR" ]; then
     printf %s "${NVM_DIR}"
@@ -32,10 +36,12 @@ nvm_install_dir() {
   fi
 }
 
+# 获取 nvm 最新版本
 nvm_latest_version() {
   nvm_echo "v0.40.1"
 }
 
+# 检查 profile 是否是 bash 或 zsh
 nvm_profile_is_bash_or_zsh() {
   local TEST_PROFILE
   TEST_PROFILE="${1-}"
@@ -104,6 +110,7 @@ nvm_node_version() {
   nvm_echo "$NODE_VERSION"
 }
 
+# 下载文件
 nvm_download() {
   if nvm_has "curl"; then
     curl --fail --compressed -q "$@"
