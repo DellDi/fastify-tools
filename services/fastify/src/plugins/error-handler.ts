@@ -1,23 +1,23 @@
 import fp from 'fastify-plugin'
 import { FastifyError, FastifyInstance, FastifyRequest } from 'fastify'
-import { 
-  AppError, 
-  createErrorResponse, 
+import {
+  AppError,
+  createErrorResponse,
   isOperationalError,
-  ValidationError 
+  ValidationError
 } from '@/utils/errors.js'
 
 /**
  * 全局错误处理插件
  */
 export default fp(async (fastify: FastifyInstance) => {
-  
+
   /**
    * 设置全局错误处理器
    */
   fastify.setErrorHandler((error: FastifyError, request: FastifyRequest, reply) => {
     const requestPath = request.url
-    
+
     // 记录错误日志
     fastify.log.error({
       error: error.message,
@@ -31,7 +31,7 @@ export default fp(async (fastify: FastifyInstance) => {
     // 处理验证错误（Fastify 的 schema 验证错误）
     if (error.validation) {
       const validationError = new ValidationError('请求参数验证失败', error.validation)
-      
+
       const errorResponse = createErrorResponse(validationError, requestPath)
       return reply.status(400).send(errorResponse)
     }
@@ -56,13 +56,13 @@ export default fp(async (fastify: FastifyInstance) => {
     // 处理未知错误
     const internalError = new AppError('服务器内部错误', 500, false)
     const errorResponse = createErrorResponse(internalError, requestPath)
-    
+
     // 在开发环境下包含堆栈信息
     if (process.env.NODE_ENV === 'development') {
-      (errorResponse as any).stack = error.stack
+      (errorResponse as any).stack
       (errorResponse as any).originalError = error.message
     }
-    
+
     reply.status(500).send(errorResponse)
   })
 
@@ -72,10 +72,10 @@ export default fp(async (fastify: FastifyInstance) => {
   fastify.decorate('handleError', function(error: Error, request?: FastifyRequest) {
     const path = request?.url || 'unknown'
     const errorResponse = createErrorResponse(error, path)
-    
+
     // 记录错误但不发送响应（由调用者处理）
     fastify.log.error(errorResponse, 'Handled error')
-    
+
     return errorResponse
   })
 

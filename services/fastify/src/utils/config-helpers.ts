@@ -56,15 +56,15 @@ export function generateJiraEndpoints(baseUrl: string): JiraEndpoints {
 }
 
 /**
- * 从 fastify.config 获取 Jira 配置
+ * 从 fastify?.config 获取 Jira 配置
  */
 export function getJiraConfig(fastify: FastifyInstance): JiraConfig {
   const config = fastify.config as any
-  
+
   const username = config.JIRA_USERNAME
   const password = config.JIRA_PASSWORD
   const baseUrl = config.JIRA_BASE_URL || 'http://bug.new-see.com:8088'
-  
+
   return {
     baseUrl,
     auth: {
@@ -81,11 +81,11 @@ export function getJiraConfig(fastify: FastifyInstance): JiraConfig {
 }
 
 /**
- * 从 fastify.config 获取 LLM 配置
+ * 从 fastify?.config 获取 LLM 配置
  */
 export function getLLMConfig(fastify: FastifyInstance): LLMConfig {
-  const config = fastify.config as any
-  
+  const config = fastify?.config as any
+
   return {
     apiKey: config.DASHSCOPE_API_KEY || '',
     baseUrl: config.LLM_BASE_URL || 'https://dashscope.aliyuncs.com/compatible-mode/v1/chat/completions',
@@ -94,18 +94,18 @@ export function getLLMConfig(fastify: FastifyInstance): LLMConfig {
 }
 
 /**
- * 从 fastify.config 获取认证配置
+ * 从 fastify?.config 获取认证配置
  */
 export function getAuthConfig(fastify: FastifyInstance): AuthConfig {
-  const config = fastify.config as any
-  
+  const config = fastify?.config as any
+
   return {
     bearerToken: config.BEARER_TOKEN
   }
 }
 
 /**
- * 从 fastify.config 获取缓存配置
+ * 从 fastify?.config 获取缓存配置
  */
 export function getCacheConfig(fastify: FastifyInstance): CacheConfig {
   return {

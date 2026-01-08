@@ -80,13 +80,13 @@ const jira: FastifyPluginAsyncTypebox = async (fastify): Promise<void> => {
 
       // 使用 JiraService 获取元数据（验证和错误处理在服务层）
       const metaInfo = await jiraService.getCreateMeta(
-        { jiraUser, jiraPassword },
+        { jiraUser: jiraUser || '', jiraPassword: jiraPassword || '' },
         projectKey,
         issueTypeId,
         maxResults,
         startAt
       )
-   
+
       return metaInfo
     },
   })

@@ -76,3 +76,7 @@ dist
 
 services/fastify/.env
 services/fastify/api
+
+# windsurf
+.windsurf
+.shared

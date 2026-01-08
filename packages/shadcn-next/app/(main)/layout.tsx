@@ -17,7 +17,7 @@ const Layout = async ({ children }: {
     >
       <AppSidebar/>
       <main className="h-screen w-full flex flex-col transition-all duration-300 ease-in-out box-border">
-        <header className="flex items-center justify-between p-2 border-b bg-white dark:bg-black">
+        <header className="flex items-center justify-between p-2 border-b-2 border-border bg-card shadow-[4px_4px_0_hsl(var(--shadow-brutal))]">
           <div className="flex items-center justify-center">
             <SidebarTrigger className={`mr-2`}/>
             <DynamicBreadcrumb/>
@@ -29,14 +29,14 @@ const Layout = async ({ children }: {
                 <Input
                   type="search"
                   placeholder="Search products..."
-                  className="w-full appearance-none bg-background pl-8 shadow-none"
+                  className="w-full appearance-none pl-8"
                 />
               </div>
             </form>
             <ToggleTheme className="ml-2"/>
           </div>
         </header>
-        <div className="grow rounded-md border-1 p-2 box-border overflow-auto">
+        <div className="grow rounded-none border-2 border-border bg-background p-3 box-border overflow-auto shadow-[4px_4px_0_hsl(var(--shadow-brutal))]">
           {children}
         </div>
       </main>

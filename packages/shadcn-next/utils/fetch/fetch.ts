@@ -8,20 +8,20 @@ import { baseFetch } from './baseFetch'
  */
 export const fetchBase = async (url: string, options: RequestInit = {}) => {
   const isServer = typeof window === 'undefined'
-  
+
   // 获取 basePath 前缀
   let basePath = ''
-  
+
   // 客户端环境下需要考虑 basePath
   if (!isServer) {
     basePath = (window as any).__NEXT_DATA__?.basePath || process.env.NEXT_PUBLIC_BASE_PATH || ''
-  } 
+  }
   // 服务端环境下，对内部 API 路由不需要 basePath
   else if (!url.startsWith('/api/')) {
     // 非内部 API 路由可能需要 basePath
     basePath = process.env.NEXT_PUBLIC_BASE_PATH || ''
   }
-  
+
   // 确保 URL 正确拼接 basePath
   return baseFetch(url, basePath, options)
 }
@@ -34,11 +34,11 @@ export const createNextSWRFetcher = (defaultOptions: RequestInit = {}) => {
     // 支持 useSWR 的键值对形式，如 [url, params]
     let url: string
     let options = { ...defaultOptions }
-    
+
     if (Array.isArray(key)) {
       url = key[0]
       const params = key[1]
-      
+
       // 如果第二个参数是对象，将其作为请求体或查询参数
       if (params && typeof params === 'object') {
         if (options.method === 'GET' || !options.method) {
@@ -65,7 +65,7 @@ export const createNextSWRFetcher = (defaultOptions: RequestInit = {}) => {
     } else {
       url = key
     }
-    
+
     // 在客户端环境中才执行请求
     if (typeof window === 'undefined') {
       // 服务端环境跳过 API 请求，返回空数据
@@ -73,7 +73,7 @@ export const createNextSWRFetcher = (defaultOptions: RequestInit = {}) => {
         return { skipped: true, message: 'API request skipped in server environment' }
       }
     }
-    
+
     return fetchBase(url, options)
   }
 }

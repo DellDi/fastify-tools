@@ -7,6 +7,15 @@
 - 添加Prisma Schema和数据库迁移文件
 - 更新数据库连接配置
 
+### Changed
+- Brutalism 视觉升级：全局主题变量改为高对比配色、radius 归零、引入偏移阴影变量。
+- 统一基础组件风格：Button/Card/Input/Sheet/Sidebar/Skeleton 采用粗边框 + 偏移阴影的硬朗风格。
+- 主布局（Header/Content）视觉统一：粗分割线、背景卡片化、偏移阴影增强层次。
+- 更新了 users 表结构，添加了新的字段：username, phone_number, avatar_url, created_at
+- 优化了登录表单，添加了"记住我"功能
+- 改进了前端表单验证，使用 zod 进行数据验证
+- 将后端数据库从Supabase迁移到自托管的PostgreSQL
+
 ### Fixed
 - 修复了用户注册时，邮箱验证码发送失败的bug
 - 修复了用户登录时，密码错误提示信息不准确的bug

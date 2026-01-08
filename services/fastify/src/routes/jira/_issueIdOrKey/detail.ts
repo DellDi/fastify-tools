@@ -9,8 +9,8 @@ const detail: FastifyPluginAsyncTypebox = async (
   opts
 ): Promise<void> => {
   const jiraConfig = getJiraConfig(fastify)
-  
-  fastify.get('/detail', {
+
+  fastify.get('/', {
     schema: jiraDetailSchema,
     handler: async (_request, reply) => {
       const { issueIdOrKey } = _request.params

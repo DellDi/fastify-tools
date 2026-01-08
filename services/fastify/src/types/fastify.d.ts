@@ -5,5 +5,6 @@ declare module 'fastify' {
     mysql: MySQLPromiseConnection;
     mysqlRegistered: boolean;
     isConnectedPg: boolean
+    config: any
   }
 }
