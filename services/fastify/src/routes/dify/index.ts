@@ -41,7 +41,7 @@ const dify: FastifyPluginAsyncTypebox = async (fastify): Promise<void> => {
 
       if (point === 'app.create_jira_tool') {
         // 验证必需字段 - 让服务层处理验证
-        const { issueId, issueKey, issueUrl, updateMsg } =
+        const { issueId, issueKey, issueUrl, updateMsg, matchInfo, devReply } =
           await handleAppExternalDataToolQuery(fastify, params)
         
         return {
@@ -50,6 +50,8 @@ const dify: FastifyPluginAsyncTypebox = async (fastify): Promise<void> => {
           issueKey,
           issueUrl,
           updateMsg,
+          matchInfo,
+          devReply,
         }
       }
 
@@ -73,6 +75,11 @@ async function handleAppExternalDataToolQuery(
     jiraUser,
     jiraPassword,
     labels,
+    projectKey,
+    issueType,
+    smartMatch,
+    matchPrompt,
+    autoDevReply,
   } = params || {}
 
   if (!jiraUser || !jiraPassword) {
@@ -80,6 +87,7 @@ async function handleAppExternalDataToolQuery(
   }
 
   // 使用 JiraService 创建工单并处理标签
+  // 支持动态 projectKey、issueType、LLM 智能匹配和自动开发回复
   const result = await jiraService.createTicketWithLabels(
     { jiraUser, jiraPassword },
     {
@@ -88,6 +96,11 @@ async function handleAppExternalDataToolQuery(
       assignee,
       customerName,
       labels,
+      projectKey,
+      issueTypeId: issueType,
+      smartMatch,
+      matchPrompt,
+      autoDevReply,
     }
   )
 

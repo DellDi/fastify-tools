@@ -40,6 +40,33 @@ const DifyJiraCreateExportBody = Type.Object({
       default: '新安明珠',
     })
   ),
+  projectKey: Type.Optional(
+    Type.String({
+      description: 'Jira 项目 Key，如不指定则使用默认项目或 LLM 智能匹配',
+    })
+  ),
+  issueType: Type.Optional(
+    Type.String({
+      description: 'Jira 问题类型 ID，如不指定则使用默认类型或 LLM 智能匹配',
+    })
+  ),
+  smartMatch: Type.Optional(
+    Type.Boolean({
+      default: false,
+      description: '是否启用 LLM 智能匹配项目和问题类型',
+    })
+  ),
+  matchPrompt: Type.Optional(
+    Type.String({
+      description: '用于 LLM 智能匹配的额外提示信息，如"这是一个 Bug"、"提给产品组"等',
+    })
+  ),
+  autoDevReply: Type.Optional(
+    Type.Boolean({
+      default: false,
+      description: '创建工单后是否自动执行"开发回复"工作流转换，包括自动选择修复版本和分配预计开发完成时间',
+    })
+  ),
 })
 
 const InputData = Type.Intersect([
@@ -88,11 +115,36 @@ const DifyHeaders = Type.Object({
   }),
 })
 
+const MatchInfo = Type.Object({
+  projectKey: Type.String({ description: '匹配的项目 Key' }),
+  projectName: Type.String({ description: '匹配的项目名称' }),
+  issueTypeId: Type.String({ description: '匹配的问题类型 ID' }),
+  issueTypeName: Type.String({ description: '匹配的问题类型名称' }),
+  confidence: Type.Union([
+    Type.Literal('high'),
+    Type.Literal('medium'),
+    Type.Literal('low'),
+  ], { description: '匹配置信度' }),
+})
+
+const DevReplyInfo = Type.Object({
+  success: Type.Boolean({ description: '开发回复是否成功' }),
+  issueKey: Type.String({ description: '工单 Key' }),
+  fixVersionName: Type.Optional(Type.String({ description: '选择的修复版本名称' })),
+  devCompleteDate: Type.Optional(Type.String({ description: '分配的预计开发完成时间' })),
+  transitionName: Type.Optional(Type.String({ description: '执行的工作流转换名称' })),
+  message: Type.String({ description: '执行结果消息' }),
+})
+
 const DifyResponse = Type.Intersect([
   Type.Object({
     result: Type.String(),
   }),
   Type.Partial(JiraCreateExportResponse),
+  Type.Object({
+    matchInfo: Type.Optional(MatchInfo),
+    devReply: Type.Optional(DevReplyInfo),
+  }),
 ])
 
 const ErrorResponse = Type.Object({
