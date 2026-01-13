@@ -1,6 +1,6 @@
 import { FastifyPluginAsyncTypebox } from "@fastify/type-provider-typebox";
 import fastifyStatic from '@fastify/static'
-import { staticSchema } from "../../../schema/file.js";
+import { staticSchema } from '@/schema/zuul/index.js'
 import { UPLOAD_DIR } from "../../../utils/index.js";
 import fs from "node:fs";
 

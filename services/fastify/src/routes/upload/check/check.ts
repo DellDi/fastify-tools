@@ -1,7 +1,7 @@
 import fs from 'node:fs'
 import { FastifyPluginAsyncTypebox } from '@fastify/type-provider-typebox'
 import cors from '@fastify/cors'
-import { uploadCheckBase } from '../../../schema/upload.js'
+import { uploadCheckBase } from '@/schema/upload/index.js'
 import { UPLOAD_DIR } from '../../../utils/index.js'
 
 // 新增秒传验证hash功能

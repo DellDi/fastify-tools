@@ -3,18 +3,15 @@ import bearerAuth from '@fastify/bearer-auth'
 import { FastifyInstance } from 'fastify'
 import { FastifyPluginAsyncTypebox } from '@fastify/type-provider-typebox'
 import { difySchema, InputDataType } from '@/schema/dify/dify.js'
-import { JiraService } from '@/services/jira/jira.service.js'
-import { getAuthConfig } from '@/utils/config-helpers.js'
 import { ValidationError } from '@/utils/errors.js'
 
 const dify: FastifyPluginAsyncTypebox = async (fastify): Promise<void> => {
-  const authConfig = getAuthConfig(fastify)
-  
+
   fastify
     .register(auth)
     .register(bearerAuth, {
       addHook: true,
-      keys: new Set([authConfig.bearerToken]),
+      keys: new Set([fastify.config.BEARER_TOKEN]),
     })
     .decorate(
       'allowAnonymous',
@@ -43,7 +40,7 @@ const dify: FastifyPluginAsyncTypebox = async (fastify): Promise<void> => {
         // 验证必需字段 - 让服务层处理验证
         const { issueId, issueKey, issueUrl, updateMsg, matchInfo, devReply } =
           await handleAppExternalDataToolQuery(fastify, params)
-        
+
         return {
           result: `${Date.now()}`,
           issueId,
@@ -61,12 +58,11 @@ const dify: FastifyPluginAsyncTypebox = async (fastify): Promise<void> => {
   })
 }
 
-// 重构后的 handleAppExternalDataToolQuery 函数，使用 JiraService
+// 重构后的 handleAppExternalDataToolQuery 函数，使用 fastify.jiraService
 async function handleAppExternalDataToolQuery(
   fastify: FastifyInstance,
   params: Omit<InputDataType, 'point'>
 ) {
-  const jiraService = new JiraService(fastify)
   const {
     title,
     description,
@@ -88,7 +84,7 @@ async function handleAppExternalDataToolQuery(
 
   // 使用 JiraService 创建工单并处理标签
   // 支持动态 projectKey、issueType、LLM 智能匹配和自动开发回复
-  const result = await jiraService.createTicketWithLabels(
+  const result = await fastify.jiraService.createTicketWithLabels(
     { jiraUser, jiraPassword },
     {
       title,

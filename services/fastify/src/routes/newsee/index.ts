@@ -1,6 +1,6 @@
 import cors from '@fastify/cors'
 import { AesContext, strategyMap } from '../../utils/crypto.js'
-import { cryptoSchema, sqlSchema } from '../../schema/newsee.js'
+import { cryptoSchema, sqlSchema } from '@/schema/newsee/index.js'
 import { FastifyPluginAsyncTypebox } from '@fastify/type-provider-typebox'
 import { handleSQL } from './handleSQL.js'
 

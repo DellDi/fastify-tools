@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 /**
  * 迁移脚本：从原生 PostgreSQL 迁移到 Prisma ORM
- * 
+ *
  * 此脚本用于将现有的数据库结构迁移到 Prisma ORM 管理的结构
  * 执行步骤：
  * 1. 确保已安装 Prisma 依赖
@@ -41,8 +41,8 @@ try {
 
   // 创建初始迁移
   console.log('创建初始迁移...');
-  execSync('npx prisma migrate dev --name init', { 
-    stdio: 'inherit', 
+  execSync('npx prisma migrate dev --name init', {
+    stdio: 'inherit',
     cwd: rootDir,
     env: { ...process.env, PRISMA_MIGRATION_SKIP_GENERATE: '1' }
   });

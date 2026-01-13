@@ -6,11 +6,9 @@ import {
   jiraCreateExport,
   JiraCreateExportBodyType,
 } from '@/schema/jira/jira.js'
-import { JiraService } from '@/services/jira/jira.service.js'
 import { FieldMetaBean } from '@/schema/jira/meta.js'
 
 const jira: FastifyPluginAsyncTypebox = async (fastify): Promise<void> => {
-  const jiraService = new JiraService(fastify)
 
   fastify.route({
     method: 'POST',
@@ -24,7 +22,7 @@ const jira: FastifyPluginAsyncTypebox = async (fastify): Promise<void> => {
       const { jiraUser, jiraPassword } = req.body
 
       // 使用 JiraService 创建工单（验证和错误处理在服务层）
-      const result = await jiraService.createTicket(
+      const result = await fastify.jiraService.createTicket(
         { jiraUser: jiraUser || '', jiraPassword: jiraPassword || '' },
         {
           title,
@@ -79,7 +77,7 @@ const jira: FastifyPluginAsyncTypebox = async (fastify): Promise<void> => {
       const { jiraUser, jiraPassword, projectKey, issueTypeId, maxResults, startAt } = req.body
 
       // 使用 JiraService 获取元数据（验证和错误处理在服务层）
-      const metaInfo = await jiraService.getCreateMeta(
+      const metaInfo = await fastify.jiraService.getCreateMeta(
         { jiraUser: jiraUser || '', jiraPassword: jiraPassword || '' },
         projectKey,
         issueTypeId,

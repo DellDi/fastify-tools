@@ -24,7 +24,7 @@ export class JiraRestService {
     this.jiraConfig = getJiraConfig(fastify)
     this.llmConfig = getLLMConfig(fastify)
     this.cacheConfig = getCacheConfig(fastify)
-    
+
     // 移除敏感信息日志记录，只记录用户名
     this.fastify.log.info(`Jira service initialized for user: ${this.jiraConfig.auth.username}`)
   }
@@ -57,7 +57,7 @@ export class JiraRestService {
 
     const projects = (await response.body.json()) as JiraProject[]
     fastifyCache.set(cacheKey, projects)
-    
+
     return projects
   }
 
@@ -91,7 +91,7 @@ export class JiraRestService {
     const projectData = (await response.body.json()) as { issueTypes: JiraIssueType[] }
     const issueTypes = projectData.issueTypes || []
     fastifyCache.set(cacheKey, issueTypes)
-    
+
     return issueTypes
   }
 
@@ -176,7 +176,7 @@ ${prompt || '无'}
       ])
 
       const parsed = JSON.parse(response) as ProjectIssueTypeMatch
-      
+
       // 验证返回的 projectKey 和 issueTypeId 是否有效
       const validProject = projects.find(p => p.key === parsed.projectKey)
       const validIssueType = issueTypes.find(t => t.id === parsed.issueTypeId)
@@ -507,7 +507,7 @@ ${prompt || '无'}
       }
 
       const holidays = new Set<string>()
-      
+
       if (data.code === 0 && data.holiday) {
         // 只添加 holiday: true 的日期（法定节假日）
         Object.values(data.holiday).forEach(item => {
@@ -519,7 +519,7 @@ ${prompt || '无'}
 
       fastifyCache.set(cacheKey, holidays)
       this.fastify.log.info(`Loaded ${holidays.size} holidays for year ${year}`)
-      
+
       return holidays
     } catch (error) {
       this.fastify.log.warn(`Failed to fetch holidays for ${year}:`, error)
@@ -556,8 +556,35 @@ ${prompt || '无'}
   }
 
   /**
-   * 执行工作流转换
+   * 获取工单详情
    */
+  async getIssueDetail<T = Record<string, any>>(
+    issueIdOrKey: string,
+    cookies: string,
+    fields?: string[]
+  ): Promise<T> {
+    let url = `${this.jiraConfig.baseUrl}/rest/api/2/issue/${issueIdOrKey}`
+    if (fields?.length) {
+      url += `?fields=${fields.join(',')}`
+    }
+
+    const response = await request(url, {
+      method: 'GET',
+      headers: {
+        Cookie: cookies,
+        Authorization: this.jiraConfig.auth.basicToken,
+        'Content-Type': 'application/json',
+      },
+    })
+
+    if (response.statusCode !== 200) {
+      const errorText = await response.body.text()
+      throw new Error(`获取工单详情失败: HTTP ${response.statusCode} - ${errorText}`)
+    }
+
+    return (await response.body.json()) as T
+  }
+
   async doTransition(
     issueKey: string,
     cookies: string,

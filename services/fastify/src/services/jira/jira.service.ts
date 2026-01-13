@@ -4,9 +4,9 @@ import { JiraRestService } from './jira-rest.service.js'
 import { fastifyCache } from '@/utils/cache.js'
 import { createHash } from 'crypto'
 import { getJiraConfig, getCacheConfig } from '@/utils/config-helpers.js'
-import { 
-  JiraLoginError, 
-  JiraCreateError, 
+import {
+  JiraLoginError,
+  JiraCreateError,
   JiraUpdateError,
   ValidationError,
   JiraError
@@ -108,7 +108,7 @@ export class JiraService {
 
       const sessionData: JiraSession = { cookies, atlToken }
       fastifyCache.set(sessionKey, sessionData)
-      
+
       return sessionData
     } catch (error) {
       this.fastify.log.error('Jira login error:', error)
@@ -240,7 +240,7 @@ export class JiraService {
           metaResponse.values,
           data.customerName
         )
-        
+
         if (Object.keys(customInfo).length > 0) {
           await this.updateTicket(credentials, {
             issueIdOrKey: createResponse.key,
@@ -324,7 +324,7 @@ export class JiraService {
   ) {
     try {
       const session = await this.getSession(credentials)
-      
+
       return await this.jiraRestService.createMeta(
         projectKey,
         issueTypeId,
@@ -439,19 +439,19 @@ export class JiraService {
 
     // 3. 获取可用的工作流转换
     const transitions = await this.jiraRestService.getTransitions(issueKey, session.cookies)
-    
+
     // 查找"开发回复"转换，默认使用 ID 11
     const transitionId = data.transitionId || '11'
     const targetTransition = transitions.find(t => t.id === transitionId)
 
     if (!targetTransition) {
       // 尝试通过名称查找
-      const devReplyTransition = transitions.find(t => 
-        t.name.includes('开发回复') || 
+      const devReplyTransition = transitions.find(t =>
+        t.name.includes('开发回复') ||
         t.name.toLowerCase().includes('dev reply') ||
         t.name.toLowerCase().includes('development')
       )
-      
+
       if (!devReplyTransition) {
         this.fastify.log.warn(`Available transitions: ${transitions.map(t => `${t.id}:${t.name}`).join(', ')}`)
         throw new JiraError(`找不到开发回复工作流转换 (ID: ${transitionId})`)
@@ -510,5 +510,17 @@ export class JiraService {
   async getTransitions(credentials: JiraLoginCredentials, issueKey: string) {
     const session = await this.getSession(credentials)
     return this.jiraRestService.getTransitions(issueKey, session.cookies)
+  }
+
+  /**
+   * 获取工单详情
+   */
+  async getIssueDetail<T = Record<string, any>>(
+    credentials: JiraLoginCredentials,
+    issueIdOrKey: string,
+    fields?: string[]
+  ): Promise<T> {
+    const session = await this.getSession(credentials)
+    return this.jiraRestService.getIssueDetail<T>(issueIdOrKey, session.cookies, fields)
   }
 }
