@@ -74,7 +74,8 @@ export class JiraService {
       const loginResponse = await request(jiraUrl, {
         method: 'POST',
         headers: {
-          Authorization: this.jiraConfig.auth.basicToken,
+          // 使用 Nginx 代理认证
+          Authorization: this.jiraConfig.auth.proxyAuthToken,
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({

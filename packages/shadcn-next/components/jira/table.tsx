@@ -20,8 +20,13 @@ const fetchJiraData = async (page: number, pageSize: number, query: string): Pro
 
   try {
     // 获取 Jira 登录凭证
-    const { cookies } = await jiraLogin()
+    const loginResponse = await jiraLogin()
+    const { cookies } = loginResponse
     console.log("🚀 ~ fetchJiraData ~ cookies:", cookies)
+
+    if (!cookies) {
+      throw new Error(loginResponse.message || 'Jira 登录失败，请检查环境变量配置')
+    }
 
     // 获取 Jira 数据
     const response = await jiraSaaSFetch({

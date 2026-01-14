@@ -44,13 +44,25 @@ let cachePromise = new Promise<void>((resolve) => {
 
 export async function POST(req: NextRequest) {
   const { jql, jiraCookies, secondaryPage, secondaryPageSize } = await req.json()
+
+  if (!jiraCookies) {
+    return NextResponse.json({ message: 'Missing jiraCookies' }, { status: 400 })
+  }
+
   try {
     // Fetch all pages of data from the primary API
     let allIssues: JiraResponse['issues'] = []
-    let startAt = 1
-    const maxResults = 1000 // Adjust based on your primary API's max results per page
+    let startAt = 0 // Jira API starts at 0, not 1
+    const maxResults = 100 // Reduce page size to avoid timeouts
+    const MAX_PAGES = 10 // Limit total pages to fetch to avoid infinite loops or overly long requests
 
+    let pageCount = 0
     while (true) {
+      if (pageCount >= MAX_PAGES) {
+        console.warn(`Reached maximum page limit of ${MAX_PAGES}. Stopping fetch.`)
+        break
+      }
+
       const response = await fastifyFetch(`/jira/search`, {
         headers: {
           'Content-Type': 'application/json',
@@ -64,7 +76,8 @@ export async function POST(req: NextRequest) {
         }),
       })
 
-      if (!response) {
+      if (!response || !response.issues) {
+        console.error('Invalid response from Jira search API', response)
         return NextResponse.json({ message: 'Failed to fetch Jira issues' }, {
           status: 500,
         })
@@ -72,10 +85,14 @@ export async function POST(req: NextRequest) {
 
       const data = response
       allIssues = allIssues.concat(data.issues)
+      
+      // If we got fewer issues than maxResults, we've reached the end
       if (data.issues.length < maxResults) {
         break
       }
+      
       startAt += maxResults
+      pageCount++
     }
     // SaaS客户的ID范围是6000-7000
     const filteredIssues = allIssues.filter((issue) => {

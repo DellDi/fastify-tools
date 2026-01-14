@@ -1,6 +1,7 @@
 # Logs
 logs
 .git
+.trae
 *.log
 npm-debug.log*
 

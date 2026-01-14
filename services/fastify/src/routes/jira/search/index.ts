@@ -45,11 +45,11 @@ const jira: FastifyPluginAsyncTypebox = async (
               },
               headers: {
                 Cookie: jiraCookies,
-                Authorization: jiraConfig.auth.basicToken,
+                Authorization: jiraConfig.auth.proxyAuthToken,
               },
               // 添加超时设置
-              headersTimeout: 30000,
-              bodyTimeout: 60000,
+              headersTimeout: 60000,
+              bodyTimeout: 120000,
             }
           )
 

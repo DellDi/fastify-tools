@@ -13,6 +13,7 @@ export interface JiraConfig {
     username: string
     password: string
     basicToken: string
+    proxyAuthToken: string
   }
   defaultProject: string
   defaultIssueType: string
@@ -64,13 +65,15 @@ export function getJiraConfig(fastify: FastifyInstance): JiraConfig {
   const username = config.JIRA_USERNAME
   const password = config.JIRA_PASSWORD
   const baseUrl = config.JIRA_BASE_URL || 'http://bug.new-see.com:8088'
+  const proxyAuthToken = config.JIRA_PROXY_AUTH || 'Basic bmV3c2VlOm5ld3NlZQ=='
 
   return {
     baseUrl,
     auth: {
       username,
       password,
-      basicToken: generateBasicToken(username, password)
+      basicToken: generateBasicToken(username, password),
+      proxyAuthToken
     },
     defaultProject: config.JIRA_DEFAULT_PROJECT || 'V10',
     defaultIssueType: config.JIRA_DEFAULT_ISSUE_TYPE || '4',
