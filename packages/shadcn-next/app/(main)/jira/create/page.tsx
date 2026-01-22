@@ -26,7 +26,7 @@ export default function JiraForm() {
   const [error, setError] = useState<string | null>(null)
   const [success, setSuccess] = useState<boolean>(false)
   const [formData, setFormData] = useState({
-    point: 'ping',
+    point: 'app.create_jira_tool',
     title: '',
     description: '',
     labels: 'SaaS内部已审核',
@@ -54,7 +54,7 @@ export default function JiraForm() {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          Authorization: `Bearer zd808611`,
+          Authorization: `Bearer zd-808611`,
         },
         body: JSON.stringify(formData),
       })

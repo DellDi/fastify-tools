@@ -4,9 +4,15 @@ import { FastifyInstance } from 'fastify'
 import { FastifyPluginAsyncTypebox } from '@fastify/type-provider-typebox'
 import { difySchema, InputDataType } from '@/schema/dify/dify.js'
 import { ValidationError } from '@/utils/errors.js'
+import cors from '@fastify/cors'
 
 const dify: FastifyPluginAsyncTypebox = async (fastify): Promise<void> => {
-
+  // Access-Control-Allow-Origin
+  fastify.register(cors, {
+    origin: ['http://localhost:3001', 'http://localhost:3000'],
+    methods: ['GET', 'POST', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization'],
+  })
   fastify
     .register(auth)
     .register(bearerAuth, {
@@ -18,14 +24,15 @@ const dify: FastifyPluginAsyncTypebox = async (fastify): Promise<void> => {
       function (
         req: { headers: { authorization: any } },
         reply: any,
-        done: (arg0: Error | undefined) => any
+        done: (arg0: Error | undefined) => any,
       ) {
         if (req.headers.authorization) {
           return done(Error('not anonymous'))
         }
         return done(undefined)
-      }
+      },
     )
+
   fastify.post('/create-jira', {
     schema: difySchema,
     preHandler: fastify.verifyBearerAuth,

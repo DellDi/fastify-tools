@@ -85,7 +85,14 @@ export class JiraService {
       })
 
       if (loginResponse.statusCode !== 200) {
-        throw new JiraLoginError(`登录失败，状态码: ${loginResponse.statusCode}`)
+        const errorMessages: Record<number, string> = {
+          401: '用户名或密码错误',
+          403: '账户被锁定或无权限访问',
+          404: 'Jira 服务地址不正确',
+          500: 'Jira 服务器内部错误',
+        }
+        const friendlyMsg = errorMessages[loginResponse.statusCode] || `未知错误`
+        throw new JiraLoginError(`登录失败: ${friendlyMsg} (HTTP ${loginResponse.statusCode})`)
       }
 
       // Extract cookies from response
@@ -286,7 +293,7 @@ export class JiraService {
           method: 'PUT',
           headers: {
             Cookie: session.cookies,
-            Authorization: this.jiraConfig.auth.basicToken,
+            Authorization: this.jiraConfig.auth.proxyAuthToken,
             'Content-Type': 'application/json',
           },
           body: JSON.stringify({

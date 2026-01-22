@@ -45,7 +45,7 @@ export class JiraRestService {
         method: 'GET',
         headers: {
           Cookie: cookies,
-          Authorization: this.jiraConfig.auth.basicToken,
+          Authorization: this.jiraConfig.auth.proxyAuthToken,
           'Content-Type': 'application/json',
         },
       }
@@ -78,7 +78,7 @@ export class JiraRestService {
         method: 'GET',
         headers: {
           Cookie: cookies,
-          Authorization: this.jiraConfig.auth.basicToken,
+          Authorization: this.jiraConfig.auth.proxyAuthToken,
           'Content-Type': 'application/json',
         },
       }
@@ -240,7 +240,7 @@ ${prompt || '无'}
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          Authorization: this.jiraConfig.auth.basicToken,
+          Authorization: this.jiraConfig.auth.proxyAuthToken, // 使用 Nginx 代理认证
           'X-Atlassian-Token': 'no-check', // 禁用 XSRF 检查
           Cookie: cookies,
         },
@@ -282,7 +282,7 @@ ${prompt || '无'}
         method: 'GET',
         headers: {
           Cookie: cookies,
-          Authorization: this.jiraConfig.auth.basicToken,
+          Authorization: this.jiraConfig.auth.proxyAuthToken,
           'Content-Type': 'application/json',
           'X-Atlassian-Token': 'no-check', // 禁用 XSRF 检查
         },
@@ -426,7 +426,7 @@ ${prompt || '无'}
       method: 'GET',
       headers: {
         Cookie: cookies,
-        Authorization: this.jiraConfig.auth.basicToken,
+        Authorization: this.jiraConfig.auth.proxyAuthToken,
         'Content-Type': 'application/json',
       },
     })
@@ -456,7 +456,7 @@ ${prompt || '无'}
         method: 'POST',
         headers: {
           Cookie: cookies,
-          Authorization: this.jiraConfig.auth.basicToken,
+          Authorization: this.jiraConfig.auth.proxyAuthToken,
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
@@ -538,7 +538,7 @@ ${prompt || '无'}
         method: 'GET',
         headers: {
           Cookie: cookies,
-          Authorization: this.jiraConfig.auth.basicToken,
+          Authorization: this.jiraConfig.auth.proxyAuthToken,
           'Content-Type': 'application/json',
         },
         query: {
@@ -572,7 +572,7 @@ ${prompt || '无'}
       method: 'GET',
       headers: {
         Cookie: cookies,
-        Authorization: this.jiraConfig.auth.basicToken,
+        Authorization: this.jiraConfig.auth.proxyAuthToken,
         'Content-Type': 'application/json',
       },
     })
@@ -618,7 +618,7 @@ ${prompt || '无'}
         method: 'POST',
         headers: {
           Cookie: cookies,
-          Authorization: this.jiraConfig.auth.basicToken,
+          Authorization: this.jiraConfig.auth.proxyAuthToken,
           'Content-Type': 'application/json',
           'X-Atlassian-Token': 'no-check',
         },

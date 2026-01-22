@@ -12,7 +12,6 @@ export interface JiraConfig {
   auth: {
     username: string
     password: string
-    basicToken: string
     proxyAuthToken: string
   }
   defaultProject: string
@@ -35,13 +34,6 @@ export interface AuthConfig {
 export interface CacheConfig {
   sessionPrefix: string
   metaPrefix: string
-}
-
-/**
- * 生成 Basic Token
- */
-export function generateBasicToken(username: string, password: string): string {
-  return `Basic ${Buffer.from(`${username}:${password}`).toString('base64')}`
 }
 
 /**
@@ -72,12 +64,11 @@ export function getJiraConfig(fastify: FastifyInstance): JiraConfig {
     auth: {
       username,
       password,
-      basicToken: generateBasicToken(username, password),
       proxyAuthToken
     },
     defaultProject: config.JIRA_DEFAULT_PROJECT || 'V10',
     defaultIssueType: config.JIRA_DEFAULT_ISSUE_TYPE || '4',
-    defaultComponent: config.JIRA_DEFAULT_COMPONENT || '13676',
+    defaultComponent: config.JIRA_DEFAULT_COMPONENT || '15775',
     defaultPriority: config.JIRA_DEFAULT_PRIORITY || '3',
     endpoints: generateJiraEndpoints(baseUrl)
   }

@@ -27,7 +27,7 @@ const schema = Type.Object({
   JIRA_BASE_URL: Type.Optional(Type.String({ default: 'http://bug.new-see.com:8088' })),
   JIRA_DEFAULT_PROJECT: Type.Optional(Type.String({ default: 'V10' })),
   JIRA_DEFAULT_ISSUE_TYPE: Type.Optional(Type.String({ default: '4' })),
-  JIRA_DEFAULT_COMPONENT: Type.Optional(Type.String({ default: '13676' })),
+  JIRA_DEFAULT_COMPONENT: Type.Optional(Type.String({ default: '15775' })),
   JIRA_DEFAULT_PRIORITY: Type.Optional(Type.String({ default: '3' })),
 
   // 认证配置
@@ -40,10 +40,10 @@ const schema = Type.Object({
 })
 
 export default fp<FastifyEnvOptions>(async (fastify, opts) => {
-  // 根据环境变量加载不同的 .env 文件
+  // 优先加载 .env 文件，然后加载环境特定的 .env.{NODE_ENV} 文件
+  config() // 加载 .env
   const nodeEnv = process.env.NODE_ENV || 'development'
-  const envFilePath = `.env.${nodeEnv}`
-  config({ path: envFilePath })
+  config({ path: `.env.${nodeEnv}` }) // 加载 .env.development 等（如果存在会覆盖）
   // Register other plugins with options
   fastify
     .register(fastifyEnv, {
