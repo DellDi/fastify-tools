@@ -19,7 +19,7 @@ services:
       # 初始化脚本目录，可以放置 .sql 文件进行初始化
       - ./db_init_scripts:/docker-entrypoint-initdb.d
     ports:
-      - '5432:5432'
+      - '${EXPORT_PG_PORT:-5433}:5432'
     healthcheck:
       test: ['CMD-SHELL', 'pg_isready -U postgres']
       interval: 10s
