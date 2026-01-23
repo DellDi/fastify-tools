@@ -40,6 +40,7 @@ services:
     environment:
       - NODE_ENV=${NODE_ENV:-production}
       - PORT=3100
+      - BEARER_TOKEN=${BEARER_TOKEN}
       # API 前缀配置（生产环境使用 /fastify，开发环境留空）
       - API_PREFIX=${API_PREFIX:-/fastify}
       # 数据库连接配置
