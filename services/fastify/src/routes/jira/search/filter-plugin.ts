@@ -24,7 +24,7 @@ const customFieldProcessor: FastifyPluginAsync = async (fastify) => {
         return JSON.stringify(data)
       }
     } catch (error) {
-      fastify.log.error('Error processing custom field:', error)
+      fastify.log.error(`Error processing custom field: ${error instanceof Error ? error.message : String(error)}`)
       return payload
     }
     return payload

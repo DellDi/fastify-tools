@@ -14,23 +14,32 @@ const app: FastifyPluginAsync<AppOptions> = async (
   fastify,
   opts
 ): Promise<void> => {
+  // 从环境变量获取 API 前缀
+  const API_PREFIX = process.env.API_PREFIX || ''
 
   void fastify.register(AutoLoad, {
     dir: path.join(__dirname, 'plugins'),
     options: opts,
     forceESM: true,
-    ignoreFilter: (path) => {
-      return path.includes('test')
-    },
+    ignoreFilter: (path) => path.includes('test'),
   })
 
-  // 加载所有路由
-  void fastify.register(AutoLoad, {
-    dir: path.join(__dirname, 'routes'),
-    options: opts,
-    forceESM: true,
-    routeParams: true,
-  })
+  // 加载所有路由（带前缀）
+  const loadRoutes = async (instance: typeof fastify) => {
+    void instance.register(AutoLoad, {
+      dir: path.join(__dirname, 'routes'),
+      options: opts,
+      forceESM: true,
+      routeParams: true,
+    })
+  }
+
+  if (API_PREFIX) {
+    fastify.log.info(`路由前缀已设置为: ${API_PREFIX}`)
+    void fastify.register(loadRoutes, { prefix: API_PREFIX })
+  } else {
+    void fastify.register(loadRoutes)
+  }
 
   fastify.ready((err) => {
     if (err) throw err

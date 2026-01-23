@@ -7,28 +7,39 @@ export default fp(async (fastify) => {
   // 获取 API 前缀
   const API_PREFIX = process.env.API_PREFIX || ''
 
-  // 定义公共路径
-  const openApiJsonPath = '/openapi.json'
-  const docsPath = '/docs'
+  // 定义公共路径（带前缀）
+  const openApiJsonPath = `${API_PREFIX}/openapi.json`
+  const docsPath = `${API_PREFIX}/docs` as `/${string}`
+  const referencePath = `${API_PREFIX}/reference` as `/${string}`
 
   fastify.log.info('开始注册 API 文档')
 
   // 注册 OpenAPI 文档路由
   fastify.get(openApiJsonPath, (request, reply) => {
     // 生成带有服务器信息的 OpenAPI 文档
+    let serverUrl = API_PREFIX || '/'
 
-    // 使用 referer 获取当前 URL
-    let serverUrl = ''
+    // 尝试从 referer 或 host 获取完整 URL
+    try {
+      const referer = request.headers.referer
+      const host = request.headers.host
+      const protocol = request.headers['x-forwarded-proto'] || 'http'
 
-    // 如果有 referer，从 referer 中提取协议和主机
-    const refererUrl = new URL(request.headers.referer as string)
-    serverUrl = `${refererUrl.protocol}//${refererUrl.host}${API_PREFIX}`
+      if (referer) {
+        const refererUrl = new URL(referer)
+        serverUrl = `${refererUrl.protocol}//${refererUrl.host}${API_PREFIX}`
+      } else if (host) {
+        serverUrl = `${protocol}://${host}${API_PREFIX}`
+      }
+    } catch {
+      // 解析失败时使用默认值
+    }
 
     // 获取基本的 swagger 对象
     const swaggerObject = fastify.swagger()
 
-    // 添加服务器信息 - 使用类型断言确保类型安全
-    const typedSwaggerObject = swaggerObject as any
+    // 添加服务器信息
+    const typedSwaggerObject = swaggerObject as Record<string, unknown>
     typedSwaggerObject.servers = [
       {
         url: serverUrl,
@@ -70,8 +81,7 @@ export default fp(async (fastify) => {
     uiConfig: {
       docExpansion: 'list',
       deepLinking: true,
-      // 指向我们自定义的 OpenAPI 文档路径
-      url: `${API_PREFIX}${openApiJsonPath}`,
+      url: openApiJsonPath,
     },
     staticCSP: true,
   })
@@ -80,16 +90,14 @@ export default fp(async (fastify) => {
 
   // 注册 Scalar API Reference
   await fastify.register(scalarReference, {
-    routePrefix: '/reference', // 使用不同的路由前缀
+    routePrefix: referencePath,
     configuration: {
       theme: 'purple',
       title: 'Dell DI 的API文档',
-      // 指定正确的 OpenAPI 文档 URL
-      // 使用绝对路径，确保包含 API 前缀
-      url: `${API_PREFIX}${openApiJsonPath}`,
+      url: openApiJsonPath,
     },
   })
   fastify.log.info('成功注册 Scalar API Reference')
-  fastify.log.info(`Scalar API Reference URL: ${API_PREFIX}/reference`)
-  fastify.log.info(`OpenAPI JSON URL: ${API_PREFIX}${openApiJsonPath}`)
+  fastify.log.info(`Scalar API Reference URL: ${referencePath}`)
+  fastify.log.info(`OpenAPI JSON URL: ${openApiJsonPath}`)
 })

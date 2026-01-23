@@ -17,7 +17,7 @@ const filename: FastifyPluginAsyncTypebox = async (fastify): Promise<void> => {
                 filename: Type.String(),
             }),
             response: {
-                500: Type.Object({
+                404: Type.Object({
                     error: Type.String()
                 })
             },
@@ -27,8 +27,8 @@ const filename: FastifyPluginAsyncTypebox = async (fastify): Promise<void> => {
             const fileList = fs.readdirSync(BASE_STATIC_URL)
             let fileFullName = fileList.find(a => a.includes(pathFileName))
             console.log('BASE_STATIC_URL', BASE_STATIC_URL)
-            if (fileFullName) return reply.code(200).sendFile(pathFileName)
-            return reply.code(500).send({
+            if (fileFullName) return reply.sendFile(pathFileName)
+            return reply.code(404).send({
                 error: "没有对应的文件"
             })
         },

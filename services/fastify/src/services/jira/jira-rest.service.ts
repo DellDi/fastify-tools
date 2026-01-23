@@ -237,7 +237,7 @@ ${prompt || '无'}
         'LLM returned invalid project/issueType, using defaults',
       )
     } catch (error) {
-      this.fastify.log.error('LLM matching failed:', error)
+      this.fastify.log.error(`LLM matching failed: ${error instanceof Error ? error.message : String(error)}`)
     }
 
     // 降级：返回默认值
@@ -586,7 +586,7 @@ ${prompt || '无'}
 
       return holidays
     } catch (error) {
-      this.fastify.log.warn(`Failed to fetch holidays for ${year}:`, error)
+      this.fastify.log.warn(`Failed to fetch holidays for ${year}: ${error instanceof Error ? error.message : String(error)}`)
       // 返回空集合，不阻塞业务
       return new Set<string>()
     }
@@ -764,7 +764,7 @@ ${prompt || '无'}
         `Found ${usedDates.size} used dates for ${assignee}`,
       )
     } catch (error) {
-      this.fastify.log.warn('Failed to query existing issues:', error)
+      this.fastify.log.warn(`Failed to query existing issues: ${error instanceof Error ? error.message : String(error)}`)
     }
 
     // 2. 获取节假日
@@ -870,7 +870,7 @@ ${description}
           ) as Record<string, string>
         }
       } catch (parseError) {
-        this.fastify.log.error('Failed to parse LLM response:', parseError)
+        this.fastify.log.error(`Failed to parse LLM response: ${parseError instanceof Error ? parseError.message : String(parseError)}`)
         throw new Error('解析LLM响应失败，返回的不是有效的JSON格式')
       }
 
@@ -883,7 +883,7 @@ ${description}
 
       return result
     } catch (error) {
-      this.fastify.log.error('Error in genCustomInfo:', error)
+      this.fastify.log.error(`Error in genCustomInfo: ${error instanceof Error ? error.message : String(error)}`)
       // 出错时返回包含所有必填字段的空对象
       return Object.fromEntries(
         requiredCustomFields.map((field) => [field.fieldId, '']),

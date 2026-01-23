@@ -122,11 +122,11 @@ export class JiraService {
 
       return sessionData
     } catch (error) {
-      this.fastify.log.error('Jira login error:', error)
+      this.fastify.log.error(`Jira login error: ${error instanceof Error ? error.message : String(error)}`)
       if (error instanceof JiraLoginError) {
         throw error
       }
-      throw new JiraLoginError(`Jira 登录失败: ${error}`)
+      throw new JiraLoginError(`Jira 登录失败: ${error instanceof Error ? error.message : String(error)}`)
     }
   }
 
@@ -209,8 +209,7 @@ export class JiraService {
           )
         } catch (matchError) {
           this.fastify.log.warn(
-            'Smart match failed, using defaults:',
-            matchError,
+            `Smart match failed, using defaults: ${matchError instanceof Error ? matchError.message : String(matchError)}`,
           )
         }
       }
@@ -275,14 +274,14 @@ export class JiraService {
         matchInfo,
       }
     } catch (error) {
-      this.fastify.log.error('Create ticket error:', error)
+      this.fastify.log.error(`Create ticket error: ${error instanceof Error ? error.message : String(error)}`)
       if (
         error instanceof JiraCreateError ||
         error instanceof ValidationError
       ) {
         throw error
       }
-      throw new JiraCreateError(`创建 Jira 工单失败: ${error}`)
+      throw new JiraCreateError(`创建 Jira 工单失败: ${error instanceof Error ? error.message : String(error)}`)
     }
   }
 
@@ -325,14 +324,14 @@ export class JiraService {
         ).join(',')}`,
       }
     } catch (error) {
-      this.fastify.log.error('Update ticket error:', error)
+      this.fastify.log.error(`Update ticket error: ${error instanceof Error ? error.message : String(error)}`)
       if (
         error instanceof JiraUpdateError ||
         error instanceof ValidationError
       ) {
         throw error
       }
-      throw new JiraUpdateError(`更新 Jira 工单失败: ${error}`)
+      throw new JiraUpdateError(`更新 Jira 工单失败: ${error instanceof Error ? error.message : String(error)}`)
     }
   }
 
@@ -357,8 +356,8 @@ export class JiraService {
         startAt,
       )
     } catch (error) {
-      this.fastify.log.error('Get create meta error:', error)
-      throw new JiraError(`获取 Jira 元数据失败: ${error}`)
+      this.fastify.log.error(`Get create meta error: ${error instanceof Error ? error.message : String(error)}`)
+      throw new JiraError(`获取 Jira 元数据失败: ${error instanceof Error ? error.message : String(error)}`)
     }
   }
 
@@ -397,13 +396,12 @@ export class JiraService {
         this.fastify.log.info(`Dev reply completed for ${result.issueKey}`)
       } catch (devReplyError) {
         this.fastify.log.warn(
-          `Dev reply failed for ${result.issueKey}:`,
-          devReplyError,
+          `Dev reply failed for ${result.issueKey}: ${devReplyError instanceof Error ? devReplyError.message : String(devReplyError)}`,
         )
         devReplyResult = {
           success: false,
           issueKey: result.issueKey,
-          message: `开发回复失败: ${devReplyError}`,
+          message: `开发回复失败: ${devReplyError instanceof Error ? devReplyError.message : String(devReplyError)}`,
         }
       }
     }
@@ -448,7 +446,7 @@ export class JiraService {
         `Found ${usedDates.size} used dates for ${assignee}, max: ${maxUsedDate || 'none'}`,
       )
     } catch (error) {
-      this.fastify.log.warn('Failed to query existing issues:', error)
+      this.fastify.log.warn(`Failed to query existing issues: ${error instanceof Error ? error.message : String(error)}`)
     }
 
     // 2. 智能选择修复版本（根据已占用日期动态选择）
@@ -471,7 +469,7 @@ export class JiraService {
           )
         }
       } catch (error) {
-        this.fastify.log.warn('Failed to get project versions:', error)
+        this.fastify.log.warn(`Failed to get project versions: ${error instanceof Error ? error.message : String(error)}`)
       }
     }
 
@@ -495,7 +493,7 @@ export class JiraService {
           `Allocated dev complete date: ${devCompleteDate}`,
         )
       } catch (error) {
-        this.fastify.log.warn('Failed to allocate dev complete date:', error)
+        this.fastify.log.warn(`Failed to allocate dev complete date: ${error instanceof Error ? error.message : String(error)}`)
       }
     }
 

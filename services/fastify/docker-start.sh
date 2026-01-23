@@ -11,14 +11,9 @@ npx wait-on -t 60000 tcp:${POSTGRES_HOST:-localhost}:${POSTGRES_PORT:-5432}
 echo "🔄 执行数据库迁移..."
 npx prisma migrate deploy
 
-# 生成 Prisma Client
-# 只检查客户端目录是否存在
-if [ ! -d "./generated/client" ]; then
-  echo "🔧 生成 Prisma Client..."
-  npx prisma generate
-else
-  echo "🔧 Prisma Client 已存在，跳过生成步骤..."
-fi
+# 生成 Prisma Client（始终重新生成以确保 binaryTargets 匹配当前平台）
+echo "🔧 生成 Prisma Client..."
+npx prisma generate
 
 # 执行种子数据
 echo "🌱 执行种子数据..."

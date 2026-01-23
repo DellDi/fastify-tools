@@ -13,8 +13,8 @@ ENV COREPACK_NPM_REGISTRY=https://registry.npmmirror.com
 # Set the npm registry to the mirror
 RUN pnpm config set registry https://registry.npmmirror.com
 
-# 复制工作区配置和根目录依赖
-COPY pnpm-workspace.yaml package.json ./
+# 复制工作区配置、根目录依赖和锁文件（确保依赖版本一致）
+COPY pnpm-workspace.yaml package.json pnpm-lock.yaml ./
 
 # 复制服务目录
 COPY services/fastify ./services/fastify
