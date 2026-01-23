@@ -47,8 +47,22 @@ services:
       - DATABASE_URL=${FASTIFY_DATABASE_URL:-postgresql://postgres:postgres@postgres:5432/fastify_db}
       - POSTGRES_HOST=postgres
       - POSTGRES_PORT=5432
+      # Jira 配置
+      - JIRA_USERNAME=${JIRA_USERNAME}
+      - JIRA_PASSWORD=${JIRA_PASSWORD}
+      - JIRA_BASE_URL=${JIRA_BASE_URL}
+      - JIRA_DEFAULT_PROJECT=${JIRA_DEFAULT_PROJECT}
+      - JIRA_DEFAULT_ISSUE_TYPE=${JIRA_DEFAULT_ISSUE_TYPE}
+      - JIRA_DEFAULT_COMPONENT=${JIRA_DEFAULT_COMPONENT}
+      - JIRA_DEFAULT_PRIORITY=${JIRA_DEFAULT_PRIORITY}
       # 阿里百炼密钥
       - DASHSCOPE_API_KEY=${DASHSCOPE_API_KEY}
+      # 邮箱服务
+      - SMTP_HOST=${SMTP_HOST}
+      - SMTP_PORT=${SMTP_PORT}
+      - SMTP_USER=${SMTP_USER}
+      - SMTP_PASS=${SMTP_PASS}
+      - SMTP_SECURE=${SMTP_SECURE}  
     depends_on:
       postgres:
         condition: service_healthy
@@ -77,14 +91,11 @@ services:
       - JWT_SECRET=${JWT_SECRET:?JWT_SECRET is required}
       - JIRA_USERNAME=${JIRA_USERNAME:?JIRA_USERNAME is required}
       - JIRA_PASSWORD=${JIRA_PASSWORD:?JIRA_PASSWORD is required}
+      - INITIAL_USER_PASSWORD=${INITIAL_USER_PASSWORD}
+      - INITIAL_SUPER_PASSWORD=${INITIAL_SUPER_PASSWORD}
+      - BEARER_TOKEN=${BEARER_TOKEN}
       - POSTGRES_HOST=postgres
       - POSTGRES_PORT=5432
-      # 邮箱服务
-      - SMTP_HOST=${SMTP_HOST}
-      - SMTP_PORT=${SMTP_PORT}
-      - SMTP_USER=${SMTP_USER}
-      - SMTP_PASS=${SMTP_PASS}
-      - SMTP_SECURE=${SMTP_SECURE}
     depends_on:
       - postgres
       - fastify
