@@ -34,22 +34,71 @@ export function parseVersionDate(versionName: string): Date | null {
 }
 
 /**
- * 选择合适的修复版本
- * 规则：选择日期 >= 当前日期的最近版本
+ * 获取所有有效版本（未发布、未归档、日期 >= 今天）
+ * 按日期升序排列
  */
-export function selectFixVersion(versions: JiraVersion[]): JiraVersion | null {
+export function getValidVersions(versions: JiraVersion[]): Array<{ version: JiraVersion; date: Date }> {
   const today = dayjs().startOf('day')
 
-  const validVersions = versions
+  return versions
     .filter(v => !v.released && !v.archived)
     .map(v => ({
       version: v,
       date: parseVersionDate(v.name),
     }))
-    .filter(item => item.date !== null && dayjs(item.date).isSameOrAfter(today))
-    .sort((a, b) => a.date!.getTime() - b.date!.getTime())
+    .filter((item): item is { version: JiraVersion; date: Date } => 
+      item.date !== null && dayjs(item.date).isSameOrAfter(today)
+    )
+    .sort((a, b) => a.date.getTime() - b.date.getTime())
+}
 
+/**
+ * 选择合适的修复版本（简单版本，选择最近的）
+ * @deprecated 使用 selectFixVersionSmart 替代
+ */
+export function selectFixVersion(versions: JiraVersion[]): JiraVersion | null {
+  const validVersions = getValidVersions(versions)
   return validVersions.length > 0 ? validVersions[0].version : null
+}
+
+/**
+ * 智能选择修复版本
+ * 规则：
+ * 1. 如果用户最新已占用日期 >= 版本日期 - 1天，则选择下一个版本
+ * 2. 否则选择当前版本
+ * 
+ * @param versions 所有版本列表
+ * @param maxUsedDate 用户最新已占用日期（YYYY-MM-DD 格式）
+ * @returns 选中的版本及其日期
+ */
+export function selectFixVersionSmart(
+  versions: JiraVersion[],
+  maxUsedDate?: string
+): { version: JiraVersion; date: Date } | null {
+  const validVersions = getValidVersions(versions)
+  
+  if (validVersions.length === 0) {
+    return null
+  }
+
+  // 如果没有已占用日期，直接返回第一个版本
+  if (!maxUsedDate) {
+    return validVersions[0]
+  }
+
+  const maxUsed = dayjs(maxUsedDate).startOf('day')
+
+  // 遍历版本，找到第一个“版本日期 - 1天 > 最新已占用日期”的版本
+  for (const item of validVersions) {
+    const versionDeadline = dayjs(item.date).subtract(1, 'day')
+    // 如果版本截止日期 > 最新已占用日期，说明这个版本还有空间
+    if (versionDeadline.isAfter(maxUsed)) {
+      return item
+    }
+  }
+
+  // 所有版本都满了，返回最后一个版本（降级处理）
+  return validVersions[validVersions.length - 1]
 }
 
 /**
@@ -64,7 +113,7 @@ export function isWeekend(date: dayjs.Dayjs): boolean {
  * 智能分配可用日期
  * 规则：
  * 1. >= 当前日期
- * 2. <= 版本日期
+ * 2. < 版本日期（不能等于版本日，最多到版本前一天）
  * 3. 不与已占用日期重复
  * 4. 不是节假日或周末
  */
@@ -74,7 +123,8 @@ export function findAvailableDate(
   holidays: Set<string>
 ): string {
   let candidate = dayjs().startOf('day')
-  const maxDate = dayjs(versionDate).startOf('day')
+  // 最大可用日期 = 版本日期 - 1天
+  const maxDate = dayjs(versionDate).subtract(1, 'day').startOf('day')
 
   while (candidate.isSameOrBefore(maxDate)) {
     const dateStr = candidate.format('YYYY-MM-DD')
@@ -93,8 +143,19 @@ export function findAvailableDate(
     candidate = candidate.add(1, 'day')
   }
 
-  // 如果没有可用日期，返回版本日期（降级）
+  // 如果没有可用日期，返回版本前一天（降级）
   return maxDate.format('YYYY-MM-DD')
+}
+
+/**
+ * 获取已占用日期中的最大日期
+ */
+export function getMaxUsedDate(usedDates: Set<string>): string | undefined {
+  if (usedDates.size === 0) {
+    return undefined
+  }
+  const sorted = Array.from(usedDates).sort()
+  return sorted[sorted.length - 1]
 }
 
 export { dayjs }

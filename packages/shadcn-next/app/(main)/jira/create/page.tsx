@@ -21,10 +21,10 @@ import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
 import { fastifyFetch } from '@/utils/fetch/fastifyFetch'
 
 export default function JiraForm() {
-  const router = useRouter()
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [success, setSuccess] = useState<boolean>(false)
+  const [data, setData] = useState<any>(null)
   const [formData, setFormData] = useState({
     point: 'app.create_jira_tool',
     title: '',
@@ -59,17 +59,13 @@ export default function JiraForm() {
         body: JSON.stringify(formData),
       })
 
-      if (!response.ok) {
-        const errorData = await response.json()
-        throw new Error(errorData.message || '创建工单失败')
-      }
-
-      const data = await response.json()
+      const data = response
       console.log('Success:', data)
+      setData(data)
       setSuccess(true)
       // 重置表单
       setFormData({
-        point: 'ping',
+        point: 'app.create_jira_tool',
         title: '',
         description: '',
         labels: 'SaaS内部已审核',
@@ -107,6 +103,7 @@ export default function JiraForm() {
               <CheckCircle2 className="h-4 w-4 text-green-600" />
               <AlertTitle className="text-green-600">成功</AlertTitle>
               <AlertDescription>工单已成功创建</AlertDescription>
+              <pre>{JSON.stringify(data, null, 2)}</pre>
             </Alert>
           )}
 

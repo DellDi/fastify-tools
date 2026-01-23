@@ -11,7 +11,9 @@ import {
   dayjs,
   parseVersionDate,
   selectFixVersion,
+  selectFixVersionSmart,
   findAvailableDate,
+  getMaxUsedDate,
 } from './utils.js'
 import type {
   IssueData,
@@ -712,11 +714,29 @@ ${prompt || '无'}
   }
 
   /**
-   * 选择合适的修复版本
-   * 委托给 utils.ts 中的工具函数
+   * 选择合适的修复版本（简单版本）
+   * @deprecated 使用 selectFixVersionSmart 替代
    */
   selectFixVersion(versions: JiraVersion[]): JiraVersion | null {
     return selectFixVersion(versions)
+  }
+
+  /**
+   * 智能选择修复版本
+   * 根据用户已占用日期动态选择合适的版本
+   */
+  selectFixVersionSmart(
+    versions: JiraVersion[],
+    maxUsedDate?: string
+  ): { version: JiraVersion; date: Date } | null {
+    return selectFixVersionSmart(versions, maxUsedDate)
+  }
+
+  /**
+   * 获取已占用日期中的最大日期
+   */
+  getMaxUsedDate(usedDates: Set<string>): string | undefined {
+    return getMaxUsedDate(usedDates)
   }
 
   /**

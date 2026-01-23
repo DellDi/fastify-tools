@@ -427,8 +427,32 @@ export class JiraService {
     const session = await this.getSession(credentials)
     const { issueKey, projectKey, assignee } = data
 
-    // 1. 获取项目版本列表，选择合适的修复版本
-    let fixVersion = null
+    // 1. 先查询用户已占用的预计开发完成时间
+    let usedDates = new Set<string>()
+    let maxUsedDate: string | undefined
+
+    try {
+      const jql = `assignee = "${assignee}" AND resolution = Unresolved ORDER BY cf[10022] ASC`
+      const searchResult = await this.jiraRestService.searchIssuesByJql(
+        jql,
+        session.cookies,
+        ['customfield_10022'],
+      )
+      usedDates = new Set(
+        searchResult.issues
+          .map((issue) => issue.fields.customfield_10022)
+          .filter(Boolean),
+      )
+      maxUsedDate = this.jiraRestService.getMaxUsedDate(usedDates)
+      this.fastify.log.info(
+        `Found ${usedDates.size} used dates for ${assignee}, max: ${maxUsedDate || 'none'}`,
+      )
+    } catch (error) {
+      this.fastify.log.warn('Failed to query existing issues:', error)
+    }
+
+    // 2. 智能选择修复版本（根据已占用日期动态选择）
+    let fixVersion: { version: { id: string; name: string }; date: Date } | null = null
     let fixVersionId = data.fixVersionId
 
     if (!fixVersionId) {
@@ -438,11 +462,12 @@ export class JiraService {
           session.cookies,
           'unreleased',
         )
-        fixVersion = this.jiraRestService.selectFixVersion(versions)
+        // 使用智能版本选择，传入最大已占用日期
+        fixVersion = this.jiraRestService.selectFixVersionSmart(versions, maxUsedDate)
         if (fixVersion) {
-          fixVersionId = fixVersion.id
+          fixVersionId = fixVersion.version.id
           this.fastify.log.info(
-            `Selected fix version: ${fixVersion.name} (${fixVersion.id})`,
+            `Selected fix version: ${fixVersion.version.name} (${fixVersion.version.id})`,
           )
         }
       } catch (error) {
@@ -450,24 +475,27 @@ export class JiraService {
       }
     }
 
-    // 2. 智能分配预计开发完成时间
+    // 3. 智能分配预计开发完成时间
     let devCompleteDate = data.devCompleteDate
 
     if (!devCompleteDate && fixVersion) {
-      const versionDate = this.jiraRestService.parseVersionDate(fixVersion.name)
-      if (versionDate) {
-        try {
-          devCompleteDate = await this.jiraRestService.allocateDevCompleteDate(
-            session.cookies,
-            assignee,
-            versionDate,
-          )
-          this.fastify.log.info(
-            `Allocated dev complete date: ${devCompleteDate}`,
-          )
-        } catch (error) {
-          this.fastify.log.warn('Failed to allocate dev complete date:', error)
-        }
+      try {
+        // 获取节假日
+        const currentYear = new Date().getFullYear()
+        const holidays = await this.jiraRestService.getHolidays(currentYear)
+        const nextYearHolidays = fixVersion.date.getFullYear() > currentYear
+          ? await this.jiraRestService.getHolidays(currentYear + 1)
+          : new Set<string>()
+        const allHolidays = new Set([...holidays, ...nextYearHolidays])
+
+        // 使用工具函数查找可用日期
+        const { findAvailableDate } = await import('./utils.js')
+        devCompleteDate = findAvailableDate(fixVersion.date, usedDates, allHolidays)
+        this.fastify.log.info(
+          `Allocated dev complete date: ${devCompleteDate}`,
+        )
+      } catch (error) {
+        this.fastify.log.warn('Failed to allocate dev complete date:', error)
       }
     }
 
@@ -525,7 +553,7 @@ export class JiraService {
     return {
       success: true,
       issueKey,
-      fixVersionName: fixVersion?.name,
+      fixVersionName: fixVersion?.version.name,
       devCompleteDate,
       transitionName: targetTransition?.name || '开发回复',
       message: `工单 ${issueKey} 已执行开发回复`,

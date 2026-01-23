@@ -11,8 +11,6 @@ export const fastifyFetch = async (url: string, options: RequestInit = {}) => {
     const baseFastifyApiUrl = process.env.SERVER_FASTIFY_API || ''
     // 前端调用地址
     const baseApiUrl = process.env.NEXT_PUBLIC_API_URL || ''
-    console.log('🚀 ~ fastifyFetch ~ baseFastifyApiUrl:', baseFastifyApiUrl)
-    console.log('🚀 ~ fastifyFetch ~ baseApiUrl:', baseApiUrl)
 
     // 根据环境选择基础URL
     const baseUrl = isServerEnvironment() ? baseFastifyApiUrl : baseApiUrl
