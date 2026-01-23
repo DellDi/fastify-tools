@@ -66,7 +66,7 @@ export function getJiraConfig(fastify: FastifyInstance): JiraConfig {
       password,
       proxyAuthToken
     },
-    defaultProject: config.JIRA_DEFAULT_PROJECT || 'V10',
+    defaultProject: config.JIRA_DEFAULT_PROJECT || 'NDE',
     defaultIssueType: config.JIRA_DEFAULT_ISSUE_TYPE || '4',
     defaultComponent: config.JIRA_DEFAULT_COMPONENT || '15775',
     defaultPriority: config.JIRA_DEFAULT_PRIORITY || '3',
@@ -83,7 +83,7 @@ export function getLLMConfig(fastify: FastifyInstance): LLMConfig {
   return {
     apiKey: config.DASHSCOPE_API_KEY || '',
     baseUrl: config.LLM_BASE_URL || 'https://dashscope.aliyuncs.com/compatible-mode/v1/chat/completions',
-    model: config.LLM_MODEL || 'qwen3-flash'
+    model: config.LLM_MODEL || 'qwen-flash'
   }
 }
 

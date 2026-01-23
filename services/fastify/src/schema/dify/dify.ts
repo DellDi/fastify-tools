@@ -52,7 +52,7 @@ const DifyJiraCreateExportBody = Type.Object({
   ),
   smartMatch: Type.Optional(
     Type.Boolean({
-      default: false,
+      default: true,
       description: '是否启用 LLM 智能匹配项目和问题类型',
     })
   ),
@@ -63,7 +63,7 @@ const DifyJiraCreateExportBody = Type.Object({
   ),
   autoDevReply: Type.Optional(
     Type.Boolean({
-      default: false,
+      default: true,
       description: '创建工单后是否自动执行"开发回复"工作流转换，包括自动选择修复版本和分配预计开发完成时间',
     })
   ),

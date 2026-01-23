@@ -9,7 +9,7 @@ import {
   JiraCreateError,
   JiraUpdateError,
   ValidationError,
-  JiraError
+  JiraError,
 } from '@/utils/errors.js'
 import type {
   JiraLoginCredentials,
@@ -91,8 +91,11 @@ export class JiraService {
           404: 'Jira 服务地址不正确',
           500: 'Jira 服务器内部错误',
         }
-        const friendlyMsg = errorMessages[loginResponse.statusCode] || `未知错误`
-        throw new JiraLoginError(`登录失败: ${friendlyMsg} (HTTP ${loginResponse.statusCode})`)
+        const friendlyMsg =
+          errorMessages[loginResponse.statusCode] || `未知错误`
+        throw new JiraLoginError(
+          `登录失败: ${friendlyMsg} (HTTP ${loginResponse.statusCode})`,
+        )
       }
 
       // Extract cookies from response
@@ -107,7 +110,7 @@ export class JiraService {
       let atlToken = ''
       if (Array.isArray(setCookieHeader)) {
         const xsrfCookie = setCookieHeader.find((cookie) =>
-          cookie.startsWith('atlassian.xsrf.token=')
+          cookie.startsWith('atlassian.xsrf.token='),
         )
         if (xsrfCookie) {
           atlToken = xsrfCookie.split(';')[0].split('=')[1]
@@ -130,7 +133,9 @@ export class JiraService {
   /**
    * Get cached session or login if needed
    */
-  private async getSession(credentials: JiraLoginCredentials): Promise<JiraSession> {
+  public async getSession(
+    credentials: JiraLoginCredentials,
+  ): Promise<JiraSession> {
     const sessionKey = this.getSessionKey(credentials.jiraUser)
     const session = fastifyCache.get(sessionKey)
     if (session?.cookies && session?.atlToken) {
@@ -161,7 +166,7 @@ export class JiraService {
    */
   async createTicket(
     credentials: JiraLoginCredentials,
-    data: JiraCreateTicketData
+    data: JiraCreateTicketData,
   ): Promise<JiraCreateTicketResponse> {
     if (!data.title || !data.description) {
       throw new ValidationError('缺少必需字段: title 和 description')
@@ -179,10 +184,12 @@ export class JiraService {
       // 如果启用智能匹配且未显式指定 project/issueType
       if (data.smartMatch && (!data.projectKey || !data.issueTypeId)) {
         try {
-          const projects = await this.jiraRestService.getProjects(session.cookies)
-          const issueTypes = await this.jiraRestService.getIssueTypes(
+          const projects = await this.jiraRestService.getProjects(
+            session.cookies,
+          )
+          const { issueTypes } = await this.jiraRestService.getIssueTypes(
             projectKey,
-            session.cookies
+            session.cookies,
           )
 
           const match = await this.jiraRestService.matchProjectAndIssueType(
@@ -190,7 +197,7 @@ export class JiraService {
             data.title,
             data.description,
             projects,
-            issueTypes
+            issueTypes,
           )
 
           projectKey = match.projectKey
@@ -198,10 +205,13 @@ export class JiraService {
           matchInfo = match
 
           this.fastify.log.info(
-            `Smart match result: project=${projectKey}, issueType=${issueTypeId}, confidence=${match.confidence}`
+            `Smart match result: componentId=${match.componentId}, project=${projectKey}, issueType=${issueTypeId}, confidence=${match.confidence}`,
           )
         } catch (matchError) {
-          this.fastify.log.warn('Smart match failed, using defaults:', matchError)
+          this.fastify.log.warn(
+            'Smart match failed, using defaults:',
+            matchError,
+          )
         }
       }
 
@@ -211,14 +221,14 @@ export class JiraService {
         issueTypeId,
         session.cookies,
         25,
-        0
+        0,
       )
 
       // Generate custom field information
       const genCustomInfo = await this.jiraRestService.genCustomInfo(
         metaResponse.values,
         data.title,
-        data.description
+        data.description,
       )
 
       this.fastify.log.info(genCustomInfo, 'genCustomInfo')
@@ -235,7 +245,7 @@ export class JiraService {
           },
         },
         session.cookies,
-        { projectKey, issueTypeId }
+        { projectKey, issueTypeId, componentId: matchInfo?.componentId },
       )
 
       if (!createResponse.id || !createResponse.key) {
@@ -246,7 +256,7 @@ export class JiraService {
       if (data.customerName) {
         const customInfo = this.jiraRestService.getCustomInfo(
           metaResponse.values,
-          data.customerName
+          data.customerName,
         )
 
         if (Object.keys(customInfo).length > 0) {
@@ -266,7 +276,10 @@ export class JiraService {
       }
     } catch (error) {
       this.fastify.log.error('Create ticket error:', error)
-      if (error instanceof JiraCreateError || error instanceof ValidationError) {
+      if (
+        error instanceof JiraCreateError ||
+        error instanceof ValidationError
+      ) {
         throw error
       }
       throw new JiraCreateError(`创建 Jira 工单失败: ${error}`)
@@ -278,7 +291,7 @@ export class JiraService {
    */
   async updateTicket(
     credentials: JiraLoginCredentials,
-    data: JiraUpdateTicketData
+    data: JiraUpdateTicketData,
   ): Promise<{ message: string }> {
     if (!data.issueIdOrKey || !data.fields) {
       throw new ValidationError('缺少必需字段: issueIdOrKey 和 fields')
@@ -299,7 +312,7 @@ export class JiraService {
           body: JSON.stringify({
             fields: data.fields,
           }),
-        }
+        },
       )
 
       if (updateResponse?.statusCode !== 204) {
@@ -308,12 +321,15 @@ export class JiraService {
 
       return {
         message: `Jira 工单：${data.issueIdOrKey} 已经更新成功，涉及字段：${Object.keys(
-          data.fields
+          data.fields,
         ).join(',')}`,
       }
     } catch (error) {
       this.fastify.log.error('Update ticket error:', error)
-      if (error instanceof JiraUpdateError || error instanceof ValidationError) {
+      if (
+        error instanceof JiraUpdateError ||
+        error instanceof ValidationError
+      ) {
         throw error
       }
       throw new JiraUpdateError(`更新 Jira 工单失败: ${error}`)
@@ -328,7 +344,7 @@ export class JiraService {
     projectKey: string = 'V10',
     issueTypeId: string = '4',
     maxResults: number = 25,
-    startAt: number = 0
+    startAt: number = 0,
   ) {
     try {
       const session = await this.getSession(credentials)
@@ -338,7 +354,7 @@ export class JiraService {
         issueTypeId,
         session.cookies,
         maxResults,
-        startAt
+        startAt,
       )
     } catch (error) {
       this.fastify.log.error('Get create meta error:', error)
@@ -351,13 +367,13 @@ export class JiraService {
    */
   async createTicketWithLabels(
     credentials: JiraLoginCredentials,
-    data: JiraCreateTicketData & { labels?: string; autoDevReply?: boolean }
+    data: JiraCreateTicketData & { labels?: string; autoDevReply?: boolean },
   ): Promise<JiraCreateTicketResponse & { devReply?: DevReplyResponse }> {
     const result = await this.createTicket(credentials, data)
 
     // Update with labels if provided
     if (data.labels) {
-      const labelArr = data.labels.split(',').filter(label => label.trim())
+      const labelArr = data.labels.split(',').filter((label) => label.trim())
       if (labelArr.length > 0) {
         await this.updateTicket(credentials, {
           issueIdOrKey: result.issueKey,
@@ -372,12 +388,18 @@ export class JiraService {
       try {
         devReplyResult = await this.devReply(credentials, {
           issueKey: result.issueKey,
-          projectKey: result.matchInfo?.projectKey || data.projectKey || this.jiraConfig.defaultProject,
+          projectKey:
+            result.matchInfo?.projectKey ||
+            data.projectKey ||
+            this.jiraConfig.defaultProject,
           assignee: data.assignee || credentials.jiraUser,
         })
         this.fastify.log.info(`Dev reply completed for ${result.issueKey}`)
       } catch (devReplyError) {
-        this.fastify.log.warn(`Dev reply failed for ${result.issueKey}:`, devReplyError)
+        this.fastify.log.warn(
+          `Dev reply failed for ${result.issueKey}:`,
+          devReplyError,
+        )
         devReplyResult = {
           success: false,
           issueKey: result.issueKey,
@@ -400,7 +422,7 @@ export class JiraService {
    */
   async devReply(
     credentials: JiraLoginCredentials,
-    data: DevReplyData
+    data: DevReplyData,
   ): Promise<DevReplyResponse> {
     const session = await this.getSession(credentials)
     const { issueKey, projectKey, assignee } = data
@@ -414,12 +436,14 @@ export class JiraService {
         const versions = await this.jiraRestService.getProjectVersions(
           projectKey,
           session.cookies,
-          'unreleased'
+          'unreleased',
         )
         fixVersion = this.jiraRestService.selectFixVersion(versions)
         if (fixVersion) {
           fixVersionId = fixVersion.id
-          this.fastify.log.info(`Selected fix version: ${fixVersion.name} (${fixVersion.id})`)
+          this.fastify.log.info(
+            `Selected fix version: ${fixVersion.name} (${fixVersion.id})`,
+          )
         }
       } catch (error) {
         this.fastify.log.warn('Failed to get project versions:', error)
@@ -436,9 +460,11 @@ export class JiraService {
           devCompleteDate = await this.jiraRestService.allocateDevCompleteDate(
             session.cookies,
             assignee,
-            versionDate
+            versionDate,
           )
-          this.fastify.log.info(`Allocated dev complete date: ${devCompleteDate}`)
+          this.fastify.log.info(
+            `Allocated dev complete date: ${devCompleteDate}`,
+          )
         } catch (error) {
           this.fastify.log.warn('Failed to allocate dev complete date:', error)
         }
@@ -446,22 +472,28 @@ export class JiraService {
     }
 
     // 3. 获取可用的工作流转换
-    const transitions = await this.jiraRestService.getTransitions(issueKey, session.cookies)
+    const transitions = await this.jiraRestService.getTransitions(
+      issueKey,
+      session.cookies,
+    )
 
     // 查找"开发回复"转换，默认使用 ID 11
     const transitionId = data.transitionId || '11'
-    const targetTransition = transitions.find(t => t.id === transitionId)
+    const targetTransition = transitions.find((t) => t.id === transitionId)
 
     if (!targetTransition) {
       // 尝试通过名称查找
-      const devReplyTransition = transitions.find(t =>
-        t.name.includes('开发回复') ||
-        t.name.toLowerCase().includes('dev reply') ||
-        t.name.toLowerCase().includes('development')
+      const devReplyTransition = transitions.find(
+        (t) =>
+          t.name.includes('开发回复') ||
+          t.name.toLowerCase().includes('dev reply') ||
+          t.name.toLowerCase().includes('development'),
       )
 
       if (!devReplyTransition) {
-        this.fastify.log.warn(`Available transitions: ${transitions.map(t => `${t.id}:${t.name}`).join(', ')}`)
+        this.fastify.log.warn(
+          `Available transitions: ${transitions.map((t) => `${t.id}:${t.name}`).join(', ')}`,
+        )
         throw new JiraError(`找不到开发回复工作流转换 (ID: ${transitionId})`)
       }
     }
@@ -487,7 +519,7 @@ export class JiraService {
       session.cookies,
       transitionId,
       Object.keys(transitionFields).length > 0 ? transitionFields : undefined,
-      data.comment
+      data.comment,
     )
 
     return {
@@ -506,10 +538,14 @@ export class JiraService {
   async getProjectVersions(
     credentials: JiraLoginCredentials,
     projectKey: string,
-    status?: 'released' | 'unreleased' | 'archived'
+    status?: 'released' | 'unreleased' | 'archived',
   ) {
     const session = await this.getSession(credentials)
-    return this.jiraRestService.getProjectVersions(projectKey, session.cookies, status)
+    return this.jiraRestService.getProjectVersions(
+      projectKey,
+      session.cookies,
+      status,
+    )
   }
 
   /**
@@ -526,9 +562,13 @@ export class JiraService {
   async getIssueDetail<T = Record<string, any>>(
     credentials: JiraLoginCredentials,
     issueIdOrKey: string,
-    fields?: string[]
+    fields?: string[],
   ): Promise<T> {
     const session = await this.getSession(credentials)
-    return this.jiraRestService.getIssueDetail<T>(issueIdOrKey, session.cookies, fields)
+    return this.jiraRestService.getIssueDetail<T>(
+      issueIdOrKey,
+      session.cookies,
+      fields,
+    )
   }
 }

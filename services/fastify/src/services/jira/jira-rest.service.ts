@@ -2,8 +2,17 @@ import { JiraMeta } from '@/schema/jira/meta.js'
 import { FastifyInstance } from 'fastify'
 import { request } from 'undici'
 import { fastifyCache } from '@/utils/cache.js'
-import { getJiraConfig, getLLMConfig, getCacheConfig } from '@/utils/config-helpers.js'
-import { dayjs, parseVersionDate, selectFixVersion, findAvailableDate } from './utils.js'
+import {
+  getJiraConfig,
+  getLLMConfig,
+  getCacheConfig,
+} from '@/utils/config-helpers.js'
+import {
+  dayjs,
+  parseVersionDate,
+  selectFixVersion,
+  findAvailableDate,
+} from './utils.js'
 import type {
   IssueData,
   JiraCreateResponse,
@@ -13,6 +22,7 @@ import type {
   JiraTransition,
   JiraSearchResult,
   ProjectIssueTypeMatch,
+  JiraComponent,
 } from './types.js'
 
 export class JiraRestService {
@@ -26,7 +36,9 @@ export class JiraRestService {
     this.cacheConfig = getCacheConfig(fastify)
 
     // 移除敏感信息日志记录，只记录用户名
-    this.fastify.log.info(`Jira service initialized for user: ${this.jiraConfig.auth.username}`)
+    this.fastify.log.info(
+      `Jira service initialized for user: ${this.jiraConfig.auth.username}`,
+    )
   }
 
   /**
@@ -48,7 +60,7 @@ export class JiraRestService {
           Authorization: this.jiraConfig.auth.proxyAuthToken,
           'Content-Type': 'application/json',
         },
-      }
+      },
     )
 
     if (response.statusCode !== 200) {
@@ -64,9 +76,14 @@ export class JiraRestService {
   /**
    * 获取指定项目的问题类型列表
    */
-  async getIssueTypes(projectKey: string, cookies: string): Promise<JiraIssueType[]> {
+  async getIssueTypes(
+    projectKey: string,
+    cookies: string,
+  ): Promise<{ issueTypes: JiraIssueType[]; components: JiraComponent[] }> {
     const cacheKey = `${this.cacheConfig.metaPrefix}-issuetypes-${projectKey}`
-    const cached = fastifyCache.get(cacheKey) as JiraIssueType[] | undefined
+    const cached = fastifyCache.get(cacheKey) as
+      | { issueTypes: JiraIssueType[]; components: JiraComponent[] }
+      | undefined
     if (cached) {
       return cached
     }
@@ -81,18 +98,21 @@ export class JiraRestService {
           Authorization: this.jiraConfig.auth.proxyAuthToken,
           'Content-Type': 'application/json',
         },
-      }
+      },
     )
 
     if (response.statusCode !== 200) {
       throw new Error(`获取问题类型失败: HTTP ${response.statusCode}`)
     }
 
-    const projectData = (await response.body.json()) as { issueTypes: JiraIssueType[] }
+    const projectData = (await response.body.json()) as {
+      issueTypes: JiraIssueType[]
+      components: JiraComponent[]
+    }
     const issueTypes = projectData.issueTypes || []
-    fastifyCache.set(cacheKey, issueTypes)
-
-    return issueTypes
+    const components = projectData.components || []
+    fastifyCache.set(cacheKey, { issueTypes, components })
+    return { issueTypes, components }
   }
 
   /**
@@ -103,12 +123,15 @@ export class JiraRestService {
     title: string,
     description: string,
     projects: JiraProject[],
-    issueTypes: JiraIssueType[]
+    issueTypes: JiraIssueType[],
   ): Promise<ProjectIssueTypeMatch> {
     // 如果没有 LLM API Key，返回默认值
     if (!this.llmConfig.apiKey) {
-      this.fastify.log.warn('DASHSCOPE_API_KEY not provided, using default project and issueType')
+      this.fastify.log.warn(
+        'DASHSCOPE_API_KEY not provided, using default project and issueType',
+      )
       return {
+        componentId: this.jiraConfig.defaultComponent,
         projectKey: this.jiraConfig.defaultProject,
         projectName: '默认项目',
         issueTypeId: this.jiraConfig.defaultIssueType,
@@ -117,15 +140,18 @@ export class JiraRestService {
       }
     }
 
-    const projectsInfo = projects.map(p => ({
+    this.fastify.log.info({ projects, count: projects.length }) // 順便帶其他資訊
+
+    const projectsInfo = projects.map((p) => ({
+      id: p.id,
       key: p.key,
       name: p.name,
       description: p.description || '',
     }))
 
     const issueTypesInfo = issueTypes
-      .filter(t => !t.subtask) // 排除子任务类型
-      .map(t => ({
+      .filter((t) => !t.subtask) // 排除子任务类型
+      .map((t) => ({
         id: t.id,
         name: t.name,
         description: t.description || '',
@@ -176,30 +202,53 @@ ${prompt || '无'}
       ])
 
       const parsed = JSON.parse(response) as ProjectIssueTypeMatch
-
       // 验证返回的 projectKey 和 issueTypeId 是否有效
-      const validProject = projects.find(p => p.key === parsed.projectKey)
-      const validIssueType = issueTypes.find(t => t.id === parsed.issueTypeId)
+      const validProject = projects.find((p) => p.key === parsed.projectKey)
+      const validIssueType = issueTypes.find((t) => t.id === parsed.issueTypeId)
+
+      // 重新获取匹配到的项目信息
+      const jiraConfig = getJiraConfig(this.fastify)
+      const { components: matchedComponents } =
+        await this.fastify.jiraService.getIssueTypes(
+          {
+            jiraUser: jiraConfig.auth.username || '',
+            jiraPassword: jiraConfig.auth.password || '',
+          },
+          parsed.projectKey,
+        )
 
       if (validProject && validIssueType) {
         this.fastify.log.info(
-          `LLM matched: project=${parsed.projectKey}, issueType=${parsed.issueTypeName}, confidence=${parsed.confidence}`
+          `LLM matched:matchedComponents=${JSON.stringify(
+            matchedComponents,
+          )},issueTypeId=${parsed.issueTypeId}, project=${parsed.projectKey}, issueType=${parsed.issueTypeName}, confidence=${parsed.confidence}`,
         )
-        return parsed
+        return {
+          ...parsed,
+          componentId:
+            matchedComponents[0]?.id || this.jiraConfig.defaultComponent,
+        }
       }
 
       // 如果匹配无效，降级到默认值
-      this.fastify.log.warn('LLM returned invalid project/issueType, using defaults')
+      this.fastify.log.warn(
+        'LLM returned invalid project/issueType, using defaults',
+      )
     } catch (error) {
       this.fastify.log.error('LLM matching failed:', error)
     }
 
     // 降级：返回默认值
     return {
+      componentId: this.jiraConfig.defaultComponent,
       projectKey: this.jiraConfig.defaultProject,
-      projectName: projects.find(p => p.key === this.jiraConfig.defaultProject)?.name || '默认项目',
+      projectName:
+        projects.find((p) => p.key === this.jiraConfig.defaultProject)?.name ||
+        '默认项目',
       issueTypeId: this.jiraConfig.defaultIssueType,
-      issueTypeName: issueTypes.find(t => t.id === this.jiraConfig.defaultIssueType)?.name || '默认类型',
+      issueTypeName:
+        issueTypes.find((t) => t.id === this.jiraConfig.defaultIssueType)
+          ?.name || '默认类型',
       confidence: 'low',
     }
   }
@@ -207,17 +256,28 @@ ${prompt || '无'}
   async createIssue(
     restData: { [key: string]: any },
     cookies: string,
-    options?: { projectKey?: string; issueTypeId?: string }
+    options?: {
+      projectKey?: string
+      issueTypeId?: string
+      componentId?: string
+    },
   ) {
-    const projectKey = options?.projectKey || restData.projectKey || this.jiraConfig.defaultProject
-    const issueTypeId = options?.issueTypeId || restData.issueTypeId || this.jiraConfig.defaultIssueType
+    const projectKey =
+      options?.projectKey ||
+      restData.projectKey ||
+      this.jiraConfig.defaultProject
+    const issueTypeId =
+      options?.issueTypeId ||
+      restData.issueTypeId ||
+      this.jiraConfig.defaultIssueType
+    const componentId = options?.componentId || this.jiraConfig.defaultComponent
 
     const issueData: IssueData = {
       fields: {
         project: { key: projectKey },
         summary: restData.title,
         issuetype: { id: issueTypeId },
-        components: [{ id: this.jiraConfig.defaultComponent }],
+        components: [{ id: componentId }],
         customfield_10000: { id: '13163' }, // 使用对象格式提供 ID
         customfield_12600: {
           id: '15862', // This is the ID for the parent option
@@ -245,7 +305,7 @@ ${prompt || '无'}
           Cookie: cookies,
         },
         body: JSON.stringify(issueData),
-      }
+      },
     )
 
     const responseBody =
@@ -269,7 +329,7 @@ ${prompt || '无'}
     issueTypeId: string,
     cookies: string,
     maxResults: number,
-    startAt: number
+    startAt: number,
   ) {
     const metaInfo = fastifyCache.get(this.cacheConfig.metaPrefix)
     if (metaInfo) {
@@ -290,7 +350,7 @@ ${prompt || '无'}
           maxResults,
           startAt,
         },
-      }
+      },
     )
 
     if (requestCreateMeta.statusCode !== 200) {
@@ -323,7 +383,7 @@ ${prompt || '无'}
    */
   getCustomInfo(
     values: JiraMeta[],
-    cusstomName: string
+    cusstomName: string,
   ): {
     [key: string]: any
   } {
@@ -337,7 +397,7 @@ ${prompt || '无'}
 
     customInfo.forEach((item) => {
       const valueInfo = item.allowedValues.find((obj) =>
-        obj.value?.includes(cusstomName)
+        obj.value?.includes(cusstomName),
       )
 
       if (valueInfo) {
@@ -362,26 +422,23 @@ ${prompt || '无'}
   }
 
   private async callLLM(
-    messages: Array<{ role: string; content: string }>
+    messages: Array<{ role: string; content: string }>,
   ): Promise<string> {
     try {
-      const response = await fetch(
-        this.llmConfig.baseUrl,
-        {
-          method: 'POST',
-          headers: {
-            Authorization: `Bearer ${this.llmConfig.apiKey}`,
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            model: this.llmConfig.model,
-            messages,
-            temperature: 0.3, // 降低随机性，提高确定性
-            top_p: 0.5, // 限制候选词范围，提高一致性
-            response_format: { type: 'json_object' },
-          }),
-        }
-      )
+      const response = await fetch(this.llmConfig.baseUrl, {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${this.llmConfig.apiKey}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          model: this.llmConfig.model,
+          messages,
+          temperature: 0.1, // 降低随机性，提高确定性
+          top_p: 0.5, // 限制候选词范围，提高一致性
+          response_format: { type: 'json_object' },
+        }),
+      })
 
       if (!response.ok) {
         const error = await response.text()
@@ -393,7 +450,7 @@ ${prompt || '无'}
       }
       this.fastify.log.info(
         data.choices[0],
-        'data.choices[0]?.message?.content?.trim()'
+        'data.choices[0]?.message?.content?.trim()',
       )
 
       return data.choices[0]?.message?.content?.trim() || '{}'
@@ -409,7 +466,7 @@ ${prompt || '无'}
   async getProjectVersions(
     projectKey: string,
     cookies: string,
-    status?: 'released' | 'unreleased' | 'archived'
+    status?: 'released' | 'unreleased' | 'archived',
   ): Promise<JiraVersion[]> {
     const cacheKey = `${this.cacheConfig.metaPrefix}-versions-${projectKey}-${status || 'all'}`
     const cached = fastifyCache.get(cacheKey) as JiraVersion[] | undefined
@@ -448,7 +505,7 @@ ${prompt || '无'}
     jql: string,
     cookies: string,
     fields: string[] = ['summary', 'status', 'customfield_10022'],
-    maxResults: number = 100
+    maxResults: number = 100,
   ): Promise<JiraSearchResult> {
     const response = await request(
       `${this.jiraConfig.baseUrl}/rest/api/2/search`,
@@ -464,12 +521,14 @@ ${prompt || '无'}
           fields,
           maxResults,
         }),
-      }
+      },
     )
 
     if (response.statusCode !== 200) {
       const errorText = await response.body.text()
-      throw new Error(`JQL 搜索失败: HTTP ${response.statusCode} - ${errorText}`)
+      throw new Error(
+        `JQL 搜索失败: HTTP ${response.statusCode} - ${errorText}`,
+      )
     }
 
     return (await response.body.json()) as JiraSearchResult
@@ -489,7 +548,7 @@ ${prompt || '无'}
     try {
       // 使用 timor.tech 免费节假日 API
       const response = await fetch(
-        `https://timor.tech/api/holiday/year/${year}`
+        `https://timor.tech/api/holiday/year/${year}`,
       )
 
       if (!response.ok) {
@@ -498,19 +557,22 @@ ${prompt || '无'}
 
       const data = (await response.json()) as {
         code: number
-        holiday: Record<string, {
-          holiday: boolean
-          name: string
-          wage: number
-          date: string
-        }>
+        holiday: Record<
+          string,
+          {
+            holiday: boolean
+            name: string
+            wage: number
+            date: string
+          }
+        >
       }
 
       const holidays = new Set<string>()
 
       if (data.code === 0 && data.holiday) {
         // 只添加 holiday: true 的日期（法定节假日）
-        Object.values(data.holiday).forEach(item => {
+        Object.values(data.holiday).forEach((item) => {
           if (item.holiday) {
             holidays.add(item.date)
           }
@@ -531,7 +593,10 @@ ${prompt || '无'}
   /**
    * 获取工单可用的工作流转换
    */
-  async getTransitions(issueKey: string, cookies: string): Promise<JiraTransition[]> {
+  async getTransitions(
+    issueKey: string,
+    cookies: string,
+  ): Promise<JiraTransition[]> {
     const response = await request(
       `${this.jiraConfig.baseUrl}/rest/api/2/issue/${issueKey}/transitions`,
       {
@@ -544,14 +609,16 @@ ${prompt || '无'}
         query: {
           expand: 'transitions.fields',
         },
-      }
+      },
     )
 
     if (response.statusCode !== 200) {
       throw new Error(`获取工作流转换失败: HTTP ${response.statusCode}`)
     }
 
-    const data = (await response.body.json()) as { transitions: JiraTransition[] }
+    const data = (await response.body.json()) as {
+      transitions: JiraTransition[]
+    }
     return data.transitions || []
   }
 
@@ -561,7 +628,7 @@ ${prompt || '无'}
   async getIssueDetail<T = Record<string, any>>(
     issueIdOrKey: string,
     cookies: string,
-    fields?: string[]
+    fields?: string[],
   ): Promise<T> {
     let url = `${this.jiraConfig.baseUrl}/rest/api/2/issue/${issueIdOrKey}`
     if (fields?.length) {
@@ -579,7 +646,9 @@ ${prompt || '无'}
 
     if (response.statusCode !== 200) {
       const errorText = await response.body.text()
-      throw new Error(`获取工单详情失败: HTTP ${response.statusCode} - ${errorText}`)
+      throw new Error(
+        `获取工单详情失败: HTTP ${response.statusCode} - ${errorText}`,
+      )
     }
 
     return (await response.body.json()) as T
@@ -590,7 +659,7 @@ ${prompt || '无'}
     cookies: string,
     transitionId: string,
     fields?: Record<string, any>,
-    comment?: string
+    comment?: string,
   ): Promise<void> {
     const body: any = {
       transition: { id: transitionId },
@@ -623,12 +692,14 @@ ${prompt || '无'}
           'X-Atlassian-Token': 'no-check',
         },
         body: JSON.stringify(body),
-      }
+      },
     )
 
     if (response.statusCode !== 204 && response.statusCode !== 200) {
       const errorText = await response.body.text()
-      throw new Error(`执行工作流转换失败: HTTP ${response.statusCode} - ${errorText}`)
+      throw new Error(
+        `执行工作流转换失败: HTTP ${response.statusCode} - ${errorText}`,
+      )
     }
   }
 
@@ -654,20 +725,24 @@ ${prompt || '无'}
   async allocateDevCompleteDate(
     cookies: string,
     assignee: string,
-    versionDate: Date
+    versionDate: Date,
   ): Promise<string> {
     // 1. 查询用户未完成工单的预计开发完成时间
     const jql = `assignee = "${assignee}" AND resolution = Unresolved ORDER BY cf[10022] ASC`
     let usedDates = new Set<string>()
 
     try {
-      const searchResult = await this.searchIssuesByJql(jql, cookies, ['customfield_10022'])
+      const searchResult = await this.searchIssuesByJql(jql, cookies, [
+        'customfield_10022',
+      ])
       usedDates = new Set(
         searchResult.issues
-          .map(issue => issue.fields.customfield_10022)
-          .filter(Boolean)
+          .map((issue) => issue.fields.customfield_10022)
+          .filter(Boolean),
       )
-      this.fastify.log.info(`Found ${usedDates.size} used dates for ${assignee}`)
+      this.fastify.log.info(
+        `Found ${usedDates.size} used dates for ${assignee}`,
+      )
     } catch (error) {
       this.fastify.log.warn('Failed to query existing issues:', error)
     }
@@ -675,9 +750,10 @@ ${prompt || '无'}
     // 2. 获取节假日
     const currentYear = dayjs().year()
     const holidays = await this.getHolidays(currentYear)
-    const nextYearHolidays = versionDate.getFullYear() > currentYear
-      ? await this.getHolidays(currentYear + 1)
-      : new Set<string>()
+    const nextYearHolidays =
+      versionDate.getFullYear() > currentYear
+        ? await this.getHolidays(currentYear + 1)
+        : new Set<string>()
 
     const allHolidays = new Set([...holidays, ...nextYearHolidays])
 
@@ -690,7 +766,7 @@ ${prompt || '无'}
   async genCustomInfo(
     values: JiraMeta[],
     summary: string,
-    description: string
+    description: string,
   ): Promise<Record<string, string>> {
     // 1. 筛选出必填的自定义字段 - 当前只处理字符串类型
     const requiredCustomFields = values.filter((field) => {
@@ -707,10 +783,10 @@ ${prompt || '无'}
     // 如果没有提供 API Key，直接返回字段名作为值
     if (!this.llmConfig.apiKey) {
       this.fastify.log.warn(
-        'DASHSCOPE_API_KEY not provided, using field names as values'
+        'DASHSCOPE_API_KEY not provided, using field names as values',
       )
       return Object.fromEntries(
-        requiredCustomFields.map((field) => [field.fieldId, field.name])
+        requiredCustomFields.map((field) => [field.fieldId, field.name]),
       )
     }
 
@@ -739,7 +815,6 @@ ${prompt || '无'}
 
 ## 必填字段信息：
 ${JSON.stringify(fieldsInfo, null, 2)}`
-
 
       const userPrompt = `## 问题标题：
 ${summary}
@@ -770,8 +845,8 @@ ${description}
               ([key, value]) =>
                 typeof key === 'string' &&
                 key.startsWith('customfield') &&
-                typeof value === 'string'
-            )
+                typeof value === 'string',
+            ),
           ) as Record<string, string>
         }
       } catch (parseError) {
@@ -791,7 +866,7 @@ ${description}
       this.fastify.log.error('Error in genCustomInfo:', error)
       // 出错时返回包含所有必填字段的空对象
       return Object.fromEntries(
-        requiredCustomFields.map((field) => [field.fieldId, ''])
+        requiredCustomFields.map((field) => [field.fieldId, '']),
       )
     }
   }

@@ -31,12 +31,12 @@ const schema = Type.Object({
   JIRA_DEFAULT_PRIORITY: Type.Optional(Type.String({ default: '3' })),
 
   // 认证配置
-  BEARER_TOKEN: Type.String(),
+  BEARER_TOKEN: Type.String({default: 'zd-808611'}),
 
   // LLM 配置（阿里云 DashScope）
   DASHSCOPE_API_KEY: Type.Optional(Type.String()),
   LLM_BASE_URL: Type.Optional(Type.String({ default: 'https://dashscope.aliyuncs.com/compatible-mode/v1/chat/completions' })),
-  LLM_MODEL: Type.Optional(Type.String({ default: 'qwen3-flash' })),
+  LLM_MODEL: Type.Optional(Type.String({ default: 'qwen-flash' })),
 })
 
 export default fp<FastifyEnvOptions>(async (fastify, opts) => {

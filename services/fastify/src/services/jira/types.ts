@@ -23,6 +23,13 @@ export interface JiraIssueType {
   iconUrl?: string
 }
 
+export interface JiraComponent {
+  self: string
+  id: string
+  name: string
+  isAssigneeTypeValid?: string
+}
+
 export interface JiraVersion {
   id: string
   name: string
@@ -73,6 +80,7 @@ export interface JiraSearchResult {
 // ============================================
 
 export interface ProjectIssueTypeMatch {
+  componentId: string
   projectKey: string
   projectName: string
   issueTypeId: string
