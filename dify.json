@@ -1,0 +1,265 @@
+{
+    "openapi": "3.1.0",
+    "info": {
+        "title": "Dify API",
+        "description": "API for creating Jira tickets and other Dify operations",
+        "version": "v1.0.0"
+    },
+    "servers": [
+        {
+            "url": "https://dify.yswg360.com/fastify"
+        }
+    ],
+    "paths": {
+        "/dify/create-jira": {
+            "post": {
+                "tags": [
+                    "dify"
+                ],
+                "description": "快速创建jira工单并更新内容",
+                "operationId": "createJira",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "type": "object",
+                                "properties": {
+                                    "point": {
+                                        "default": "ping",
+                                        "description": "触发标识:'ping' | 触发接口: 'app.external_data_tool.query'",
+                                        "type": "string"
+                                    },
+                                    "title": {
+                                        "default": "【超级工单】新增测试工单",
+                                        "description": "单子标题",
+                                        "type": "string"
+                                    },
+                                    "description": {
+                                        "default": "【超级工单】新增测试工单-我是工单的描述信息",
+                                        "description": "单子描述",
+                                        "type": "string"
+                                    },
+                                    "labels": {
+                                        "default": "SaaS需求,SaaS内部已评审",
+                                        "description": "标签",
+                                        "type": "string"
+                                    },
+                                    "jiraUser": {
+                                        "default": "lfx123456",
+                                        "description": "jira用户名",
+                                        "type": "string"
+                                    },
+                                    "jiraPassword": {
+                                        "default": "lfx123456",
+                                        "description": "jira密码",
+                                        "type": "string"
+                                    },
+                                    "assignee": {
+                                        "default": "lfx123456",
+                                        "description": "经办人",
+                                        "type": "string"
+                                    },
+                                    "customerName": {
+                                        "default": "新安明珠",
+                                        "description": "客户名称信息",
+                                        "type": "string"
+                                    }
+                                },
+                                "required": [
+                                    "point"
+                                ]
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Successful response",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "result": {
+                                            "type": "string"
+                                        },
+                                        "issueId": {
+                                            "type": "string"
+                                        },
+                                        "issueKey": {
+                                            "type": "string"
+                                        },
+                                        "issueUrl": {
+                                            "type": "string"
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Bad request",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "error": {
+                                            "type": "string"
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/jira/link/types": {
+            "get": {
+                "tags": [
+                    "jira"
+                ],
+                "description": "查询当前 Jira 实例支持的所有工单链接类型，用于确认 linkTypeName 的可用值",
+                "operationId": "getJiraLinkTypes",
+                "servers": [
+                    {
+                        "url": "https://dify.yswg360.com/fastify"
+                    }
+                ],
+                "parameters": [
+                    {
+                        "name": "jiraUser",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "description": "jira用户名，不传则使用服务默认账号"
+                        }
+                    },
+                    {
+                        "name": "jiraPassword",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "description": "jira密码，不传则使用服务默认账号"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "链接类型列表",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "array",
+                                    "items": {
+                                        "type": "object",
+                                        "properties": {
+                                            "id": { "type": "string" },
+                                            "name": { "type": "string", "description": "链接类型名称，即 linkTypeName 的可用值" },
+                                            "inward": { "type": "string", "description": "入向描述，如「被阻塞」" },
+                                            "outward": { "type": "string", "description": "出向描述，如「阻塞」" }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/jira/link": {
+            "post": {
+                "tags": [
+                    "jira"
+                ],
+                "description": "批量将多个 Jira 工单关联到指定目标工单（relates to）。linkTypeName 不传时自动选择第一个可用类型，可先调用 GET /jira/link/types 确认可用值",
+                "operationId": "linkJiraIssues",
+                "servers": [
+                    {
+                        "url": "https://dify.yswg360.com/fastify"
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "type": "object",
+                                "required": ["sourceIssueKeys", "targetIssueKey"],
+                                "properties": {
+                                    "jiraUser": {
+                                        "type": "string",
+                                        "description": "jira用户名，不传则使用服务默认账号"
+                                    },
+                                    "jiraPassword": {
+                                        "type": "string",
+                                        "description": "jira密码，不传则使用服务默认账号"
+                                    },
+                                    "sourceIssueKeys": {
+                                        "type": "string",
+                                        "description": "需要建立关联的来源工单 Key，逗号分隔，例如：NDE-4143,NDE-4144,NDE-4145",
+                                        "example": "NDE-4143,NDE-4144"
+                                    },
+                                    "targetIssueKey": {
+                                        "type": "string",
+                                        "description": "被关联的目标工单 Key，即「相关于」哪个工单，例如：NDE-4128",
+                                        "example": "NDE-4128"
+                                    },
+                                    "linkTypeName": {
+                                        "type": "string",
+                                        "description": "关联类型名称，不传时自动选择第一个可用类型。可通过 GET /jira/link/types 查询实际可用值"
+                                    }
+                                }
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "关联结果，每个来源工单独立返回成功或失败",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "results": {
+                                            "type": "array",
+                                            "items": {
+                                                "type": "object",
+                                                "properties": {
+                                                    "issueKey": { "type": "string", "description": "来源工单 Key" },
+                                                    "success": { "type": "boolean", "description": "是否关联成功" },
+                                                    "message": { "type": "string", "description": "结果描述" }
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "参数错误",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "error": { "type": "string" }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    },
+    "components": {
+        "schemas": {}
+    }
+}
