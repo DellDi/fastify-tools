@@ -706,6 +706,71 @@ ${prompt || '无'}
   }
 
   /**
+   * 获取所有可用的工单链接类型
+   */
+  async getIssueLinkTypes(cookies: string): Promise<Array<{ id: string; name: string; inward: string; outward: string }>> {
+    const response = await request(
+      `${this.jiraConfig.baseUrl}/rest/api/2/issueLinkType`,
+      {
+        method: 'GET',
+        headers: {
+          Cookie: cookies,
+          Authorization: this.jiraConfig.auth.proxyAuthToken,
+          'Content-Type': 'application/json',
+        },
+      },
+    )
+
+    if (response.statusCode !== 200) {
+      const errorText = await response.body.text()
+      throw new Error(`获取链接类型失败: HTTP ${response.statusCode} - ${errorText}`)
+    }
+
+    const data = (await response.body.json()) as { issueLinkTypes: Array<{ id: string; name: string; inward: string; outward: string }> }
+    return data.issueLinkTypes || []
+  }
+
+  /**
+   * 创建工单关联（relates to）
+   */
+  async linkIssue(
+    inwardIssueKey: string,
+    outwardIssueKey: string,
+    cookies: string,
+    linkTypeName: string = 'Relates',
+  ): Promise<void> {
+    const response = await request(
+      `${this.jiraConfig.baseUrl}/rest/api/2/issueLink`,
+      {
+        method: 'POST',
+        headers: {
+          Cookie: cookies,
+          Authorization: this.jiraConfig.auth.proxyAuthToken,
+          'Content-Type': 'application/json',
+          'X-Atlassian-Token': 'no-check',
+        },
+        body: JSON.stringify({
+          type: { name: linkTypeName },
+          inwardIssue: { key: inwardIssueKey },
+          outwardIssue: { key: outwardIssueKey },
+        }),
+      },
+    )
+
+    if (response.statusCode !== 201 && response.statusCode !== 200) {
+      const errorText = await response.body.text()
+      throw new Error(
+        `关联工单失败 (${inwardIssueKey} -> ${outwardIssueKey}): HTTP ${response.statusCode} - ${errorText}`,
+      )
+    }
+
+    // 201 No Content 时 body 为空，无需解析
+    if (response.statusCode !== 201) {
+      await response.body.text()
+    }
+  }
+
+  /**
    * 解析版本名称中的日期
    * 委托给 utils.ts 中的工具函数
    */

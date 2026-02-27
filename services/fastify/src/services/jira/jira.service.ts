@@ -559,6 +559,43 @@ export class JiraService {
   }
 
   /**
+   * 获取所有可用的工单链接类型
+   */
+  async getIssueLinkTypes(credentials: JiraLoginCredentials) {
+    const session = await this.getSession(credentials)
+    return this.jiraRestService.getIssueLinkTypes(session.cookies)
+  }
+
+  /**
+   * 批量关联工单到目标工单（relates to）
+   */
+  async linkIssues(
+    credentials: JiraLoginCredentials,
+    sourceIssueKeys: string[],
+    targetIssueKey: string,
+    linkTypeName?: string,
+  ): Promise<{ results: Array<{ issueKey: string; success: boolean; message: string }> }> {
+    const session = await this.getSession(credentials)
+
+    const results = await Promise.allSettled(
+      sourceIssueKeys.map((key) =>
+        this.jiraRestService.linkIssue(key, targetIssueKey, session.cookies, linkTypeName),
+      ),
+    )
+
+    return {
+      results: results.map((result, i) => ({
+        issueKey: sourceIssueKeys[i],
+        success: result.status === 'fulfilled',
+        message:
+          result.status === 'fulfilled'
+            ? `${sourceIssueKeys[i]} 已关联到 ${targetIssueKey}`
+            : (result.reason instanceof Error ? result.reason.message : String(result.reason)),
+      })),
+    }
+  }
+
+  /**
    * 获取项目版本列表
    */
   async getProjectVersions(
