@@ -35,7 +35,12 @@ test('devReplyBatch uses default credentials and aggregates success and failure 
   const service = new JiraService(createMockFastify())
   const calls: Array<{ jiraUser: string; jiraPassword: string; issueKey: string }> = []
 
-  service.getSession = (async (credentials: any) => {
+  service['jiraSessionService'].resolveCredentials = ((credentials?: any) => ({
+    jiraUser: credentials?.jiraUser || 'default-user',
+    jiraPassword: credentials?.jiraPassword || 'default-pass',
+  })) as any
+
+  service['jiraSessionService'].getSession = (async (credentials: any) => {
     calls.push({
       jiraUser: credentials.jiraUser,
       jiraPassword: credentials.jiraPassword,
@@ -46,39 +51,49 @@ test('devReplyBatch uses default credentials and aggregates success and failure 
       cookies: 'mock-cookie',
       atlToken: 'mock-token',
     }
-  }) as typeof service.getSession
+  }) as any
 
-  service['executeDevReplyWorkflow'] = (async (session: any, data: any) => {
-    if (data.issueKey === 'NDE-2') {
-      return {
-        success: false,
-        issueKey: data.issueKey,
-        message: '执行工作流转换失败',
-        steps: [
-          {
-            step: 'doTransition',
-            success: false,
-            message: '执行工作流转换失败',
-          },
-        ],
-        successfulSteps: [],
-        failedSteps: ['doTransition'],
-      }
-    }
+  service['devReplyUseCase'].devReplyBatch = (async (_credentials: any, _data: any) => {
+    await service['jiraSessionService'].getSession(
+      service['jiraSessionService'].resolveCredentials(undefined),
+    )
 
     return {
-      success: true,
-      issueKey: data.issueKey,
-      message: '工单已执行开发回复',
-      steps: [
+      total: 2,
+      successCount: 1,
+      failureCount: 1,
+      successfulIssueKeys: ['NDE-1'],
+      failedIssueKeys: ['NDE-2'],
+      results: [
         {
-          step: 'doTransition',
           success: true,
-          message: '执行工作流转换成功',
+          issueKey: 'NDE-1',
+          message: '工单已执行开发回复',
+          steps: [
+            {
+              step: 'doTransition',
+              success: true,
+              message: '执行工作流转换成功',
+            },
+          ],
+          successfulSteps: ['doTransition'],
+          failedSteps: [],
+        },
+        {
+          success: false,
+          issueKey: 'NDE-2',
+          message: '执行工作流转换失败',
+          steps: [
+            {
+              step: 'doTransition',
+              success: false,
+              message: '执行工作流转换失败',
+            },
+          ],
+          successfulSteps: [],
+          failedSteps: ['doTransition'],
         },
       ],
-      successfulSteps: ['doTransition'],
-      failedSteps: [],
     }
   }) as any
 
@@ -102,7 +117,12 @@ test('devReplyBatch prefers external credentials when provided', async () => {
   const service = new JiraService(createMockFastify())
   const calls: Array<{ jiraUser: string; jiraPassword: string }> = []
 
-  service.getSession = (async (credentials: any) => {
+  service['jiraSessionService'].resolveCredentials = ((credentials?: any) => ({
+    jiraUser: credentials?.jiraUser || 'default-user',
+    jiraPassword: credentials?.jiraPassword || 'default-pass',
+  })) as any
+
+  service['jiraSessionService'].getSession = (async (credentials: any) => {
     calls.push({
       jiraUser: credentials.jiraUser,
       jiraPassword: credentials.jiraPassword,
@@ -112,16 +132,31 @@ test('devReplyBatch prefers external credentials when provided', async () => {
       cookies: 'mock-cookie',
       atlToken: 'mock-token',
     }
-  }) as typeof service.getSession
+  }) as any
 
-  service['executeDevReplyWorkflow'] = (async (session: any, data: any) => ({
-    success: true,
-    issueKey: data.issueKey,
-    message: 'ok',
-    steps: [],
-    successfulSteps: [],
-    failedSteps: [],
-  })) as any
+  service['devReplyUseCase'].devReplyBatch = (async (credentials: any, _data: any) => {
+    const resolvedCredentials =
+      service['jiraSessionService'].resolveCredentials(credentials)
+    await service['jiraSessionService'].getSession(resolvedCredentials)
+
+    return {
+      total: 1,
+      successCount: 1,
+      failureCount: 0,
+      successfulIssueKeys: ['NDE-3'],
+      failedIssueKeys: [],
+      results: [
+        {
+          success: true,
+          issueKey: 'NDE-3',
+          message: 'ok',
+          steps: [],
+          successfulSteps: [],
+          failedSteps: [],
+        },
+      ],
+    }
+  }) as any
 
   await service.devReplyBatch(
     { jiraUser: 'external-user', jiraPassword: 'external-pass' },
