@@ -19,6 +19,10 @@ import type {
   JiraCreateTicketResponse,
   DevReplyData,
   DevReplyResponse,
+  DevReplyBatchData,
+  DevReplyBatchResponse,
+  DevReplyStepName,
+  DevReplyStepResult,
 } from './types.js'
 
 // 重新导出类型，保持向后兼容
@@ -30,6 +34,10 @@ export type {
   JiraCreateTicketResponse,
   DevReplyData,
   DevReplyResponse,
+  DevReplyBatchData,
+  DevReplyBatchResponse,
+  DevReplyStepName,
+  DevReplyStepResult,
 }
 
 /**
@@ -142,6 +150,261 @@ export class JiraService {
       return session
     }
     return this.login(credentials)
+  }
+
+  private resolveCredentials(
+    credentials?: Partial<JiraLoginCredentials>,
+  ): JiraLoginCredentials {
+    const config = (this.fastify as any).config || {}
+    const jiraUser = credentials?.jiraUser || config.JIRA_USERNAME
+    const jiraPassword = credentials?.jiraPassword || config.JIRA_PASSWORD
+
+    if (!jiraUser || !jiraPassword) {
+      throw new ValidationError('缺少 Jira 登录凭据: jiraUser 和 jiraPassword')
+    }
+
+    return {
+      jiraUser,
+      jiraPassword,
+    }
+  }
+
+  private buildStepSummary(steps: DevReplyStepResult[]) {
+    return {
+      successfulSteps: steps
+        .filter((step) => step.success)
+        .map((step) => step.step),
+      failedSteps: steps
+        .filter((step) => !step.success)
+        .map((step) => step.step),
+    }
+  }
+
+  private buildDevReplyFailure(
+    issueKey: string,
+    message: string,
+    steps: DevReplyStepResult[] = [],
+    extra: Partial<DevReplyResponse> = {},
+  ): DevReplyResponse {
+    return {
+      success: false,
+      issueKey,
+      message,
+      ...extra,
+      steps,
+      ...this.buildStepSummary(steps),
+    }
+  }
+
+  private async executeDevReplyWorkflow(
+    session: JiraSession,
+    data: DevReplyData,
+  ): Promise<DevReplyResponse> {
+    const { issueKey, projectKey, assignee } = data
+    const steps: DevReplyStepResult[] = []
+    const pushStep = (
+      step: DevReplyStepName,
+      success: boolean,
+      message: string,
+      data?: Record<string, any>,
+    ) => {
+      steps.push({ step, success, message, data })
+    }
+
+    try {
+      let usedDates = new Set<string>()
+      let maxUsedDate: string | undefined
+
+      try {
+        const jql = `assignee = "${assignee}" AND resolution = Unresolved ORDER BY cf[10022] ASC`
+        const searchResult = await this.jiraRestService.searchIssuesByJql(
+          jql,
+          session.cookies,
+          ['customfield_10022'],
+        )
+        usedDates = new Set(
+          searchResult.issues
+            .map((issue) => issue.fields.customfield_10022)
+            .filter(Boolean),
+        )
+        maxUsedDate = this.jiraRestService.getMaxUsedDate(usedDates)
+        this.fastify.log.info(
+          `Found ${usedDates.size} used dates for ${assignee}, max: ${maxUsedDate || 'none'}`,
+        )
+        pushStep('queryUsedDates', true, '已完成已占用日期查询', {
+          usedDateCount: usedDates.size,
+          maxUsedDate,
+        })
+      } catch (error) {
+        const message = `查询已占用日期失败: ${error instanceof Error ? error.message : String(error)}`
+        this.fastify.log.warn(message)
+        pushStep('queryUsedDates', false, message)
+      }
+
+      let fixVersion: { version: { id: string; name: string }; date: Date } | null = null
+      let fixVersionId = data.fixVersionId
+
+      if (fixVersionId) {
+        pushStep('selectFixVersion', true, '使用请求指定的修复版本', {
+          fixVersionId,
+        })
+      } else {
+        try {
+          const versions = await this.jiraRestService.getProjectVersions(
+            projectKey,
+            session.cookies,
+            'unreleased',
+          )
+          fixVersion = this.jiraRestService.selectFixVersionSmart(
+            versions,
+            maxUsedDate,
+          )
+          if (fixVersion) {
+            fixVersionId = fixVersion.version.id
+            this.fastify.log.info(
+              `Selected fix version: ${fixVersion.version.name} (${fixVersion.version.id})`,
+            )
+            pushStep('selectFixVersion', true, '已自动选择修复版本', {
+              fixVersionId,
+              fixVersionName: fixVersion.version.name,
+            })
+          } else {
+            pushStep('selectFixVersion', false, '未找到可用的修复版本')
+          }
+        } catch (error) {
+          const message = `获取项目版本失败: ${error instanceof Error ? error.message : String(error)}`
+          this.fastify.log.warn(message)
+          pushStep('selectFixVersion', false, message)
+        }
+      }
+
+      let devCompleteDate = data.devCompleteDate
+
+      if (devCompleteDate) {
+        pushStep('allocateDevCompleteDate', true, '使用请求指定的预计开发完成时间', {
+          devCompleteDate,
+        })
+      } else if (fixVersion) {
+        try {
+          const currentYear = new Date().getFullYear()
+          const holidays = await this.jiraRestService.getHolidays(currentYear)
+          const nextYearHolidays =
+            fixVersion.date.getFullYear() > currentYear
+              ? await this.jiraRestService.getHolidays(currentYear + 1)
+              : new Set<string>()
+          const allHolidays = new Set([...holidays, ...nextYearHolidays])
+          const { findAvailableDate } = await import('./utils.js')
+          devCompleteDate = findAvailableDate(
+            fixVersion.date,
+            usedDates,
+            allHolidays,
+          )
+          this.fastify.log.info(
+            `Allocated dev complete date: ${devCompleteDate}`,
+          )
+          pushStep('allocateDevCompleteDate', true, '已自动分配预计开发完成时间', {
+            devCompleteDate,
+          })
+        } catch (error) {
+          const message = `分配预计开发完成时间失败: ${error instanceof Error ? error.message : String(error)}`
+          this.fastify.log.warn(message)
+          pushStep('allocateDevCompleteDate', false, message)
+        }
+      } else {
+        pushStep('allocateDevCompleteDate', false, '缺少可用修复版本，无法自动分配预计开发完成时间')
+      }
+
+      const transitionId = data.transitionId || '11'
+      let resolvedTransitionId = transitionId
+      let transitionName = '开发回复'
+
+      try {
+        const transitions = await this.jiraRestService.getTransitions(
+          issueKey,
+          session.cookies,
+        )
+        const matchedTransition =
+          transitions.find((transition) => transition.id === transitionId) ||
+          transitions.find(
+            (transition) =>
+              transition.name.includes('开发回复') ||
+              transition.name.toLowerCase().includes('dev reply') ||
+              transition.name.toLowerCase().includes('development'),
+          )
+
+        if (!matchedTransition) {
+          this.fastify.log.warn(
+            `Available transitions: ${transitions.map((transition) => `${transition.id}:${transition.name}`).join(', ')}`,
+          )
+          throw new JiraError(`找不到开发回复工作流转换 (ID: ${transitionId})`)
+        }
+
+        resolvedTransitionId = matchedTransition.id
+        transitionName = matchedTransition.name
+        pushStep('getTransitions', true, '已获取并匹配工作流转换', {
+          transitionId: resolvedTransitionId,
+          transitionName,
+        })
+      } catch (error) {
+        const message = `获取工作流转换失败: ${error instanceof Error ? error.message : String(error)}`
+        this.fastify.log.warn(message)
+        pushStep('getTransitions', false, message)
+        return this.buildDevReplyFailure(issueKey, message, steps, {
+          fixVersionName: fixVersion?.version.name,
+          devCompleteDate,
+        })
+      }
+
+      const transitionFields: Record<string, any> = {
+        ...data.additionalFields,
+      }
+
+      if (fixVersionId) {
+        transitionFields.fixVersions = [{ id: fixVersionId }]
+      }
+
+      if (devCompleteDate) {
+        transitionFields.customfield_10022 = devCompleteDate
+      }
+
+      try {
+        await this.jiraRestService.doTransition(
+          issueKey,
+          session.cookies,
+          resolvedTransitionId,
+          Object.keys(transitionFields).length > 0 ? transitionFields : undefined,
+          data.comment,
+        )
+        pushStep('doTransition', true, '工作流转换执行成功', {
+          transitionId: resolvedTransitionId,
+          transitionName,
+        })
+      } catch (error) {
+        const message = `执行工作流转换失败: ${error instanceof Error ? error.message : String(error)}`
+        this.fastify.log.warn(message)
+        pushStep('doTransition', false, message)
+        return this.buildDevReplyFailure(issueKey, message, steps, {
+          fixVersionName: fixVersion?.version.name,
+          devCompleteDate,
+          transitionName,
+        })
+      }
+
+      return {
+        success: true,
+        issueKey,
+        fixVersionName: fixVersion?.version.name,
+        devCompleteDate,
+        transitionName,
+        message: `工单 ${issueKey} 已执行开发回复`,
+        steps,
+        ...this.buildStepSummary(steps),
+      }
+    } catch (error) {
+      const message = `开发回复执行异常: ${error instanceof Error ? error.message : String(error)}`
+      this.fastify.log.error(message)
+      return this.buildDevReplyFailure(issueKey, message, steps)
+    }
   }
 
   /**
@@ -393,7 +656,11 @@ export class JiraService {
             this.jiraConfig.defaultProject,
           assignee: data.assignee || credentials.jiraUser,
         })
-        this.fastify.log.info(`Dev reply completed for ${result.issueKey}`)
+        if (devReplyResult.success) {
+          this.fastify.log.info(`Dev reply completed for ${result.issueKey}`)
+        } else {
+          this.fastify.log.warn(`Dev reply failed for ${result.issueKey}: ${devReplyResult.message}`)
+        }
       } catch (devReplyError) {
         this.fastify.log.warn(
           `Dev reply failed for ${result.issueKey}: ${devReplyError instanceof Error ? devReplyError.message : String(devReplyError)}`,
@@ -419,142 +686,86 @@ export class JiraService {
    * 3. 执行工作流转换
    */
   async devReply(
-    credentials: JiraLoginCredentials,
+    credentials: Partial<JiraLoginCredentials> | undefined,
     data: DevReplyData,
   ): Promise<DevReplyResponse> {
-    const session = await this.getSession(credentials)
-    const { issueKey, projectKey, assignee } = data
-
-    // 1. 先查询用户已占用的预计开发完成时间
-    let usedDates = new Set<string>()
-    let maxUsedDate: string | undefined
+    const resolvedCredentials = this.resolveCredentials(credentials)
 
     try {
-      const jql = `assignee = "${assignee}" AND resolution = Unresolved ORDER BY cf[10022] ASC`
-      const searchResult = await this.jiraRestService.searchIssuesByJql(
-        jql,
-        session.cookies,
-        ['customfield_10022'],
-      )
-      usedDates = new Set(
-        searchResult.issues
-          .map((issue) => issue.fields.customfield_10022)
-          .filter(Boolean),
-      )
-      maxUsedDate = this.jiraRestService.getMaxUsedDate(usedDates)
-      this.fastify.log.info(
-        `Found ${usedDates.size} used dates for ${assignee}, max: ${maxUsedDate || 'none'}`,
-      )
+      const session = await this.getSession(resolvedCredentials)
+      return await this.executeDevReplyWorkflow(session, data)
     } catch (error) {
-      this.fastify.log.warn(`Failed to query existing issues: ${error instanceof Error ? error.message : String(error)}`)
+      return this.buildDevReplyFailure(
+        data.issueKey,
+        `开发回复前置登录失败: ${error instanceof Error ? error.message : String(error)}`,
+      )
+    }
+  }
+
+  async devReplyBatch(
+    credentials: Partial<JiraLoginCredentials> | undefined,
+    data: DevReplyBatchData,
+  ): Promise<DevReplyBatchResponse> {
+    if (!data.issueKeys.length) {
+      throw new ValidationError('issueKeys 不能为空')
     }
 
-    // 2. 智能选择修复版本（根据已占用日期动态选择）
-    let fixVersion: { version: { id: string; name: string }; date: Date } | null = null
-    let fixVersionId = data.fixVersionId
+    const resolvedCredentials = this.resolveCredentials(credentials)
 
-    if (!fixVersionId) {
-      try {
-        const versions = await this.jiraRestService.getProjectVersions(
-          projectKey,
-          session.cookies,
-          'unreleased',
-        )
-        // 使用智能版本选择，传入最大已占用日期
-        fixVersion = this.jiraRestService.selectFixVersionSmart(versions, maxUsedDate)
-        if (fixVersion) {
-          fixVersionId = fixVersion.version.id
-          this.fastify.log.info(
-            `Selected fix version: ${fixVersion.version.name} (${fixVersion.version.id})`,
-          )
-        }
-      } catch (error) {
-        this.fastify.log.warn(`Failed to get project versions: ${error instanceof Error ? error.message : String(error)}`)
+    let session: JiraSession
+    try {
+      session = await this.getSession(resolvedCredentials)
+    } catch (error) {
+      const message = `开发回复前置登录失败: ${error instanceof Error ? error.message : String(error)}`
+      const results = data.issueKeys.map((issueKey) =>
+        this.buildDevReplyFailure(issueKey, message),
+      )
+
+      return {
+        total: results.length,
+        successCount: 0,
+        failureCount: results.length,
+        successfulIssueKeys: [],
+        failedIssueKeys: results.map((item) => item.issueKey),
+        results,
       }
     }
 
-    // 3. 智能分配预计开发完成时间
-    let devCompleteDate = data.devCompleteDate
-
-    if (!devCompleteDate && fixVersion) {
-      try {
-        // 获取节假日
-        const currentYear = new Date().getFullYear()
-        const holidays = await this.jiraRestService.getHolidays(currentYear)
-        const nextYearHolidays = fixVersion.date.getFullYear() > currentYear
-          ? await this.jiraRestService.getHolidays(currentYear + 1)
-          : new Set<string>()
-        const allHolidays = new Set([...holidays, ...nextYearHolidays])
-
-        // 使用工具函数查找可用日期
-        const { findAvailableDate } = await import('./utils.js')
-        devCompleteDate = findAvailableDate(fixVersion.date, usedDates, allHolidays)
-        this.fastify.log.info(
-          `Allocated dev complete date: ${devCompleteDate}`,
-        )
-      } catch (error) {
-        this.fastify.log.warn(`Failed to allocate dev complete date: ${error instanceof Error ? error.message : String(error)}`)
-      }
-    }
-
-    // 3. 获取可用的工作流转换
-    const transitions = await this.jiraRestService.getTransitions(
-      issueKey,
-      session.cookies,
+    const settledResults = await Promise.allSettled(
+      data.issueKeys.map((issueKey) =>
+        this.executeDevReplyWorkflow(session, {
+          issueKey,
+          projectKey: data.projectKey,
+          assignee: data.assignee,
+          transitionId: data.transitionId,
+          fixVersionId: data.fixVersionId,
+          devCompleteDate: data.devCompleteDate,
+          comment: data.comment,
+          additionalFields: data.additionalFields,
+        }),
+      ),
     )
 
-    // 查找"开发回复"转换，默认使用 ID 11
-    const transitionId = data.transitionId || '11'
-    const targetTransition = transitions.find((t) => t.id === transitionId)
-
-    if (!targetTransition) {
-      // 尝试通过名称查找
-      const devReplyTransition = transitions.find(
-        (t) =>
-          t.name.includes('开发回复') ||
-          t.name.toLowerCase().includes('dev reply') ||
-          t.name.toLowerCase().includes('development'),
-      )
-
-      if (!devReplyTransition) {
-        this.fastify.log.warn(
-          `Available transitions: ${transitions.map((t) => `${t.id}:${t.name}`).join(', ')}`,
-        )
-        throw new JiraError(`找不到开发回复工作流转换 (ID: ${transitionId})`)
-      }
-    }
-
-    // 4. 构建转换字段
-    const transitionFields: Record<string, any> = {
-      ...data.additionalFields,
-    }
-
-    // 添加修复版本
-    if (fixVersionId) {
-      transitionFields.fixVersions = [{ id: fixVersionId }]
-    }
-
-    // 添加预计开发完成时间 (customfield_10022)
-    if (devCompleteDate) {
-      transitionFields.customfield_10022 = devCompleteDate
-    }
-
-    // 5. 执行工作流转换
-    await this.jiraRestService.doTransition(
-      issueKey,
-      session.cookies,
-      transitionId,
-      Object.keys(transitionFields).length > 0 ? transitionFields : undefined,
-      data.comment,
+    const results = settledResults.map((result, index) =>
+      result.status === 'fulfilled'
+        ? result.value
+        : this.buildDevReplyFailure(
+            data.issueKeys[index],
+            `开发回复执行异常: ${result.reason instanceof Error ? result.reason.message : String(result.reason)}`,
+          ),
     )
 
     return {
-      success: true,
-      issueKey,
-      fixVersionName: fixVersion?.version.name,
-      devCompleteDate,
-      transitionName: targetTransition?.name || '开发回复',
-      message: `工单 ${issueKey} 已执行开发回复`,
+      total: results.length,
+      successCount: results.filter((item) => item.success).length,
+      failureCount: results.filter((item) => !item.success).length,
+      successfulIssueKeys: results
+        .filter((item) => item.success)
+        .map((item) => item.issueKey),
+      failedIssueKeys: results
+        .filter((item) => !item.success)
+        .map((item) => item.issueKey),
+      results,
     }
   }
 

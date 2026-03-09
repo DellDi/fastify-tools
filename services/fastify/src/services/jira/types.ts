@@ -142,6 +142,20 @@ export interface DevReplyData {
   additionalFields?: Record<string, any>
 }
 
+export type DevReplyStepName =
+  | 'queryUsedDates'
+  | 'selectFixVersion'
+  | 'allocateDevCompleteDate'
+  | 'getTransitions'
+  | 'doTransition'
+
+export interface DevReplyStepResult {
+  step: DevReplyStepName
+  success: boolean
+  message: string
+  data?: Record<string, any>
+}
+
 export interface DevReplyResponse {
   success: boolean
   issueKey: string
@@ -149,6 +163,9 @@ export interface DevReplyResponse {
   devCompleteDate?: string
   transitionName?: string
   message: string
+  steps?: DevReplyStepResult[]
+  successfulSteps?: DevReplyStepName[]
+  failedSteps?: DevReplyStepName[]
 }
 
 export interface DevReplyOptions {
@@ -159,6 +176,26 @@ export interface DevReplyOptions {
   additionalFields?: Record<string, any>
 }
 
+export interface DevReplyBatchData {
+  issueKeys: string[]
+  projectKey: string
+  assignee: string
+  transitionId?: string
+  fixVersionId?: string
+  devCompleteDate?: string
+  comment?: string
+  additionalFields?: Record<string, any>
+}
+
+export interface DevReplyBatchResponse {
+  total: number
+  successCount: number
+  failureCount: number
+  successfulIssueKeys: string[]
+  failedIssueKeys: string[]
+  results: DevReplyResponse[]
+}
+
 // ============================================
 // REST API 相关
 // ============================================
@@ -167,7 +204,6 @@ export interface JiraCreateResponse {
   errors?: Record<string, string>
   id?: string
   key?: string
-  self?: string
 }
 
 export type IssueData = {
