@@ -11,13 +11,20 @@ import type {
   DevReplyStepResult,
   JiraLoginCredentials,
   JiraSession,
+  JiraUpdateTicketData,
 } from '../types.js'
+
+type UpdateTicketHandler = (
+  credentials: JiraLoginCredentials,
+  data: JiraUpdateTicketData,
+) => Promise<{ message: string }>
 
 export class DevReplyUseCase {
   constructor(
     private logger: FastifyBaseLogger,
     private jiraRestService: JiraRestService,
     private sessionService: JiraSessionService,
+    private updateTicket?: UpdateTicketHandler,
   ) {}
 
   private buildStepSummary(steps: DevReplyStepResult[]) {
@@ -39,6 +46,7 @@ export class DevReplyUseCase {
   ): DevReplyResponse {
     return {
       success: false,
+      status: 'failure',
       issueKey,
       message,
       ...extra,
@@ -48,11 +56,14 @@ export class DevReplyUseCase {
   }
 
   private async executeDevReplyWorkflow(
+    credentials: JiraLoginCredentials,
     session: JiraSession,
     data: DevReplyData,
   ): Promise<DevReplyResponse> {
     const { issueKey, projectKey, assignee } = data
     const steps: DevReplyStepResult[] = []
+    let fieldUpdateSuccess = false
+    let transitionSuccess = false
     const pushStep = (
       step: DevReplyStepName,
       success: boolean,
@@ -163,6 +174,35 @@ export class DevReplyUseCase {
         pushStep('allocateDevCompleteDate', false, '缺少可用修复版本，无法自动分配预计开发完成时间')
       }
 
+      const updateFields: Record<string, any> = {
+        ...data.additionalFields,
+      }
+
+      if (fixVersionId) {
+        updateFields.fixVersions = [{ id: fixVersionId }]
+      }
+
+      if (devCompleteDate) {
+        updateFields.customfield_10022 = devCompleteDate
+      }
+
+      if (Object.keys(updateFields).length > 0 && this.updateTicket) {
+        try {
+          await this.updateTicket(credentials, {
+            issueIdOrKey: issueKey,
+            fields: updateFields,
+          })
+          fieldUpdateSuccess = true
+          pushStep('updateFields', true, '字段更新成功', {
+            updatedFields: Object.keys(updateFields),
+          })
+        } catch (error) {
+          const message = `字段更新失败: ${error instanceof Error ? error.message : String(error)}`
+          this.logger.warn(message)
+          pushStep('updateFields', false, message)
+        }
+      }
+
       const transitionId = data.transitionId || '11'
       let resolvedTransitionId = transitionId
       let transitionName = '开发回复'
@@ -198,22 +238,30 @@ export class DevReplyUseCase {
         const message = `获取工作流转换失败: ${error instanceof Error ? error.message : String(error)}`
         this.logger.warn(message)
         pushStep('getTransitions', false, message)
+        if (fieldUpdateSuccess) {
+          return {
+            success: true,
+            status: 'partial_success',
+            issueKey,
+            fixVersionName: fixVersion?.version.name,
+            devCompleteDate,
+            message: `工单 ${issueKey} 字段已更新，但未执行工作流转换：${message}`,
+            fieldUpdateSuccess,
+            transitionSuccess,
+            steps,
+            ...this.buildStepSummary(steps),
+          }
+        }
         return this.buildDevReplyFailure(issueKey, message, steps, {
           fixVersionName: fixVersion?.version.name,
           devCompleteDate,
+          fieldUpdateSuccess,
+          transitionSuccess,
         })
       }
 
       const transitionFields: Record<string, any> = {
-        ...data.additionalFields,
-      }
-
-      if (fixVersionId) {
-        transitionFields.fixVersions = [{ id: fixVersionId }]
-      }
-
-      if (devCompleteDate) {
-        transitionFields.customfield_10022 = devCompleteDate
+        ...(data.comment ? {} : updateFields),
       }
 
       try {
@@ -224,6 +272,7 @@ export class DevReplyUseCase {
           Object.keys(transitionFields).length > 0 ? transitionFields : undefined,
           data.comment,
         )
+        transitionSuccess = true
         pushStep('doTransition', true, '工作流转换执行成功', {
           transitionId: resolvedTransitionId,
           transitionName,
@@ -232,20 +281,40 @@ export class DevReplyUseCase {
         const message = `执行工作流转换失败: ${error instanceof Error ? error.message : String(error)}`
         this.logger.warn(message)
         pushStep('doTransition', false, message)
+        if (fieldUpdateSuccess) {
+          return {
+            success: true,
+            status: 'partial_success',
+            issueKey,
+            fixVersionName: fixVersion?.version.name,
+            devCompleteDate,
+            transitionName,
+            message: `工单 ${issueKey} 字段已更新，但工作流转换失败：${message}`,
+            fieldUpdateSuccess,
+            transitionSuccess,
+            steps,
+            ...this.buildStepSummary(steps),
+          }
+        }
         return this.buildDevReplyFailure(issueKey, message, steps, {
           fixVersionName: fixVersion?.version.name,
           devCompleteDate,
           transitionName,
+          fieldUpdateSuccess,
+          transitionSuccess,
         })
       }
 
       return {
         success: true,
+        status: 'success',
         issueKey,
         fixVersionName: fixVersion?.version.name,
         devCompleteDate,
         transitionName,
         message: `工单 ${issueKey} 已执行开发回复`,
+        fieldUpdateSuccess,
+        transitionSuccess,
         steps,
         ...this.buildStepSummary(steps),
       }
@@ -264,7 +333,7 @@ export class DevReplyUseCase {
 
     try {
       const session = await this.sessionService.getSession(resolvedCredentials)
-      return await this.executeDevReplyWorkflow(session, data)
+      return await this.executeDevReplyWorkflow(resolvedCredentials, session, data)
     } catch (error) {
       return this.buildDevReplyFailure(
         data.issueKey,
@@ -304,7 +373,7 @@ export class DevReplyUseCase {
 
     const settledResults = await Promise.allSettled(
       data.issueKeys.map((issueKey) =>
-        this.executeDevReplyWorkflow(session, {
+        this.executeDevReplyWorkflow(resolvedCredentials, session, {
           issueKey,
           projectKey: data.projectKey,
           assignee: data.assignee,

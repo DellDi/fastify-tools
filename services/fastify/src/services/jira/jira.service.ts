@@ -48,23 +48,24 @@ export class JiraService {
   constructor(private fastify: FastifyInstance) {
     this.jiraRestService = new JiraRestService(fastify)
     this.jiraSessionService = new JiraSessionService(fastify)
+    this.jiraConfig = getJiraConfig(fastify)
+    this.updateTicketUseCase = new UpdateTicketUseCase(
+      fastify.log,
+      this.jiraSessionService,
+      this.jiraConfig,
+    )
     this.devReplyUseCase = new DevReplyUseCase(
       fastify.log,
       this.jiraRestService,
       this.jiraSessionService,
+      this.updateTicket.bind(this),
     )
-    this.jiraConfig = getJiraConfig(fastify)
     this.createTicketUseCase = new CreateTicketUseCase(
       fastify.log,
       this.jiraRestService,
       this.jiraSessionService,
       this.jiraConfig,
       this.updateTicket.bind(this),
-    )
-    this.updateTicketUseCase = new UpdateTicketUseCase(
-      fastify.log,
-      this.jiraSessionService,
-      this.jiraConfig,
     )
     this.createTicketWithLabelsUseCase = new CreateTicketWithLabelsUseCase(
       fastify.log,

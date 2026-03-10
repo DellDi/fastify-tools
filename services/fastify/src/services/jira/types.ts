@@ -146,6 +146,7 @@ export type DevReplyStepName =
   | 'queryUsedDates'
   | 'selectFixVersion'
   | 'allocateDevCompleteDate'
+  | 'updateFields'
   | 'getTransitions'
   | 'doTransition'
 
@@ -158,11 +159,14 @@ export interface DevReplyStepResult {
 
 export interface DevReplyResponse {
   success: boolean
+  status?: 'success' | 'partial_success' | 'failure'
   issueKey: string
   fixVersionName?: string
   devCompleteDate?: string
   transitionName?: string
   message: string
+  fieldUpdateSuccess?: boolean
+  transitionSuccess?: boolean
   steps?: DevReplyStepResult[]
   successfulSteps?: DevReplyStepName[]
   failedSteps?: DevReplyStepName[]
