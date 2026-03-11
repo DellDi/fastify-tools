@@ -85,7 +85,7 @@ export function getLLMConfig(fastify: FastifyInstance): LLMConfig {
   return {
     apiKey: config.DASHSCOPE_API_KEY || '',
     baseUrl: config.LLM_BASE_URL || 'https://dashscope.aliyuncs.com/compatible-mode/v1/chat/completions',
-    model: config.LLM_MODEL || 'qwen-flash'
+    model: config.LLM_MODEL || 'qwen3.5-flash'
   }
 }
 

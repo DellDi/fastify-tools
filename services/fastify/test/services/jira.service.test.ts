@@ -21,7 +21,7 @@ function createMockFastify() {
       BEARER_TOKEN: 'token',
       DASHSCOPE_API_KEY: '',
       LLM_BASE_URL: 'http://llm.test',
-      LLM_MODEL: 'qwen-flash',
+      LLM_MODEL: 'qwen3.5-flash',
     },
     log: {
       info() {},
