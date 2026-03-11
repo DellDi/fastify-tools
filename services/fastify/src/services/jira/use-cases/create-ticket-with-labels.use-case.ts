@@ -46,8 +46,21 @@ export class CreateTicketWithLabelsUseCase {
     const result = await this.createTicket(credentials, data)
 
     if (data.labels) {
-      const labelArr = data.labels.split(',').filter((label) => label.trim())
+      const labelArr = data.labels
+        .split(/[，,]/)
+        .map((label) => label.trim())
+        .filter(Boolean)
+        .map((label) => label.replace(/\s+/g, '-'))
+
       if (labelArr.length > 0) {
+        this.logger.info(
+          {
+            issueKey: result.issueKey,
+            rawLabels: data.labels,
+            normalizedLabels: labelArr,
+          },
+          'Updating Jira labels after issue creation',
+        )
         await this.updateTicket(credentials, {
           issueIdOrKey: result.issueKey,
           fields: { labels: labelArr },

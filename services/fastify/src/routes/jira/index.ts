@@ -1,14 +1,23 @@
 import { FastifyPluginAsyncTypebox } from '@fastify/type-provider-typebox'
+import fastifyMultipart from '@fastify/multipart'
 import { FastifyReply, FastifyRequest } from 'fastify'
 import { Type } from '@fastify/type-provider-typebox'
+import fs from 'node:fs'
+import path from 'node:path'
 
 import {
   jiraCreateExport,
   JiraCreateExportBodyType,
+  JiraUploadAttachmentJsonSchema,
 } from '@/schema/jira/jira.js'
 import { FieldMetaBean } from '@/schema/jira/meta.js'
 
 const jira: FastifyPluginAsyncTypebox = async (fastify): Promise<void> => {
+  fastify.register(fastifyMultipart, {
+    limits: {
+      files: 1,
+    },
+  })
 
   fastify.route({
     method: 'POST',
@@ -97,6 +106,124 @@ const jira: FastifyPluginAsyncTypebox = async (fastify): Promise<void> => {
       )
 
       return metaInfo
+    },
+  })
+
+  fastify.post('/upload-attachment', {
+    schema: JiraUploadAttachmentJsonSchema,
+    handler: async (req, reply) => {
+      if (req.isMultipart()) {
+        const filePart = await req.file()
+
+        if (!filePart) {
+          return reply.code(400).send({ error: '未接收到上传文件' })
+        }
+
+        const fields = filePart.fields as Record<string, { value?: string }>
+        const issueIdOrKey = fields.issueIdOrKey?.value || ''
+        const jiraUser = fields.jiraUser?.value || ''
+        const jiraPassword = fields.jiraPassword?.value || ''
+
+        if (!issueIdOrKey) {
+          return reply.code(400).send({ error: 'multipart 模式下 issueIdOrKey 必填' })
+        }
+
+        const chunks: Buffer[] = []
+        let size = 0
+
+        for await (const chunk of filePart.file) {
+          chunks.push(chunk)
+          size += chunk.length
+        }
+
+        return fastify.jiraService.uploadAttachment(
+          { jiraUser, jiraPassword },
+          {
+            issueIdOrKey,
+            sourceType: 'multipart',
+            fileName: filePart.filename,
+            mimeType: filePart.mimetype || 'application/octet-stream',
+            content: Buffer.concat(chunks),
+            size,
+          },
+        )
+      }
+
+      const {
+        jiraUser,
+        jiraPassword,
+        issueIdOrKey,
+        sourceType,
+        filePath,
+        fileUrl,
+      } = req.body as {
+        jiraUser?: string
+        jiraPassword?: string
+        issueIdOrKey: string
+        sourceType: 'local_path' | 'remote_url'
+        filePath?: string
+        fileUrl?: string
+      }
+
+      if (sourceType === 'local_path') {
+        if (!filePath) {
+          return reply.code(400).send({ error: 'sourceType=local_path 时 filePath 必填' })
+        }
+
+        const stat = await fs.promises.stat(filePath)
+        if (!stat.isFile()) {
+          return reply.code(400).send({ error: 'filePath 不是可读取的文件' })
+        }
+
+        const content = await fs.promises.readFile(filePath)
+
+        return fastify.jiraService.uploadAttachment(
+          { jiraUser: jiraUser || '', jiraPassword: jiraPassword || '' },
+          {
+            issueIdOrKey,
+            sourceType,
+            fileName: path.basename(filePath),
+            mimeType: 'application/octet-stream',
+            content,
+            size: content.length,
+          },
+        )
+      }
+
+      if (sourceType === 'remote_url') {
+        if (!fileUrl) {
+          return reply.code(400).send({ error: 'sourceType=remote_url 时 fileUrl 必填' })
+        }
+
+        const remoteResponse = await fetch(fileUrl)
+        if (!remoteResponse.ok) {
+          return reply.code(400).send({
+            error: `远程文件下载失败: HTTP ${remoteResponse.status}`,
+          })
+        }
+
+        const arrayBuffer = await remoteResponse.arrayBuffer()
+        const content = Buffer.from(arrayBuffer)
+        const fileName =
+          path.basename(new URL(fileUrl).pathname) || `attachment-${Date.now()}`
+
+        return fastify.jiraService.uploadAttachment(
+          { jiraUser: jiraUser || '', jiraPassword: jiraPassword || '' },
+          {
+            issueIdOrKey,
+            sourceType,
+            fileName,
+            mimeType:
+              remoteResponse.headers.get('content-type') || 'application/octet-stream',
+            content,
+            size: content.length,
+          },
+        )
+      }
+
+      return reply.code(400).send({
+        error: '仅支持 multipart、local_path、remote_url 三种附件来源模式',
+      })
     },
   })
 }

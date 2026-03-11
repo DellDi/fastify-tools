@@ -1,6 +1,6 @@
 import { JiraMeta } from '@/schema/jira/meta.js'
 import { FastifyInstance } from 'fastify'
-import { request } from 'undici'
+import { FormData, request } from 'undici'
 import { fastifyCache } from '@/utils/cache.js'
 import {
   getJiraConfig,
@@ -25,6 +25,8 @@ import type {
   JiraSearchResult,
   ProjectIssueTypeMatch,
   JiraComponent,
+  JiraUploadAttachmentData,
+  JiraUploadAttachmentResponse,
 } from './types.js'
 
 export class JiraRestService {
@@ -117,6 +119,71 @@ export class JiraRestService {
     return { issueTypes, components }
   }
 
+  async addAttachment(
+    data: JiraUploadAttachmentData,
+    cookies: string,
+  ): Promise<JiraUploadAttachmentResponse> {
+    const form = new FormData()
+    form.append(
+      'file',
+      new Blob([data.content], {
+        type: data.mimeType,
+      }),
+      data.fileName,
+    )
+
+    const response = await request(
+      `${this.jiraConfig.endpoints.addAttachment}/${data.issueIdOrKey}/attachments`,
+      {
+        method: 'POST',
+        headers: {
+          Cookie: cookies,
+          Authorization: this.jiraConfig.auth.proxyAuthToken,
+          'X-Atlassian-Token': 'no-check',
+        },
+        body: form,
+      },
+    )
+
+    const rawBody = await response.body.text()
+    let parsedBody: unknown = rawBody
+
+    try {
+      parsedBody = rawBody ? JSON.parse(rawBody) : null
+    } catch {
+      parsedBody = rawBody
+    }
+
+    if (response.statusCode < 200 || response.statusCode >= 300) {
+      this.fastify.log.error(
+        {
+          issueIdOrKey: data.issueIdOrKey,
+          sourceType: data.sourceType,
+          fileName: data.fileName,
+          mimeType: data.mimeType,
+          size: data.size,
+          jiraResponse: parsedBody,
+        },
+        'Jira attachment upload failed',
+      )
+      throw new Error(
+        `上传附件失败: HTTP ${response.statusCode}${rawBody ? ` - ${rawBody}` : ''}`,
+      )
+    }
+
+    const attachment = Array.isArray(parsedBody) ? parsedBody[0] : parsedBody
+
+    return {
+      issueIdOrKey: data.issueIdOrKey,
+      sourceType: data.sourceType,
+      fileName: data.fileName,
+      mimeType: data.mimeType,
+      size: data.size,
+      attachment: attachment as JiraUploadAttachmentResponse['attachment'],
+      message: `Jira 工单 ${data.issueIdOrKey} 附件上传成功`,
+    }
+  }
+
   /**
    * 使用 LLM 智能匹配 project 和 issueType
    */
@@ -142,14 +209,14 @@ export class JiraRestService {
       }
     }
 
-    this.fastify.log.info({ projects, count: projects.length }) // 順便帶其他資訊
-
     const projectsInfo = projects.map((p) => ({
       id: p.id,
       key: p.key,
       name: p.name,
       description: p.description || '',
     }))
+
+    this.fastify.log.info({ projectsInfo: projectsInfo, count: projectsInfo.length }) // 順便帶其他資訊
 
     const issueTypesInfo = issueTypes
       .filter((t) => !t.subtask) // 排除子任务类型
@@ -237,7 +304,9 @@ ${prompt || '无'}
         'LLM returned invalid project/issueType, using defaults',
       )
     } catch (error) {
-      this.fastify.log.error(`LLM matching failed: ${error instanceof Error ? error.message : String(error)}`)
+      this.fastify.log.error(
+        `LLM matching failed: ${error instanceof Error ? error.message : String(error)}`,
+      )
     }
 
     // 降级：返回默认值
@@ -333,7 +402,8 @@ ${prompt || '无'}
     maxResults: number,
     startAt: number,
   ) {
-    const metaInfo = fastifyCache.get(this.cacheConfig.metaPrefix)
+    const metaCacheKey = `${this.cacheConfig.metaPrefix}-${projectKey}-${issueTypeId}-${maxResults}-${startAt}`
+    const metaInfo = fastifyCache.get(metaCacheKey)
     if (metaInfo) {
       return metaInfo
     }
@@ -375,7 +445,7 @@ ${prompt || '无'}
       values: responseBody.values,
     }
 
-    fastifyCache.set(this.cacheConfig.metaPrefix, result)
+    fastifyCache.set(metaCacheKey, result)
 
     return result
   }

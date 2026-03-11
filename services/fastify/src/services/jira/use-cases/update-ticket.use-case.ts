@@ -33,6 +33,7 @@ export class UpdateTicketUseCase {
 
     try {
       const session = await this.sessionService.getSession(credentials)
+      const fieldKeys = Object.keys(data.fields || {})
 
       const updateResponse = await request(
         `${this.jiraConfig.endpoints.updateIssue}/${data.issueIdOrKey}`,
@@ -50,7 +51,34 @@ export class UpdateTicketUseCase {
       )
 
       if (updateResponse?.statusCode !== 204) {
-        throw new JiraUpdateError(`更新失败: ${updateResponse?.statusCode}`)
+        const rawBody = await updateResponse.body.text()
+        let parsedBody: unknown = rawBody
+
+        try {
+          parsedBody = rawBody ? JSON.parse(rawBody) : null
+        } catch {
+          parsedBody = rawBody
+        }
+
+        this.logger.error(
+          {
+            issueIdOrKey: data.issueIdOrKey,
+            statusCode: updateResponse.statusCode,
+            fieldKeys,
+            fields: data.fields,
+            jiraResponse: parsedBody,
+          },
+          'Jira update request failed',
+        )
+
+        const responseMessage =
+          typeof parsedBody === 'string'
+            ? parsedBody
+            : JSON.stringify(parsedBody)
+
+        throw new JiraUpdateError(
+          `更新失败: ${updateResponse.statusCode}${responseMessage ? ` - ${responseMessage}` : ''}`,
+        )
       }
 
       return {
@@ -59,7 +87,14 @@ export class UpdateTicketUseCase {
         ).join(',')}`,
       }
     } catch (error) {
-      this.logger.error(`Update ticket error: ${error instanceof Error ? error.message : String(error)}`)
+      this.logger.error(
+        {
+          issueIdOrKey: data.issueIdOrKey,
+          fieldKeys: Object.keys(data.fields || {}),
+          error: error instanceof Error ? error.message : String(error),
+        },
+        'Update ticket error',
+      )
       if (
         error instanceof JiraUpdateError ||
         error instanceof ValidationError

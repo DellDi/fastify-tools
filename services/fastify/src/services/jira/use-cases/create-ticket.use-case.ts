@@ -115,6 +115,15 @@ export class CreateTicketUseCase {
         )
 
         if (Object.keys(customInfo).length > 0) {
+          this.logger.info(
+            {
+              issueKey: createResponse.key,
+              customerName: data.customerName,
+              customFieldKeys: Object.keys(customInfo),
+              customInfo,
+            },
+            'Updating Jira customer-related fields after issue creation',
+          )
           await this.updateTicket(credentials, {
             issueIdOrKey: createResponse.key,
             fields: customInfo,

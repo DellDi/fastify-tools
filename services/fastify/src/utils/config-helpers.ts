@@ -5,6 +5,7 @@ export interface JiraEndpoints {
   createIssue: string
   updateIssue: string
   createMeta: string
+  addAttachment: string
 }
 
 export interface JiraConfig {
@@ -44,7 +45,8 @@ export function generateJiraEndpoints(baseUrl: string): JiraEndpoints {
     session: `${baseUrl}/rest/auth/1/session`,
     createIssue: `${baseUrl}/rest/api/2/issue`,
     updateIssue: `${baseUrl}/rest/api/2/issue`,
-    createMeta: `${baseUrl}/rest/api/2/issue/createmeta`
+    createMeta: `${baseUrl}/rest/api/2/issue/createmeta`,
+    addAttachment: `${baseUrl}/rest/api/2/issue`,
   }
 }
 

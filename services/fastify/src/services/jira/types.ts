@@ -119,6 +119,36 @@ export interface JiraUpdateTicketData {
   fields: Record<string, any>
 }
 
+export type JiraAttachmentSourceType = 'multipart' | 'local_path' | 'remote_url'
+
+export interface JiraUploadAttachmentData {
+  issueIdOrKey: string
+  sourceType: JiraAttachmentSourceType
+  fileName: string
+  mimeType: string
+  content: Buffer
+  size: number
+}
+
+export interface JiraAttachmentResponseItem {
+  id: string
+  filename: string
+  size?: number
+  mimeType?: string
+  content?: string
+  thumbnail?: string
+}
+
+export interface JiraUploadAttachmentResponse {
+  issueIdOrKey: string
+  sourceType: JiraAttachmentSourceType
+  fileName: string
+  mimeType: string
+  size: number
+  attachment: JiraAttachmentResponseItem
+  message: string
+}
+
 export interface JiraCreateTicketResponse {
   issueId: string
   issueKey: string

@@ -12,6 +12,8 @@ import type {
   JiraSession,
   JiraCreateTicketData,
   JiraUpdateTicketData,
+  JiraUploadAttachmentData,
+  JiraUploadAttachmentResponse,
   JiraCreateTicketResponse,
   DevReplyData,
   DevReplyResponse,
@@ -25,6 +27,8 @@ export type {
   JiraSession,
   JiraCreateTicketData,
   JiraUpdateTicketData,
+  JiraUploadAttachmentData,
+  JiraUploadAttachmentResponse,
   JiraCreateTicketResponse,
   DevReplyData,
   DevReplyResponse,
@@ -127,6 +131,14 @@ export class JiraService {
     data: JiraUpdateTicketData,
   ): Promise<{ message: string }> {
     return this.updateTicketUseCase.updateTicket(credentials, data)
+  }
+
+  async uploadAttachment(
+    credentials: JiraLoginCredentials,
+    data: JiraUploadAttachmentData,
+  ): Promise<JiraUploadAttachmentResponse> {
+    const session = await this.getSession(credentials)
+    return this.jiraRestService.addAttachment(data, session.cookies)
   }
 
   /**

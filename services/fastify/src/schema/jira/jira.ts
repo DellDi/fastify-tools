@@ -1,6 +1,7 @@
 export * from './login.js'
 export * from './create.js'
 export * from './update.js'
+export * from './attachment.js'
 export * from './meta-api.js'
 export * from './link.js'
 export * from './search.js'
