@@ -4,39 +4,39 @@ import { JiraCreateExportResponse } from '../jira/jira.js'
 const DifyJiraCreateExportBody = Type.Object({
   title: Type.String({
     default: '【超级工单】新增测试工单',
-    description: '单子标题',
+    description: '待创建 Jira 工单的标题。',
   }),
   description: Type.String({
     default: '【超级工单】新增测试工单-我是工单的描述信息',
-    description: '单子描述',
+    description: '待创建 Jira 工单的详细描述内容。',
   }),
   labels: Type.Optional(
     Type.String({
       default: 'SaaS内部已评审',
-      description: '单子标签',
+      description: '工单标签字符串。多个标签的拼接格式取决于调用方约定。',
     })
   ),
   assignee: Type.Optional(
     Type.String({
       default: process.env.JIRA_ASSIGNEE_USER,
-      description: 'jira-经办人',
+      description: 'Jira 经办人用户名。未传时由服务端默认配置兜底。',
     })
   ),
   jiraUser: Type.Optional(
     Type.String({
       default: process.env.JIRA_USERNAME,
-      description: 'jira用户名-创建人',
+      description: 'Jira 登录用户名。用于外部调用时指定执行账号。',
     })
   ),
   jiraPassword: Type.Optional(
     Type.String({
       default: process.env.JIRA_PASSWORD,
-      description: 'jira密码-创建人',
+      description: 'Jira 登录密码。用于外部调用时指定执行账号。',
     })
   ),
   customerName: Type.Optional(
     Type.String({
-      description: '客户名称信息',
+      description: '客户名称关键字。用于匹配客户相关的 Jira 自定义字段。',
       default: '新安明珠',
     })
   ),
@@ -53,18 +53,18 @@ const DifyJiraCreateExportBody = Type.Object({
   smartMatch: Type.Optional(
     Type.Boolean({
       default: true,
-      description: '是否启用 LLM 智能匹配项目和问题类型',
+      description: '是否启用 LLM 智能匹配 Jira 项目和问题类型。',
     })
   ),
   matchPrompt: Type.Optional(
     Type.String({
-      description: '用于 LLM 智能匹配的额外提示信息，如"这是一个 Bug"、"提给产品组"等',
+      description: '用于 LLM 智能匹配的补充提示信息，例如“这是一个 Bug”“提给产品组”等。',
     })
   ),
   autoDevReply: Type.Optional(
     Type.Boolean({
       default: true,
-      description: '创建工单后是否自动执行"开发回复"工作流转换，包括自动选择修复版本和分配预计开发完成时间',
+      description: '创建工单后是否自动执行“开发回复”工作流，包括自动选择修复版本和预计完成时间。',
     })
   ),
 })
@@ -74,7 +74,7 @@ const InputData = Type.Intersect([
     point: Type.String({
       default: 'ping',
       description:
-        "测试使用的标识:'ping' | 报单触发接口: 'app.create_jira_tool'",
+        "调用动作标识。`ping` 用于健康检查，`app.create_jira_tool` 用于触发 Jira 创建流程。",
     }),
   }),
   DifyJiraCreateExportBody,
@@ -82,36 +82,36 @@ const InputData = Type.Intersect([
 
 const InputCustomer = Type.Object({
   htmlStr: Type.String({
-    description: 'htmlStr',
+    description: '客户名称下拉框对应的 HTML 片段。',
   }),
   htmlStrAll: Type.String({
-    description: 'htmlStr',
+    description: '包含客户名称和合同信息级联下拉框的完整 HTML 片段。',
   }),
-  customerName: Type.Optional(Type.String({ description: '客户不精确名称' })),
+  customerName: Type.Optional(Type.String({ description: '用于模糊匹配的客户名称关键字。' })),
 })
 
 const CustomerInfo = Type.Object({
   customerNameId: Type.String({
-    description: '客户名称ID',
+    description: '匹配到的客户名称字段 ID。',
   }),
   customerInfoId: Type.String({
-    description: '客户合同信息ID',
+    description: '匹配到的客户合同一级信息 ID。',
   }),
   customerInfoIdAlias: Type.String({
-    description: '客户合同二级信息ID',
+    description: '匹配到的客户合同二级信息 ID。',
   }),
   isSaaS: Type.Boolean({
-    description: '是否为saas',
+    description: '是否判定为 SaaS 客户。',
   }),
 })
 
 const DifyHeaders = Type.Object({
   'Content-Type': Type.String({
-    description: 'application/json',
+    description: '请求内容类型，固定为 `application/json`。',
     default: 'application/json',
   }),
   Authorization: Type.String({
-    description: 'Bearer token',
+    description: 'Bearer Token 鉴权头，用于保护 Dify 外部工具接口。',
   }),
 })
 
@@ -138,7 +138,9 @@ const DevReplyInfo = Type.Object({
 
 const DifyResponse = Type.Intersect([
   Type.Object({
-    result: Type.String(),
+    result: Type.String({
+      description: '本次调用的结果标识或请求追踪值。',
+    }),
   }),
   Type.Partial(JiraCreateExportResponse),
   Type.Object({
@@ -148,11 +150,14 @@ const DifyResponse = Type.Intersect([
 ])
 
 const ErrorResponse = Type.Object({
-  error: Type.String(),
+  error: Type.String({
+    description: '请求失败时返回的错误信息。',
+  }),
 })
 
 export const difySchema = {
-  description: 'Dify create jira',
+  description:
+    'Dify 外部工具统一入口。支持健康检查 `ping`，以及通过 `app.create_jira_tool` 触发 Jira 创建、智能匹配和自动开发回复等流程。',
   tags: ['dify'],
   body: InputData,
   headers: DifyHeaders,
@@ -163,7 +168,8 @@ export const difySchema = {
 }
 
 export const difyCustomerSchema = {
-  description: 'Dify customer',
+  description:
+    'Dify 客户信息提取接口。根据页面 HTML 片段解析客户名称、合同信息及 SaaS 标识，适合自动填单前的数据预处理场景。',
   tags: ['dify'],
   body: InputCustomer,
   response: {

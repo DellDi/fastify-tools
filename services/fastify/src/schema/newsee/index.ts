@@ -24,7 +24,8 @@ const passwordResponse = Type.Object({
 
 export const cryptoSchema = {
   tags: ['newsee'],
-  description: '处理密码：零和加密、零和解密、AES加密、AES解密',
+  description:
+    '密码与文本处理接口。支持零和加解密、AES 加解密及附件加解密等模式，也支持批量按行处理输入内容。',
   consumes: ['application/json'],
   body: passwordBody,
   response: {
@@ -47,7 +48,8 @@ const sqlResponse = Type.Object({
 
 export const sqlSchema = {
   tags: ['newsee'],
-  description: '执行sql',
+  description:
+    'SQL 执行接口。用于执行动态 SQL 并返回结果，适合内部工具或受控数据查询场景，不建议对外开放使用。',
   consumes: ['application/json'],
   body: sqlBody,
   response: {

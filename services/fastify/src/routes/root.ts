@@ -1,27 +1,27 @@
 import { FastifyPluginAsync } from 'fastify'
 import { fastifyCache } from '@/utils/cache.js'
-import { Type } from '@fastify/type-provider-typebox'
+import {
+  ClearAllCacheSchema,
+  ClearCacheByKeySchema,
+  RootDebugSchema,
+} from '@/schema/system/index.js'
 
 const example: FastifyPluginAsync = async (fastify, opts): Promise<void> => {
-  fastify.get('/', async function (request, reply) {
-    let headers = request.headers
-    return {
-      headers: headers,
-      // 'process.env': process.env,
-    }
+  fastify.get('/', {
+    schema: RootDebugSchema,
+    async handler(request, reply) {
+      const headers = request.headers
+      return {
+        headers,
+      }
+    },
   })
 
   // 清除缓存
   fastify.get(
     '/clear-all-cache',
     {
-      schema: {
-        response: {
-          200: Type.Object({
-            success: Type.Boolean(),
-          }),
-        },
-      },
+      schema: ClearAllCacheSchema,
     },
     async function (request, reply) {
       fastifyCache.clear()
@@ -33,19 +33,7 @@ const example: FastifyPluginAsync = async (fastify, opts): Promise<void> => {
   fastify.get(
     '/clear-cache/:key',
     {
-      schema: {
-        params: Type.Object({
-          key: Type.String({
-            description: '缓存键 | jira-session | jira-meta',
-            default: 'jira-session',
-          }),
-        }),
-        response: {
-          200: Type.Object({
-            success: Type.Boolean(),
-          }),
-        },
-      },
+      schema: ClearCacheByKeySchema,
     },
     async function (request, reply) {
       const { key } = request.params as { key: string }

@@ -1,7 +1,7 @@
 import { FastifyPluginAsyncTypebox } from "@fastify/type-provider-typebox";
 import fastifyStatic from '@fastify/static'
 import fs from "node:fs";
-import { Type } from "@sinclair/typebox";
+import { staticFilenameSchema } from '@/schema/zuul/index.js'
 import { BASE_STATIC_URL } from "../../../../utils/index.js";
 
 const filename: FastifyPluginAsyncTypebox = async (fastify): Promise<void> => {
@@ -11,17 +11,7 @@ const filename: FastifyPluginAsyncTypebox = async (fastify): Promise<void> => {
     })
 
     fastify.get('', {
-        schema: {
-            tags: ['file'],
-            params: Type.Object({
-                filename: Type.String(),
-            }),
-            response: {
-                404: Type.Object({
-                    error: Type.String()
-                })
-            },
-        },
+        schema: staticFilenameSchema,
         handler: async (req, reply) => {
             const pathFileName = req.params.filename
             const fileList = fs.readdirSync(BASE_STATIC_URL)

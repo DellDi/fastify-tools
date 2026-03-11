@@ -1,21 +1,10 @@
 import { FastifyPluginAsyncTypebox } from '@fastify/type-provider-typebox'
-import { Type } from '@fastify/type-provider-typebox'
+import { jiraLoginSchema } from '@/schema/jira/jira.js'
 
 const jira: FastifyPluginAsyncTypebox = async (fastify): Promise<void> => {
 
   fastify.post('', {
-    schema: {
-      body: Type.Object({
-        jiraUser: Type.String(),
-        jiraPassword: Type.String(),
-      }),
-      response: {
-        200: Type.Object({
-          cookies: Type.String(),
-          atlToken: Type.String(),
-        }),
-      },
-    },
+    schema: jiraLoginSchema,
     handler: async (req, reply) => {
       const { jiraUser, jiraPassword } = req.body as any
 
