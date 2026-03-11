@@ -255,6 +255,8 @@ const JiraUpdateFieldsBody = Type.Object({
 })
 
 export const JiraUpdateTicketSchema = {
+  description:
+    '底层通用 Jira 字段更新接口。直接透传标准 `fields` 到 Jira，适合已经清楚 Jira 原始字段结构的高级调用方或内部调试场景。若只是更新常用业务字段，优先使用 `/jira/update-fields`。',
   body: JiraUpdateBody,
   header: {
     ContentType: 'application/json',
@@ -269,7 +271,8 @@ export const JiraUpdateTicketSchema = {
 }
 
 export const JiraUpdateFieldsSchema = {
-  description: '专用 Jira 字段更新接口，支持常用字段快捷写法、原始 fields 透传和 extraFields 扩展字段。',
+  description:
+    '推荐的业务字段更新接口。支持常用字段快捷写法、原始 `fields` 透传和 `extraFields` 扩展字段，适合前端或业务服务直接调用。内部最终会统一转换为 Jira 标准 `fields` 后执行更新。',
   body: JiraUpdateFieldsBody,
   header: {
     ContentType: 'application/json',

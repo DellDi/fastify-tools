@@ -3,7 +3,7 @@ import {
 } from '@/schema/jira/jira.js'
 import { FastifyPluginAsyncTypebox } from '@fastify/type-provider-typebox'
 
-const jira: FastifyPluginAsyncTypebox = async (fastify): Promise<void> => {
+const jiraRawUpdate: FastifyPluginAsyncTypebox = async (fastify): Promise<void> => {
 
   fastify.post('', {
     schema: JiraUpdateTicketSchema,
@@ -24,4 +24,4 @@ const jira: FastifyPluginAsyncTypebox = async (fastify): Promise<void> => {
   })
 }
 
-export default jira
+export default jiraRawUpdate
