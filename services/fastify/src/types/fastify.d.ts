@@ -2,6 +2,7 @@ import { MySQLPromiseConnection } from 'fastify-mysql'
 import { FastifyInstance, FastifyPluginAsync as OriginalFastifyPluginAsync } from 'fastify'
 import { JiraService } from '@/services/jira/jira.service.js'
 import { EmailSendService } from '@/services/email/email-send.service.js'
+import { LLMService } from '@/services/llm/llm.service.js'
 
 declare module 'fastify' {
   interface FastifyInstance {
@@ -33,5 +34,6 @@ declare module 'fastify' {
     // Services 单例
     jiraService: JiraService
     emailService: EmailSendService
+    llmService: LLMService
   }
 }

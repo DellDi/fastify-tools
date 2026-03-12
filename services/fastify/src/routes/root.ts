@@ -3,6 +3,8 @@ import { fastifyCache } from '@/utils/cache.js'
 import {
   ClearAllCacheSchema,
   ClearCacheByKeySchema,
+  LLMVerifyBodyType,
+  LLMVerifySchema,
   RootDebugSchema,
 } from '@/schema/system/index.js'
 
@@ -39,6 +41,37 @@ const example: FastifyPluginAsync = async (fastify, opts): Promise<void> => {
       const { key } = request.params as { key: string }
       fastifyCache.delete(key)
       return { success: true }
+    }
+  )
+
+  fastify.post(
+    '/system/llm/verify',
+    {
+      schema: LLMVerifySchema,
+    },
+    async function (request, reply) {
+      const { mode = 'config', prompt, timeoutMs } =
+        request.body as LLMVerifyBodyType
+
+      try {
+        const result = await fastify.llmService.verify({
+          mode,
+          prompt,
+          timeoutMs,
+        })
+
+        if (!result.ok && mode === 'config') {
+          return reply.code(400).send({
+            error: result.message,
+          })
+        }
+
+        return result
+      } catch (error) {
+        return reply.code(500).send({
+          error: error instanceof Error ? error.message : String(error),
+        })
+      }
     }
   )
 }

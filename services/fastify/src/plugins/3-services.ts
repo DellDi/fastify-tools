@@ -2,6 +2,7 @@ import fp from 'fastify-plugin'
 import { FastifyInstance } from 'fastify'
 import { JiraService } from '@/services/jira/jira.service.js'
 import { EmailSendService } from '@/services/email/email-send.service.js'
+import { LLMService } from '@/services/llm/llm.service.js'
 
 /**
  * Services 插件
@@ -14,5 +15,8 @@ export default fp(async (fastify: FastifyInstance) => {
   // 注册 EmailSendService 单例
   fastify.decorate('emailService', new EmailSendService(fastify))
 
-  fastify.log.info('Services registered: jiraService, emailService')
+  // 注册 LLMService 单例
+  fastify.decorate('llmService', new LLMService(fastify))
+
+  fastify.log.info('Services registered: jiraService, emailService, llmService')
 })

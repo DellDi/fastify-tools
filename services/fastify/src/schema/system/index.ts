@@ -1,4 +1,5 @@
 import { Type } from '@sinclair/typebox'
+export * from './llm.js'
 
 export const RootDebugSchema = {
   description: '根路径调试接口。用于快速查看当前请求头是否已正确透传到服务端，适合联调和排查代理问题。',
