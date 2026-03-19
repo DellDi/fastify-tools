@@ -19,6 +19,10 @@ type UpdateTicketHandler = (
   data: JiraUpdateTicketData,
 ) => Promise<{ message: string }>
 
+type DevReplyBatchAllocationState = {
+  reservedDates: Set<string>
+}
+
 export class DevReplyUseCase {
   constructor(
     private logger: FastifyBaseLogger,
@@ -59,6 +63,7 @@ export class DevReplyUseCase {
     credentials: JiraLoginCredentials,
     session: JiraSession,
     data: DevReplyData,
+    batchAllocationState?: DevReplyBatchAllocationState,
   ): Promise<DevReplyResponse> {
     const { issueKey, projectKey, assignee } = data
     const steps: DevReplyStepResult[] = []
@@ -89,6 +94,11 @@ export class DevReplyUseCase {
             .map((issue) => issue.fields.customfield_10022)
             .filter(Boolean),
         )
+        if (batchAllocationState) {
+          for (const reservedDate of batchAllocationState.reservedDates) {
+            usedDates.add(reservedDate)
+          }
+        }
         maxUsedDate = this.jiraRestService.getMaxUsedDate(usedDates)
         this.logger.info(
           `Found ${usedDates.size} used dates for ${assignee}, max: ${maxUsedDate || 'none'}`,
@@ -161,6 +171,9 @@ export class DevReplyUseCase {
             usedDates,
             allHolidays,
           )
+          if (batchAllocationState) {
+            batchAllocationState.reservedDates.add(devCompleteDate)
+          }
           this.logger.info(`Allocated dev complete date: ${devCompleteDate}`)
           pushStep('allocateDevCompleteDate', true, '已自动分配预计开发完成时间', {
             devCompleteDate,
@@ -371,20 +384,52 @@ export class DevReplyUseCase {
       }
     }
 
-    const settledResults = await Promise.allSettled(
-      data.issueKeys.map((issueKey) =>
-        this.executeDevReplyWorkflow(resolvedCredentials, session, {
-          issueKey,
-          projectKey: data.projectKey,
-          assignee: data.assignee,
-          transitionId: data.transitionId,
-          fixVersionId: data.fixVersionId,
-          devCompleteDate: data.devCompleteDate,
-          comment: data.comment,
-          additionalFields: data.additionalFields,
-        }),
-      ),
-    )
+    const shouldAllocateAutomatically = !data.devCompleteDate
+    const batchAllocationState = shouldAllocateAutomatically
+      ? { reservedDates: new Set<string>() }
+      : undefined
+
+    const settledResults = shouldAllocateAutomatically
+      ? await (async () => {
+          const results: PromiseSettledResult<DevReplyResponse>[] = []
+          for (const issueKey of data.issueKeys) {
+            try {
+              const value = await this.executeDevReplyWorkflow(
+                resolvedCredentials,
+                session,
+                {
+                  issueKey,
+                  projectKey: data.projectKey,
+                  assignee: data.assignee,
+                  transitionId: data.transitionId,
+                  fixVersionId: data.fixVersionId,
+                  devCompleteDate: data.devCompleteDate,
+                  comment: data.comment,
+                  additionalFields: data.additionalFields,
+                },
+                batchAllocationState,
+              )
+              results.push({ status: 'fulfilled', value })
+            } catch (reason) {
+              results.push({ status: 'rejected', reason })
+            }
+          }
+          return results
+        })()
+      : await Promise.allSettled(
+          data.issueKeys.map((issueKey) =>
+            this.executeDevReplyWorkflow(resolvedCredentials, session, {
+              issueKey,
+              projectKey: data.projectKey,
+              assignee: data.assignee,
+              transitionId: data.transitionId,
+              fixVersionId: data.fixVersionId,
+              devCompleteDate: data.devCompleteDate,
+              comment: data.comment,
+              additionalFields: data.additionalFields,
+            }),
+          ),
+        )
 
     const results = settledResults.map((result, index) =>
       result.status === 'fulfilled'

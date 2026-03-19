@@ -82,3 +82,64 @@ test('devReply should still update fields when transition is unavailable', async
   assert.deepEqual(calls.includes('updateTicket'), true)
   assert.deepEqual(calls.includes('doTransition'), false)
 })
+
+test('devReplyBatch should reserve allocated dev complete dates within the same batch', async () => {
+  const updatedDates: string[] = []
+
+  const logger = {
+    info() {},
+    warn() {},
+    error() {},
+  } as any
+
+  const jiraRestService = {
+    searchIssuesByJql: async () => ({ issues: [] }),
+    getMaxUsedDate: (usedDates: Set<string>) => {
+      if (usedDates.size === 0) {
+        return undefined
+      }
+      return Array.from(usedDates).sort()[usedDates.size - 1]
+    },
+    getProjectVersions: async () => [{ id: '23987', name: 'DC_V10.1.20260326' }],
+    selectFixVersionSmart: () => ({
+      version: { id: '23987', name: 'DC_V10.1.20260326' },
+      date: new Date('2026-03-26'),
+    }),
+    getHolidays: async () => new Set<string>(),
+    getTransitions: async () => [{ id: '11', name: '开发回复' }],
+    doTransition: async () => ({}) ,
+  } as any
+
+  const sessionService = {
+    resolveCredentials: (credentials?: any) => credentials,
+    getSession: async () => ({
+      cookies: 'mock-cookie',
+      atlToken: 'mock-token',
+    }),
+  } as any
+
+  const updateTicket = async (_credentials: any, data: any) => {
+    updatedDates.push(data.fields.customfield_10022)
+    return { message: 'ok' }
+  }
+
+  const useCase = new DevReplyUseCase(
+    logger,
+    jiraRestService,
+    sessionService,
+    updateTicket,
+  )
+
+  const result = await useCase.devReplyBatch(
+    { jiraUser: 'zengdi', jiraPassword: '1' },
+    {
+      issueKeys: ['NDE-3149', 'NDE-3150'],
+      projectKey: 'NDE',
+      assignee: 'lvkailang',
+    },
+  )
+
+  assert.equal(result.successCount, 2)
+  assert.equal(updatedDates.length, 2)
+  assert.notEqual(updatedDates[0], updatedDates[1])
+})
