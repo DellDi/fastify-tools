@@ -115,7 +115,9 @@ export class JiraIssueRepository {
             id: '15863',
           },
         },
-        customfield_12000: '13760',
+        customfield_12000: {
+          id: '13760',
+        },
         customfield_10041: dayjs().format('YYYY-MM-DD'),
         priority: { id: this.jiraConfig.defaultPriority },
         description: restData.description || restData.title,
