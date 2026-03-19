@@ -108,17 +108,19 @@ export class JiraIssueRepository {
         summary: restData.title,
         issuetype: { id: issueTypeId },
         components: [{ id: componentId }],
-        customfield_10000: { id: '13163' },
+        customfield_10000: { id: '13163' }, // 客户名称：默认值
         customfield_12600: {
+          // 客户名称和选择：关联
           id: '15862',
           child: {
             id: '15863',
           },
         },
         customfield_12000: {
+          // 是否已经评审
           id: '13760',
         },
-        customfield_10041: dayjs().format('YYYY-MM-DD'),
+        customfield_10041: dayjs().format('YYYY-MM-DD'), // 期望上线时间
         priority: { id: this.jiraConfig.defaultPriority },
         description: restData.description || restData.title,
         assignee: restData.assignee ? { name: restData.assignee } : null,

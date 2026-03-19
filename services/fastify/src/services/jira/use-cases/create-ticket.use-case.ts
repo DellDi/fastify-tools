@@ -60,12 +60,20 @@ export class CreateTicketUseCase {
             issueTypes,
           )
 
-          projectKey = match.projectKey
-          issueTypeId = match.issueTypeId
-          matchInfo = match
+          const resolvedProjectKey = data.projectKey || match.projectKey
+          const resolvedIssueTypeId = data.issueTypeId || match.issueTypeId
+
+          projectKey = resolvedProjectKey
+          issueTypeId = resolvedIssueTypeId
+          matchInfo = {
+            ...match,
+            projectKey: resolvedProjectKey,
+            projectName: data.projectKey || match.projectName,
+            issueTypeId: resolvedIssueTypeId,
+          }
 
           this.logger.info(
-            `Smart match result: componentId=${match.componentId}, project=${projectKey}, issueType=${issueTypeId}, confidence=${match.confidence}`,
+            `Smart match result: componentId=${match.componentId}, project=${resolvedProjectKey}, issueType=${resolvedIssueTypeId}, confidence=${match.confidence}`,
           )
         } catch (matchError) {
           this.logger.warn(

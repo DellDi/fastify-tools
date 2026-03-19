@@ -132,6 +132,124 @@ test('createTicket use-case should orchestrate smart match, meta, custom info, i
     'logger.info:[object Object]',
     'createIssue',
     'getCustomInfo',
+    'logger.info:[object Object]',
     'updateTicket',
+  ])
+})
+
+test('createTicket use-case should keep explicit projectKey when smartMatch fills missing issueTypeId', async () => {
+  const calls: string[] = []
+
+  const logger = {
+    info(...args: any[]) {
+      calls.push(`logger.info:${String(args[0])}`)
+    },
+    warn(...args: any[]) {
+      calls.push(`logger.warn:${String(args[0])}`)
+    },
+    error(...args: any[]) {
+      calls.push(`logger.error:${String(args[0])}`)
+    },
+  } as any
+
+  const jiraRestService = {
+    getProjects: async (_cookies: string) => {
+      calls.push('getProjects')
+      return [{ key: 'NDE', name: 'NDE' }]
+    },
+    getIssueTypes: async (_projectKey: string, _cookies: string) => {
+      calls.push('getIssueTypes')
+      return { issueTypes: [{ id: '10604', name: '新需求' }] }
+    },
+    matchProjectAndIssueType: async () => {
+      calls.push('matchProjectAndIssueType')
+      return {
+        componentId: 'cmp-2',
+        projectKey: 'CPYF',
+        projectName: 'CPYF',
+        issueTypeId: '10604',
+        issueTypeName: '新需求',
+        confidence: 'high',
+      }
+    },
+    createMeta: async () => {
+      calls.push('createMeta')
+      return {
+        values: [],
+      }
+    },
+    genCustomInfo: async () => {
+      calls.push('genCustomInfo')
+      return {}
+    },
+    createIssue: async (payload: any, _cookies: string, options: any) => {
+      calls.push('createIssue')
+      assert.equal(options.projectKey, 'NDE')
+      assert.equal(options.issueTypeId, '10604')
+      assert.equal(options.componentId, 'cmp-2')
+      return {
+        id: '20001',
+        key: 'NDE-20001',
+      }
+    },
+    getCustomInfo: () => {
+      calls.push('getCustomInfo')
+      return {}
+    },
+  } as any
+
+  const sessionService = {
+    getSession: async (_credentials: any) => {
+      calls.push('getSession')
+      return {
+        cookies: 'mock-cookie',
+        atlToken: 'mock-token',
+      }
+    },
+  } as any
+
+  const updateTicket = async (_credentials: any, _data: any) => {
+    calls.push('updateTicket')
+    return { message: 'ok' }
+  }
+
+  const useCase = new CreateTicketUseCase(
+    logger,
+    jiraRestService,
+    sessionService,
+    {
+      baseUrl: 'http://jira.test',
+      defaultProject: 'V10',
+      defaultIssueType: '4',
+    },
+    updateTicket,
+  )
+
+  const result = await useCase.createTicket(
+    {
+      jiraUser: 'alice',
+      jiraPassword: 'secret',
+    },
+    {
+      title: 'title',
+      description: 'description',
+      projectKey: 'NDE',
+      smartMatch: true,
+    },
+  )
+
+  assert.equal(result.issueKey, 'NDE-20001')
+  assert.equal(result.matchInfo?.projectKey, 'NDE')
+  assert.equal(result.matchInfo?.issueTypeId, '10604')
+  assert.deepEqual(calls, [
+    'getSession',
+    'getProjects',
+    'getIssueTypes',
+    'matchProjectAndIssueType',
+    'logger.info:Smart match result: componentId=cmp-2, project=NDE, issueType=10604, confidence=high',
+    'createMeta',
+    'genCustomInfo',
+    'logger.info:[object Object]',
+    'createIssue',
   ])
 })
