@@ -86,7 +86,7 @@ function scoreCandidate(
   const matchedPrimaryTokens: string[] = []
   const matchedWeakTokens: string[] = []
 
-  if (normalizedLabel.includes(normalizedInput)) {
+  if (normalizedInput && normalizedLabel.includes(normalizedInput)) {
     score += 100
   }
 
@@ -126,8 +126,12 @@ function compareCustomerCandidateScore(
     return right.score - left.score
   }
 
-  if (left.originalIndex !== right.originalIndex) {
-    return left.originalIndex - right.originalIndex
+  if (left.normalizedLabel !== right.normalizedLabel) {
+    return left.normalizedLabel.localeCompare(right.normalizedLabel)
+  }
+
+  if (left.label !== right.label) {
+    return left.label.localeCompare(right.label)
   }
 
   return left.id.localeCompare(right.id)
