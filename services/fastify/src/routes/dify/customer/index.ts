@@ -12,6 +12,7 @@ type MatchedOptionSummary = {
   input: string
   bestLabel?: string
   bestScore: number
+  matched: boolean
   rankedCandidates: Array<{
     id: string
     label: string
@@ -37,7 +38,8 @@ function matchOptionElement(
     })),
   )
   const bestMatch = result.bestMatch
-  const element = bestMatch ? elements[bestMatch.originalIndex] : undefined
+  const matched = Boolean(bestMatch && result.score > 0)
+  const element = bestMatch && result.score > 0 ? elements[bestMatch.originalIndex] : undefined
 
   return {
     element,
@@ -45,6 +47,7 @@ function matchOptionElement(
       input: customerName,
       bestLabel: bestMatch?.label,
       bestScore: result.score,
+      matched,
       rankedCandidates: result.rankedCandidates.slice(0, 3).map((candidate) => ({
         id: candidate.id,
         label: candidate.label,

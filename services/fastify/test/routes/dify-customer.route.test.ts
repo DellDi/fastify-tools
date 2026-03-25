@@ -13,27 +13,34 @@ async function build() {
   return app
 }
 
+async function injectCustomer(
+  app: Awaited<ReturnType<typeof build>>,
+  payload: Record<string, unknown>,
+) {
+  return app.inject({
+    method: 'POST',
+    url: '/dify/customer',
+    payload,
+  })
+}
+
 test('/dify/customer selects highest-score customer ids for tokenized input', async () => {
   const app = await build()
 
   try {
-    const res = await app.inject({
-      method: 'POST',
-      url: '/dify/customer',
-      payload: {
-        customerName: '中油物业',
-        htmlStr: `<select><option value="6001">6001-中油阳光</option></select>`,
-        htmlStrAll: `
-          <select class="cascadingselect-parent">
-            <option value="7001">7001-中油阳光</option>
-            <option value="17714">714-阳光物业</option>
-          </select>
-          <select class="cascadingselect-child">
-            <option value="9001">中油阳光子项</option>
-            <option value="21057">默认子项</option>
-          </select>
-        `,
-      },
+    const res = await injectCustomer(app, {
+      customerName: '中油物业',
+      htmlStr: `<select><option value="6001">6001-中油阳光</option></select>`,
+      htmlStrAll: `
+        <select class="cascadingselect-parent">
+          <option value="7001">7001-中油阳光</option>
+          <option value="17714">714-阳光物业</option>
+        </select>
+        <select class="cascadingselect-child">
+          <option value="9001">中油阳光子项</option>
+          <option value="21057">默认子项</option>
+        </select>
+      `,
     })
 
     assert.equal(res.statusCode, 200)
@@ -52,25 +59,106 @@ test('/dify/customer keeps exact includes matches working', async () => {
   const app = await build()
 
   try {
-    const res = await app.inject({
-      method: 'POST',
-      url: '/dify/customer',
-      payload: {
-        customerName: '714-中油阳光',
-        htmlStr: `<select><option value="14169">714-中油阳光</option></select>`,
-        htmlStrAll: `
-          <select class="cascadingselect-parent">
-            <option value="17714">714-中油阳光</option>
-          </select>
-          <select class="cascadingselect-child">
-            <option value="21057">714-中油阳光</option>
-          </select>
-        `,
-      },
+    const res = await injectCustomer(app, {
+      customerName: '714-中油阳光',
+      htmlStr: `
+        <select>
+          <option value="14169">714-中油阳光</option>
+          <option value="14170">714-中油阳光物业</option>
+        </select>
+      `,
+      htmlStrAll: `
+        <select class="cascadingselect-parent">
+          <option value="17714">714-中油阳光</option>
+          <option value="17715">714-中油阳光物业</option>
+        </select>
+        <select class="cascadingselect-child">
+          <option value="21057">714-中油阳光</option>
+          <option value="21058">714-中油阳光物业</option>
+        </select>
+      `,
     })
 
     assert.equal(res.statusCode, 200)
     assert.deepEqual(JSON.parse(res.payload), {
+      isSaaS: false,
+      customerNameId: '14169',
+      customerInfoId: '17714',
+      customerInfoIdAlias: '21057',
+    })
+  } finally {
+    await app.close()
+  }
+})
+
+test('/dify/customer keeps fallback behavior for omitted customerName', async () => {
+  const app = await build()
+
+  try {
+    const res = await injectCustomer(app, {
+      htmlStr: `<select><option value="14169">714-中油阳光</option></select>`,
+      htmlStrAll: `
+        <select class="cascadingselect-parent">
+          <option value="17714">714-中油阳光</option>
+        </select>
+        <select class="cascadingselect-child">
+          <option value="21057">默认子项</option>
+        </select>
+      `,
+    })
+
+    assert.equal(res.statusCode, 200)
+    assert.deepEqual(JSON.parse(res.payload), {
+      isSaaS: false,
+      customerNameId: '14169',
+      customerInfoId: '17714',
+      customerInfoIdAlias: '21057',
+    })
+  } finally {
+    await app.close()
+  }
+})
+
+test('/dify/customer keeps fallback behavior for blank or noise-only customerName', async () => {
+  const app = await build()
+
+  try {
+    const blankResponse = await injectCustomer(app, {
+      customerName: '',
+      htmlStr: `<select><option value="14169">714-中油阳光</option></select>`,
+      htmlStrAll: `
+        <select class="cascadingselect-parent">
+          <option value="17714">714-中油阳光</option>
+        </select>
+        <select class="cascadingselect-child">
+          <option value="21057">默认子项</option>
+        </select>
+      `,
+    })
+
+    assert.equal(blankResponse.statusCode, 200)
+    assert.deepEqual(JSON.parse(blankResponse.payload), {
+      isSaaS: false,
+      customerNameId: '14169',
+      customerInfoId: '17714',
+      customerInfoIdAlias: '21057',
+    })
+
+    const noiseResponse = await injectCustomer(app, {
+      customerName: '  -- / ,  123 ',
+      htmlStr: `<select><option value="14169">714-中油阳光</option></select>`,
+      htmlStrAll: `
+        <select class="cascadingselect-parent">
+          <option value="17714">714-中油阳光</option>
+        </select>
+        <select class="cascadingselect-child">
+          <option value="21057">默认子项</option>
+        </select>
+      `,
+    })
+
+    assert.equal(noiseResponse.statusCode, 200)
+    assert.deepEqual(JSON.parse(noiseResponse.payload), {
       isSaaS: false,
       customerNameId: '14169',
       customerInfoId: '17714',
