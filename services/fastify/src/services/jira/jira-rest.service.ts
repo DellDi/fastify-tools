@@ -180,7 +180,7 @@ export class JiraRestService {
         ),
       )
 
-      if (bestValue?.bestMatch) {
+      if (bestValue?.bestMatch && bestValue.score > 0) {
         const matchedAllowedValue = item.allowedValues[bestValue.bestMatch.originalIndex]
 
         dynamicCustomField[item.fieldId] = buildJiraCustomerFieldValue(

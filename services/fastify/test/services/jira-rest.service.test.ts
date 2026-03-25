@@ -56,7 +56,7 @@ test('getCustomInfo selects highest-score allowed value for tokenized customer n
   })
 })
 
-test('getCustomInfo keeps exact includes matches and child fallback behavior', async () => {
+test('getCustomInfo keeps exact includes matches without child values as plain id', async () => {
   const service = new JiraRestService(createMockFastify())
 
   const result = service.getCustomInfo(
@@ -65,7 +65,7 @@ test('getCustomInfo keeps exact includes matches and child fallback behavior', a
         fieldId: 'customfield_12600',
         name: '客户名称',
         allowedValues: [
-          { id: '17714', value: '714-中油阳光', children: [{ id: '21057', value: '默认子项' }] },
+          { id: '17714', value: '714-中油阳光' },
           { id: '17715', value: '715-阳光物业' },
         ],
       },
@@ -76,7 +76,26 @@ test('getCustomInfo keeps exact includes matches and child fallback behavior', a
   assert.deepEqual(result, {
     customfield_12600: {
       id: '17714',
-      child: { id: '21057' },
     },
   })
+})
+
+test('getCustomInfo leaves customer fields untouched for unrelated input', async () => {
+  const service = new JiraRestService(createMockFastify())
+
+  const result = service.getCustomInfo(
+    [
+      {
+        fieldId: 'customfield_12600',
+        name: '客户信息',
+        allowedValues: [
+          { id: '17714', value: '714-中油阳光', children: [{ id: '21057', value: '默认子项' }] },
+          { id: '17715', value: '715-阳光物业' },
+        ],
+      },
+    ] as any,
+    '完全无关输入',
+  )
+
+  assert.deepEqual(result, {})
 })
