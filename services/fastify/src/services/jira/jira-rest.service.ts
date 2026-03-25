@@ -4,6 +4,7 @@ import { fastifyCache } from '@/utils/cache.js'
 import {
   getJiraConfig,
 } from '@/utils/config-helpers.js'
+import { matchCustomerOption } from './customer-name.matcher.js'
 import { JiraLLMService } from './jira-llm.service.js'
 import { JiraMetaRepository } from './jira-meta.repository.js'
 import { JiraIssueRepository } from './jira-issue.repository.js'
@@ -16,6 +17,8 @@ import {
     getMaxUsedDate,
 } from './utils.js'
 import type {
+  CustomerCandidate,
+  CustomerCandidateScore,
   JiraProject,
   JiraIssueType,
   JiraVersion,
@@ -26,6 +29,42 @@ import type {
   JiraUploadAttachmentData,
   JiraUploadAttachmentResponse,
 } from './types.js'
+
+function toCustomerCandidate(value: {
+  id: string
+  value?: string
+  name?: string
+}): CustomerCandidate {
+  return {
+    id: value.id,
+    label: value.value ?? value.name ?? '',
+  }
+}
+
+function buildJiraCustomerFieldValue(
+  bestMatch: CustomerCandidateScore,
+  allowedValue: {
+    children?: Array<{
+      id: string
+    }>
+  },
+): {
+  id: string
+  child?: {
+    id: string
+  }
+} {
+  return {
+    id: bestMatch.id,
+    ...(allowedValue.children?.[0]?.id
+      ? {
+          child: {
+            id: allowedValue.children[0].id,
+          },
+        }
+      : {}),
+  }
+}
 
 export class JiraRestService {
   private jiraConfig: ReturnType<typeof getJiraConfig>
@@ -134,23 +173,20 @@ export class JiraRestService {
     } = {}
 
     customInfo.forEach((item) => {
-      const valueInfo = item.allowedValues.find((obj) =>
-        obj.value?.includes(cusstomName),
+      const bestValue = matchCustomerOption(
+        cusstomName,
+        item.allowedValues.map((allowedValue) =>
+          toCustomerCandidate(allowedValue),
+        ),
       )
 
-      if (valueInfo) {
-        dynamicCustomField[item.fieldId] = {
-          id: valueInfo.id,
-        }
-      }
+      if (bestValue?.bestMatch) {
+        const matchedAllowedValue = item.allowedValues[bestValue.bestMatch.originalIndex]
 
-      if (valueInfo && valueInfo.children) {
-        dynamicCustomField[item.fieldId] = {
-          id: valueInfo.id,
-          child: {
-            id: valueInfo.children[0].id,
-          },
-        }
+        dynamicCustomField[item.fieldId] = buildJiraCustomerFieldValue(
+          bestValue.bestMatch,
+          matchedAllowedValue,
+        )
       }
     })
 
