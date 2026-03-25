@@ -6,6 +6,53 @@ import {
   difyCustomerSchema,
   InputCustomerType,
 } from '../../../schema/dify/dify.js'
+import { matchCustomerOption } from '../../../services/jira/customer-name.matcher.js'
+
+type MatchedOptionSummary = {
+  input: string
+  bestLabel?: string
+  bestScore: number
+  rankedCandidates: Array<{
+    id: string
+    label: string
+    score: number
+  }>
+}
+
+function matchOptionElement(
+  customerName: string | undefined,
+  options: cheerio.Cheerio<any>,
+  $: cheerio.CheerioAPI,
+): { element?: any; summary?: MatchedOptionSummary } {
+  if (!customerName) {
+    return {}
+  }
+
+  const elements = options.toArray()
+  const result = matchCustomerOption(
+    customerName,
+    elements.map((element) => ({
+      id: $(element).attr('value') ?? '',
+      label: $(element).text(),
+    })),
+  )
+  const bestMatch = result.bestMatch
+  const element = bestMatch ? elements[bestMatch.originalIndex] : undefined
+
+  return {
+    element,
+    summary: {
+      input: customerName,
+      bestLabel: bestMatch?.label,
+      bestScore: result.score,
+      rankedCandidates: result.rankedCandidates.slice(0, 3).map((candidate) => ({
+        id: candidate.id,
+        label: candidate.label,
+        score: candidate.score,
+      })),
+    },
+  }
+}
 
 const customer: FastifyPluginAsync = async (fastify, opts): Promise<void> => {
   fastify.post<{
@@ -24,17 +71,32 @@ const customer: FastifyPluginAsync = async (fastify, opts): Promise<void> => {
       const optionsP = $2('select.cascadingselect-parent').find('option')
       const optionsC = $2('select.cascadingselect-child').find('option')
 
-      const elementName = optionsList
-        .toArray()
-        .find((e) => customerName && $1(e).text().includes(customerName))
+      const { element: elementName, summary: elementNameSummary } = matchOptionElement(
+        customerName,
+        optionsList,
+        $1,
+      )
 
-      const elementInfo = optionsP
-        .toArray()
-        .find((e) => customerName && $2(e).text().includes(customerName))
+      const { element: elementInfo, summary: elementInfoSummary } = matchOptionElement(
+        customerName,
+        optionsP,
+        $2,
+      )
 
-      const elementInfoAlias = optionsC
-        .toArray()
-        .find((e) => customerName && $2(e).text().includes(customerName))
+      const { element: elementInfoAlias, summary: elementInfoAliasSummary } =
+        matchOptionElement(customerName, optionsC, $2)
+
+      request.log.info(
+        {
+          customerName,
+          matcher: {
+            customerName: elementNameSummary,
+            customerInfo: elementInfoSummary,
+            customerInfoAlias: elementInfoAliasSummary,
+          },
+        },
+        'dify customer matcher result',
+      )
 
       const customerNum = $2(elementName).text().split('-')[0]
       reply.send({
