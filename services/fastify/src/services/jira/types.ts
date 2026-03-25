@@ -88,6 +88,25 @@ export interface ProjectIssueTypeMatch {
   confidence: 'high' | 'medium' | 'low'
 }
 
+export interface CustomerCandidate {
+  id: string
+  label: string
+}
+
+export interface CustomerCandidateScore extends CustomerCandidate {
+  score: number
+  normalizedLabel: string
+  matchedPrimaryTokens: string[]
+  matchedWeakTokens: string[]
+  originalIndex: number
+}
+
+export interface CustomerMatchResult {
+  bestMatch?: CustomerCandidateScore
+  score: number
+  rankedCandidates: CustomerCandidateScore[]
+}
+
 // ============================================
 // 工单创建相关
 // ============================================
