@@ -85,8 +85,9 @@ function scoreCandidate(
   let score = 0
   const matchedPrimaryTokens: string[] = []
   const matchedWeakTokens: string[] = []
+  const hasPrimaryTokens = primaryTokens.length > 0
 
-  if (normalizedInput && normalizedLabel.includes(normalizedInput)) {
+  if (hasPrimaryTokens && normalizedInput && normalizedLabel.includes(normalizedInput)) {
     score += 100
   }
 

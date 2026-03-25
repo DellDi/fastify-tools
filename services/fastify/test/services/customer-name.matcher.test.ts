@@ -8,7 +8,8 @@ const {
   normalizeCustomerText,
 } = require('../../api/services/jira/customer-name.matcher.js') as {
   matchCustomerOption: (input: string, candidates: Array<{ id: string; label: string }>) => {
-    bestMatch?: { id: string; label: string }
+    bestMatch?: { id: string; label: string; score: number; normalizedLabel: string }
+    rankedCandidates: Array<{ id: string; label: string; score: number; normalizedLabel: string }>
     score: number
   }
   normalizeCustomerText: (input: string) => string
@@ -73,6 +74,20 @@ test('matchCustomerOption does not award a strong match for empty or noise-only 
 
   assert.ok(result.score <= 0)
   assert.ok(result.rankedCandidates.every(candidate => candidate.score <= 0))
+})
+
+test('matchCustomerOption keeps weak-only input as a minor signal', async () => {
+  const candidates = [
+    { id: '1', label: '阳光物业' },
+    { id: '2', label: '中油阳光' },
+  ]
+
+  const result = matchCustomerOption('物业', candidates)
+
+  assert.equal(result.bestMatch?.id, '1')
+  assert.equal(result.bestMatch?.label, '阳光物业')
+  assert.ok(result.score < 50)
+  assert.ok(result.rankedCandidates[0].score < 50)
 })
 
 test('matchCustomerOption chooses the same winner regardless of candidate order on ties', async () => {
