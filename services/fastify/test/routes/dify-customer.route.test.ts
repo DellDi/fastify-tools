@@ -91,6 +91,42 @@ test('/dify/customer keeps exact includes matches working', async () => {
   }
 })
 
+test('/dify/customer falls back when only weak tokens match', async () => {
+  const app = await build()
+
+  try {
+    const res = await injectCustomer(app, {
+      customerName: '物业',
+      htmlStr: `
+        <select>
+          <option value="14169">714-中油阳光</option>
+          <option value="14170">715-阳光物业</option>
+        </select>
+      `,
+      htmlStrAll: `
+        <select class="cascadingselect-parent">
+          <option value="17714">714-中油阳光</option>
+          <option value="17715">715-阳光物业</option>
+        </select>
+        <select class="cascadingselect-child">
+          <option value="21057">714-中油阳光</option>
+          <option value="21058">715-阳光物业</option>
+        </select>
+      `,
+    })
+
+    assert.equal(res.statusCode, 200)
+    assert.deepEqual(JSON.parse(res.payload), {
+      isSaaS: false,
+      customerNameId: '14169',
+      customerInfoId: '17714',
+      customerInfoIdAlias: '21057',
+    })
+  } finally {
+    await app.close()
+  }
+})
+
 test('/dify/customer keeps fallback behavior for omitted customerName', async () => {
   const app = await build()
 

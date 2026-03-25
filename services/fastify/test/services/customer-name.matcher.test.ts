@@ -4,12 +4,28 @@ import { createRequire } from 'node:module'
 
 const require = createRequire(import.meta.url)
 const {
+  hasMeaningfulCustomerMatch,
   matchCustomerOption,
   normalizeCustomerText,
 } = require('../../api/services/jira/customer-name.matcher.js') as {
+  hasMeaningfulCustomerMatch: (candidate?: {
+    matchedPrimaryTokens: string[]
+  }) => boolean
   matchCustomerOption: (input: string, candidates: Array<{ id: string; label: string }>) => {
-    bestMatch?: { id: string; label: string; score: number; normalizedLabel: string }
-    rankedCandidates: Array<{ id: string; label: string; score: number; normalizedLabel: string }>
+    bestMatch?: {
+      id: string
+      label: string
+      score: number
+      normalizedLabel: string
+      matchedPrimaryTokens: string[]
+    }
+    rankedCandidates: Array<{
+      id: string
+      label: string
+      score: number
+      normalizedLabel: string
+      matchedPrimaryTokens: string[]
+    }>
     score: number
   }
   normalizeCustomerText: (input: string) => string
@@ -41,10 +57,10 @@ test('matchCustomerOption ranks a full text containment above a weaker partial m
   assert.ok(result.score > 0)
 })
 
-test('matchCustomerOption chooses the lowest id when score and label are tied', async () => {
+test('matchCustomerOption chooses the lowest numeric id when score and label are tied', async () => {
   const candidates = [
     { id: '10', label: '北方项目' },
-    { id: '11', label: '北方项目' },
+    { id: '2', label: '北方项目' },
   ]
 
   const reversed = [...candidates].reverse()
@@ -52,9 +68,9 @@ test('matchCustomerOption chooses the lowest id when score and label are tied', 
   const result = matchCustomerOption('北方项目', candidates)
   const reversedResult = matchCustomerOption('北方项目', reversed)
 
-  assert.equal(result.bestMatch?.id, '10')
+  assert.equal(result.bestMatch?.id, '2')
   assert.equal(result.bestMatch?.label, '北方项目')
-  assert.equal(reversedResult.bestMatch?.id, '10')
+  assert.equal(reversedResult.bestMatch?.id, '2')
   assert.equal(reversedResult.bestMatch?.label, '北方项目')
   assert.ok(result.score > 0)
 })
@@ -88,6 +104,9 @@ test('matchCustomerOption keeps weak-only input as a minor signal', async () => 
   assert.equal(result.bestMatch?.label, '阳光物业')
   assert.ok(result.score < 50)
   assert.ok(result.rankedCandidates[0].score < 50)
+  assert.ok(result.score > 0)
+  assert.equal(hasMeaningfulCustomerMatch(result.bestMatch), false)
+  assert.equal(result.bestMatch?.matchedPrimaryTokens.length, 0)
 })
 
 test('matchCustomerOption chooses the same winner regardless of candidate order on ties', async () => {

@@ -6,7 +6,10 @@ import {
   difyCustomerSchema,
   InputCustomerType,
 } from '../../../schema/dify/dify.js'
-import { matchCustomerOption } from '../../../services/jira/customer-name.matcher.js'
+import {
+  hasMeaningfulCustomerMatch,
+  matchCustomerOption,
+} from '../../../services/jira/customer-name.matcher.js'
 
 type MatchedOptionSummary = {
   input: string
@@ -38,8 +41,8 @@ function matchOptionElement(
     })),
   )
   const bestMatch = result.bestMatch
-  const matched = Boolean(bestMatch && result.score > 0)
-  const element = bestMatch && result.score > 0 ? elements[bestMatch.originalIndex] : undefined
+  const matched = hasMeaningfulCustomerMatch(bestMatch)
+  const element = matched ? elements[bestMatch!.originalIndex] : undefined
 
   return {
     element,

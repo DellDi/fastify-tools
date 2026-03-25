@@ -135,6 +135,16 @@ function compareCustomerCandidateScore(
     return left.label.localeCompare(right.label)
   }
 
+  const leftIdIsNumeric = /^\d+$/.test(left.id)
+  const rightIdIsNumeric = /^\d+$/.test(right.id)
+
+  if (leftIdIsNumeric && rightIdIsNumeric) {
+    const numericIdDifference = Number(left.id) - Number(right.id)
+    if (numericIdDifference !== 0) {
+      return numericIdDifference
+    }
+  }
+
   return left.id.localeCompare(right.id)
 }
 
@@ -153,4 +163,10 @@ export function matchCustomerOption(
     score: rankedCandidates[0]?.score ?? 0,
     rankedCandidates,
   }
+}
+
+export function hasMeaningfulCustomerMatch(
+  candidate?: CustomerCandidateScore,
+): boolean {
+  return Boolean(candidate?.matchedPrimaryTokens.length)
 }

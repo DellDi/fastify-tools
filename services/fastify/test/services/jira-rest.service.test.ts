@@ -80,6 +80,26 @@ test('getCustomInfo keeps exact includes matches without child values as plain i
   })
 })
 
+test('getCustomInfo ignores weak-only input and keeps customer fields untouched', async () => {
+  const service = new JiraRestService(createMockFastify())
+
+  const result = service.getCustomInfo(
+    [
+      {
+        fieldId: 'customfield_12600',
+        name: '客户信息',
+        allowedValues: [
+          { id: '17714', value: '714-中油阳光', children: [{ id: '21057', value: '默认子项' }] },
+          { id: '17715', value: '715-阳光物业' },
+        ],
+      },
+    ] as any,
+    '物业',
+  )
+
+  assert.deepEqual(result, {})
+})
+
 test('getCustomInfo leaves customer fields untouched for unrelated input', async () => {
   const service = new JiraRestService(createMockFastify())
 

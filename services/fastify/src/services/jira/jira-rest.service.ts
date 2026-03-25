@@ -4,7 +4,10 @@ import { fastifyCache } from '@/utils/cache.js'
 import {
   getJiraConfig,
 } from '@/utils/config-helpers.js'
-import { matchCustomerOption } from './customer-name.matcher.js'
+import {
+  hasMeaningfulCustomerMatch,
+  matchCustomerOption,
+} from './customer-name.matcher.js'
 import { JiraLLMService } from './jira-llm.service.js'
 import { JiraMetaRepository } from './jira-meta.repository.js'
 import { JiraIssueRepository } from './jira-issue.repository.js'
@@ -180,7 +183,7 @@ export class JiraRestService {
         ),
       )
 
-      if (bestValue?.bestMatch && bestValue.score > 0) {
+      if (bestValue?.bestMatch && hasMeaningfulCustomerMatch(bestValue.bestMatch)) {
         const matchedAllowedValue = item.allowedValues[bestValue.bestMatch.originalIndex]
 
         dynamicCustomField[item.fieldId] = buildJiraCustomerFieldValue(
