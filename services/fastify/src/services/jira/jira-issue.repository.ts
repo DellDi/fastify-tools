@@ -18,6 +18,110 @@ export class JiraIssueRepository {
     this.jiraConfig = getJiraConfig(fastify)
   }
 
+  private buildCreateIssueData(
+    restData: { [key: string]: any },
+    projectKey: string,
+    issueTypeId: string,
+    componentId: string,
+    excludedFields: Set<string> = new Set(),
+  ): IssueData {
+    const fields: IssueData['fields'] = {
+      project: { key: projectKey },
+      summary: restData.title,
+      issuetype: { id: issueTypeId },
+      components: [{ id: componentId }],
+      customfield_10000: { id: '13163' }, // 客户名称：默认值
+      customfield_12600: {
+        // 客户名称和选择：关联
+        id: '15862',
+        child: {
+          id: '15863',
+        },
+      },
+      customfield_12000: {
+        // 是否已经评审
+        id: '13760',
+      },
+      customfield_10041: dayjs().format('YYYY-MM-DD'), // 期望上线时间
+      priority: { id: this.jiraConfig.defaultPriority },
+      description: restData.description || restData.title,
+      assignee: restData.assignee ? { name: restData.assignee } : null,
+      ...restData.customAutoFields,
+    }
+
+    for (const fieldKey of excludedFields) {
+      delete fields[fieldKey]
+    }
+
+    return { fields }
+  }
+
+  private async postCreateIssue(issueData: IssueData, cookies: string) {
+    const createTicketResponse = await request(
+      this.jiraConfig.endpoints.createIssue,
+      {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: this.jiraConfig.auth.proxyAuthToken,
+          'X-Atlassian-Token': 'no-check',
+          Cookie: cookies,
+        },
+        body: JSON.stringify(issueData),
+      },
+    )
+
+    const rawBody = await createTicketResponse.body.text()
+    let responseBody: JiraCreateResponse = {}
+
+    try {
+      responseBody = rawBody ? (JSON.parse(rawBody) as JiraCreateResponse) : {}
+    } catch {
+      responseBody = {}
+    }
+
+    return {
+      statusCode: createTicketResponse.statusCode,
+      rawBody,
+      responseBody,
+    }
+  }
+
+  private getRetryableCreateIssueFields(responseBody: JiraCreateResponse) {
+    const retryableFieldPattern = /cannot be set|appropriate screen|unknown/i
+    const protectedFields = new Set(['project', 'summary', 'issuetype'])
+
+    if (!responseBody.errors) {
+      return [] as string[]
+    }
+
+    return Object.entries(responseBody.errors)
+      .filter(([fieldKey, fieldMessage]) => {
+        return (
+          !protectedFields.has(fieldKey) &&
+          retryableFieldPattern.test(String(fieldMessage))
+        )
+      })
+      .map(([fieldKey]) => fieldKey)
+  }
+
+  private buildCreateIssueError(
+    statusCode: number,
+    responseBody: JiraCreateResponse,
+    rawBody: string,
+    retried: boolean,
+  ) {
+    const errorMsg = responseBody.errors
+      ? Object.entries(responseBody.errors)
+          .map(([key, value]) => `${key}: ${value}`)
+          .join('\n')
+      : `HTTP ${statusCode}${rawBody ? ` - ${rawBody}` : ''}`
+
+    return new Error(
+      `创建 Jira 工单失败${retried ? '（重试后仍失败）' : ''}: ${errorMsg}`,
+    )
+  }
+
   async addAttachment(
     data: JiraUploadAttachmentData,
     cookies: string,
@@ -101,60 +205,62 @@ export class JiraIssueRepository {
       restData.issueTypeId ||
       this.jiraConfig.defaultIssueType
     const componentId = options?.componentId || this.jiraConfig.defaultComponent
-
-    const issueData: IssueData = {
-      fields: {
-        project: { key: projectKey },
-        summary: restData.title,
-        issuetype: { id: issueTypeId },
-        components: [{ id: componentId }],
-        customfield_10000: { id: '13163' }, // 客户名称：默认值
-        customfield_12600: {
-          // 客户名称和选择：关联
-          id: '15862',
-          child: {
-            id: '15863',
-          },
-        },
-        customfield_12000: {
-          // 是否已经评审
-          id: '13760',
-        },
-        customfield_10041: dayjs().format('YYYY-MM-DD'), // 期望上线时间
-        priority: { id: this.jiraConfig.defaultPriority },
-        description: restData.description || restData.title,
-        assignee: restData.assignee ? { name: restData.assignee } : null,
-        ...restData.customAutoFields,
-      },
-    }
-
-    const createTicketResponse = await request(
-      this.jiraConfig.endpoints.createIssue,
-      {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: this.jiraConfig.auth.proxyAuthToken,
-          'X-Atlassian-Token': 'no-check',
-          Cookie: cookies,
-        },
-        body: JSON.stringify(issueData),
-      },
+    const issueData = this.buildCreateIssueData(
+      restData,
+      projectKey,
+      issueTypeId,
+      componentId,
     )
 
-    const responseBody =
-      (await createTicketResponse.body.json()) as JiraCreateResponse
+    const firstAttempt = await this.postCreateIssue(issueData, cookies)
 
-    if (createTicketResponse.statusCode >= 400 || responseBody?.errors) {
-      const errorMsg = responseBody.errors
-        ? Object.entries(responseBody.errors)
-            .map(([key, value]) => `${key}: ${value}`)
-            .join('\n')
-        : `HTTP ${createTicketResponse.statusCode}`
-      throw new Error(`创建 Jira 工单失败: ${errorMsg}`)
+    if (firstAttempt.statusCode < 400 && !firstAttempt.responseBody?.errors) {
+      return firstAttempt.responseBody
     }
 
-    return responseBody
+    const retryableFields = this.getRetryableCreateIssueFields(
+      firstAttempt.responseBody,
+    )
+
+    if (retryableFields.length === 0) {
+      throw this.buildCreateIssueError(
+        firstAttempt.statusCode,
+        firstAttempt.responseBody,
+        firstAttempt.rawBody,
+        false,
+      )
+    }
+
+    this.fastify.log.warn(
+      {
+        projectKey,
+        issueTypeId,
+        componentId,
+        retryableFields,
+      },
+      'Jira create issue failed with removable fields, retrying once',
+    )
+
+    const retryIssueData = this.buildCreateIssueData(
+      restData,
+      projectKey,
+      issueTypeId,
+      componentId,
+      new Set(retryableFields),
+    )
+
+    const retryAttempt = await this.postCreateIssue(retryIssueData, cookies)
+
+    if (retryAttempt.statusCode >= 400 || retryAttempt.responseBody?.errors) {
+      throw this.buildCreateIssueError(
+        retryAttempt.statusCode,
+        retryAttempt.responseBody,
+        retryAttempt.rawBody,
+        true,
+      )
+    }
+
+    return retryAttempt.responseBody
   }
 
   async searchIssuesByJql(
