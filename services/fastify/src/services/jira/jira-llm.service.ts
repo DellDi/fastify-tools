@@ -120,7 +120,7 @@ ${prompt || '无'}
         )
         return {
           ...parsed,
-          componentId: matchedComponents[0]?.id || this.jiraConfig.defaultComponent,
+          componentId: matchedComponents[0]?.id,
         }
       }
 
@@ -236,7 +236,7 @@ ${description}
 
       for (const field of requiredCustomFields) {
         if (!(field.fieldId in result)) {
-          result[field.fieldId] = ''
+          result[field.fieldId] = field.name
         }
       }
 
@@ -246,7 +246,7 @@ ${description}
         `Error in genCustomInfo: ${error instanceof Error ? error.message : String(error)}`,
       )
       return Object.fromEntries(
-        requiredCustomFields.map((field) => [field.fieldId, '']),
+        requiredCustomFields.map((field) => [field.fieldId, field.name]),
       )
     }
   }

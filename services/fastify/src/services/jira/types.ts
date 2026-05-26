@@ -80,7 +80,7 @@ export interface JiraSearchResult {
 // ============================================
 
 export interface ProjectIssueTypeMatch {
-  componentId: string
+  componentId?: string
   projectKey: string
   projectName: string
   issueTypeId: string
@@ -264,7 +264,7 @@ export type IssueData = {
     project: { key: string }
     summary: string
     issuetype: { id: string }
-    components: Array<{ id: string }>
+    components?: Array<{ id: string }>
     customfield_10000: { id: string }
     customfield_12600: {
       id: string

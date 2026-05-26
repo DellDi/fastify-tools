@@ -13,6 +13,7 @@ type JiraConfigLike = {
   baseUrl: string
   defaultProject: string
   defaultIssueType: string
+  defaultComponent?: string
 }
 
 type UpdateTicketHandler = (
@@ -28,6 +29,40 @@ export class CreateTicketUseCase {
     private jiraConfig: JiraConfigLike,
     private updateTicket: UpdateTicketHandler,
   ) {}
+
+  private async resolveComponentId(
+    projectKey: string,
+    matchedComponentId: string | undefined,
+    cookies: string,
+  ) {
+    try {
+      const { components } = await this.jiraRestService.getIssueTypes(
+        projectKey,
+        cookies,
+      )
+
+      const hasMatchedComponent = components.some(
+        (component) => component.id === matchedComponentId,
+      )
+      if (matchedComponentId && hasMatchedComponent) {
+        return matchedComponentId
+      }
+
+      const hasDefaultComponent = components.some(
+        (component) => component.id === this.jiraConfig.defaultComponent,
+      )
+      if (projectKey === this.jiraConfig.defaultProject && hasDefaultComponent) {
+        return this.jiraConfig.defaultComponent
+      }
+
+      return components[0]?.id
+    } catch (error) {
+      this.logger.warn(
+        `Resolve Jira component failed, creating without project component: ${error instanceof Error ? error.message : String(error)}`,
+      )
+      return matchedComponentId
+    }
+  }
 
   async createTicket(
     credentials: JiraLoginCredentials,
@@ -98,18 +133,24 @@ export class CreateTicketUseCase {
 
       this.logger.info(genCustomInfo, 'genCustomInfo')
 
+      const componentId = await this.resolveComponentId(
+        projectKey,
+        matchInfo?.componentId,
+        session.cookies,
+      )
+
       const createResponse = await this.jiraRestService.createIssue(
         {
           title: data.title,
           description: data.description,
-          assignee: data.assignee,
+          assignee: data.assignee || credentials.jiraUser,
           customAutoFields: {
             ...genCustomInfo,
             ...data.customAutoFields,
           },
         },
         session.cookies,
-        { projectKey, issueTypeId, componentId: matchInfo?.componentId },
+        { projectKey, issueTypeId, componentId },
       )
 
       if (!createResponse.id || !createResponse.key) {

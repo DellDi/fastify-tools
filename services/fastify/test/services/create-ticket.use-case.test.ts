@@ -29,7 +29,10 @@ test('createTicket use-case should orchestrate smart match, meta, custom info, i
     },
     getIssueTypes: async (_projectKey: string, _cookies: string) => {
       calls.push('getIssueTypes')
-      return { issueTypes: [{ id: '10001', name: 'Task' }] }
+      return {
+        issueTypes: [{ id: '10001', name: 'Task' }],
+        components: [{ id: 'cmp-1', name: 'component-1' }],
+      }
     },
     matchProjectAndIssueType: async () => {
       calls.push('matchProjectAndIssueType')
@@ -130,6 +133,7 @@ test('createTicket use-case should orchestrate smart match, meta, custom info, i
     'createMeta',
     'genCustomInfo',
     'logger.info:[object Object]',
+    'getIssueTypes',
     'createIssue',
     'getCustomInfo',
     'logger.info:[object Object]',
@@ -159,7 +163,10 @@ test('createTicket use-case should keep explicit projectKey when smartMatch fill
     },
     getIssueTypes: async (_projectKey: string, _cookies: string) => {
       calls.push('getIssueTypes')
-      return { issueTypes: [{ id: '10604', name: '新需求' }] }
+      return {
+        issueTypes: [{ id: '10604', name: '新需求' }],
+        components: [{ id: 'cmp-2', name: 'component-2' }],
+      }
     },
     matchProjectAndIssueType: async () => {
       calls.push('matchProjectAndIssueType')
@@ -250,6 +257,102 @@ test('createTicket use-case should keep explicit projectKey when smartMatch fill
     'createMeta',
     'genCustomInfo',
     'logger.info:[object Object]',
+    'getIssueTypes',
+    'createIssue',
+  ])
+})
+
+test('createTicket use-case should not pass default component for explicit non-default project without smart match', async () => {
+  const calls: string[] = []
+
+  const logger = {
+    info(...args: any[]) {
+      calls.push(`logger.info:${String(args[0])}`)
+    },
+    warn(...args: any[]) {
+      calls.push(`logger.warn:${String(args[0])}`)
+    },
+    error(...args: any[]) {
+      calls.push(`logger.error:${String(args[0])}`)
+    },
+  } as any
+
+  const jiraRestService = {
+    getIssueTypes: async (projectKey: string) => {
+      calls.push('getIssueTypes')
+      assert.equal(projectKey, 'NLC')
+      return {
+        issueTypes: [{ id: '4', name: '新需求' }],
+        components: [{ id: 'nlc-cmp-1', name: 'NLC 默认组件' }],
+      }
+    },
+    createMeta: async (projectKey: string, issueTypeId: string) => {
+      calls.push('createMeta')
+      assert.equal(projectKey, 'NLC')
+      assert.equal(issueTypeId, '4')
+      return { values: [] }
+    },
+    genCustomInfo: async () => {
+      calls.push('genCustomInfo')
+      return {}
+    },
+    createIssue: async (payload: any, _cookies: string, options: any) => {
+      calls.push('createIssue')
+      assert.equal(payload.assignee, 'alice')
+      assert.equal(options.projectKey, 'NLC')
+      assert.equal(options.issueTypeId, '4')
+      assert.equal(options.componentId, 'nlc-cmp-1')
+      return {
+        id: '30001',
+        key: 'NLC-30001',
+      }
+    },
+  } as any
+
+  const sessionService = {
+    getSession: async (_credentials: any) => {
+      calls.push('getSession')
+      return {
+        cookies: 'mock-cookie',
+        atlToken: 'mock-token',
+      }
+    },
+  } as any
+
+  const updateTicket = async () => ({ message: 'ok' })
+
+  const useCase = new CreateTicketUseCase(
+    logger,
+    jiraRestService,
+    sessionService,
+    {
+      baseUrl: 'http://jira.test',
+      defaultProject: 'NDE',
+      defaultIssueType: '4',
+    },
+    updateTicket,
+  )
+
+  const result = await useCase.createTicket(
+    {
+      jiraUser: 'alice',
+      jiraPassword: 'secret',
+    },
+    {
+      title: '数智底座需求',
+      description: 'description',
+      projectKey: 'NLC',
+      smartMatch: false,
+    },
+  )
+
+  assert.equal(result.issueKey, 'NLC-30001')
+  assert.deepEqual(calls, [
+    'getSession',
+    'createMeta',
+    'genCustomInfo',
+    'logger.info:[object Object]',
+    'getIssueTypes',
     'createIssue',
   ])
 })

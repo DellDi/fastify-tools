@@ -1,6 +1,7 @@
 import { FastifyInstance } from 'fastify'
 import { FormData, request } from 'undici'
 import { getJiraConfig } from '@/utils/config-helpers.js'
+import { JiraCreateError } from '@/utils/errors.js'
 import { dayjs } from './utils.js'
 import type {
   IssueData,
@@ -22,14 +23,13 @@ export class JiraIssueRepository {
     restData: { [key: string]: any },
     projectKey: string,
     issueTypeId: string,
-    componentId: string,
+    componentId?: string,
     excludedFields: Set<string> = new Set(),
   ): IssueData {
     const fields: IssueData['fields'] = {
       project: { key: projectKey },
       summary: restData.title,
       issuetype: { id: issueTypeId },
-      components: [{ id: componentId }],
       customfield_10000: { id: '13163' }, // 客户名称：默认值
       customfield_12600: {
         // 客户名称和选择：关联
@@ -47,6 +47,10 @@ export class JiraIssueRepository {
       description: restData.description || restData.title,
       assignee: restData.assignee ? { name: restData.assignee } : null,
       ...restData.customAutoFields,
+    }
+
+    if (componentId) {
+      fields.components = [{ id: componentId }]
     }
 
     for (const fieldKey of excludedFields) {
@@ -88,7 +92,8 @@ export class JiraIssueRepository {
   }
 
   private getRetryableCreateIssueFields(responseBody: JiraCreateResponse) {
-    const retryableFieldPattern = /cannot be set|appropriate screen|unknown/i
+    const retryableFieldPattern =
+      /cannot be set|appropriate screen|unknown|invalid|valid|does not exist/i
     const protectedFields = new Set(['project', 'summary', 'issuetype'])
 
     if (!responseBody.errors) {
@@ -117,7 +122,7 @@ export class JiraIssueRepository {
           .join('\n')
       : `HTTP ${statusCode}${rawBody ? ` - ${rawBody}` : ''}`
 
-    return new Error(
+    return new JiraCreateError(
       `创建 Jira 工单失败${retried ? '（重试后仍失败）' : ''}: ${errorMsg}`,
     )
   }
@@ -204,7 +209,11 @@ export class JiraIssueRepository {
       options?.issueTypeId ||
       restData.issueTypeId ||
       this.jiraConfig.defaultIssueType
-    const componentId = options?.componentId || this.jiraConfig.defaultComponent
+    const componentId =
+      options?.componentId ||
+      (projectKey === this.jiraConfig.defaultProject
+        ? this.jiraConfig.defaultComponent
+        : undefined)
     const issueData = this.buildCreateIssueData(
       restData,
       projectKey,
