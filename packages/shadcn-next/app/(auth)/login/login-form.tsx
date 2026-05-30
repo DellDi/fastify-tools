@@ -1,6 +1,8 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useEffect } from 'react'
+import { useFormStatus } from 'react-dom'
+import { useActionState } from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import * as z from 'zod'
@@ -15,9 +17,8 @@ import {
   FormMessage,
 } from '@/components/ui/form'
 import { Checkbox } from '@/components/ui/checkbox'
-import { useRouter } from 'next/navigation'
 import { useSearchParams } from 'next/navigation'
-import { fetchBase } from '@/utils/fetch/fetch'
+import { loginAction, type LoginState } from '@/app/actions/auth-actions'
 
 const loginSchema = z.object({
   email: z.string().email({ message: '请输入有效的邮箱地址' }),
@@ -32,10 +33,20 @@ interface LoginFormProps {
   onErrorAction: (error: string) => void
 }
 
+/** 提交按钮内部组件，用于获取 pending 状态 */
+function SubmitButton() {
+  const { pending } = useFormStatus()
+  return (
+    <Button type="submit" className="w-full" disabled={pending}>
+      {pending ? '登录中...' : '登录'}
+    </Button>
+  )
+}
+
 export function LoginForm({ onSuccessAction, onErrorAction }: LoginFormProps) {
-  const [isLoading, setIsLoading] = useState(false)
-  const router = useRouter()
   const searchParams = useSearchParams()
+
+  const [state, formAction] = useActionState(loginAction, null)
 
   const form = useForm<LoginFormValues>({
     resolver: zodResolver(loginSchema),
@@ -46,49 +57,45 @@ export function LoginForm({ onSuccessAction, onErrorAction }: LoginFormProps) {
     },
   })
 
-  async function onSubmit(data: LoginFormValues) {
-    setIsLoading(true)
-    try {
-      const response = await fetchBase('/api/auth/login', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(data),
-      })
-      const result = response
-      onSuccessAction(result.message)
-      // 如果选择了"记住我"，可以在这里设置相应的本地存储
-      if (data.rememberMe) {
-        localStorage.setItem('rememberedEmail', data.email)
-      } else {
-        localStorage.removeItem('rememberedEmail')
-      }
-      // 重定向到仪表板
-      router.replace('/dashboard')
-    } catch (error) {
-      onErrorAction(
-        error instanceof Error
-          ? error.message
-          : '登录失败，请检查您的邮箱和密码。'
-      )
-    } finally {
-      setIsLoading(false)
+  // 处理 Server Action 返回的错误结果
+  // 成功时 redirect() 会直接跳转，不会走到这里
+  useEffect(() => {
+    if (!state) return
+    if (state.success) {
+      onSuccessAction(state.message)
+    } else {
+      onErrorAction(state.message)
     }
-  }
+  }, [state, onSuccessAction, onErrorAction])
 
+  // URL 参数回填
   useEffect(() => {
     const email = searchParams?.get('email')
     const password = searchParams?.get('password')
-
-    // 只有在手动提交表单时才执行登录
     if (email && password) {
       form.setValue('email', email)
       form.setValue('password', password)
     }
   }, [searchParams, form])
 
+  // 表单提交：react-hook-form 验证通过后，将数据转为 FormData 交给 Server Action
+  function handleSubmit(data: LoginFormValues) {
+    // 记住我
+    if (data.rememberMe) {
+      localStorage.setItem('rememberedEmail', data.email)
+    } else {
+      localStorage.removeItem('rememberedEmail')
+    }
+
+    const formData = new FormData()
+    formData.append('email', data.email)
+    formData.append('password', data.password)
+    formAction(formData)
+  }
+
   return (
     <Form {...form}>
-      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+      <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-4">
         <FormField
           control={form.control}
           name="email"
@@ -132,9 +139,7 @@ export function LoginForm({ onSuccessAction, onErrorAction }: LoginFormProps) {
             </FormItem>
           )}
         />
-        <Button type="submit" className="w-full" disabled={isLoading}>
-          {isLoading ? '登录中...' : '登录'}
-        </Button>
+        <SubmitButton />
       </form>
     </Form>
   )
