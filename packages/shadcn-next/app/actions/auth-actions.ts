@@ -16,12 +16,23 @@ const UserMetaSchema = z.object({
   salt: z.string(),
 })
 
+function getSafeRedirectPath(value: FormDataEntryValue | null) {
+  if (typeof value !== 'string') return '/dashboard'
+
+  const path = value.trim()
+  if (!path.startsWith('/') || path.startsWith('//')) return '/dashboard'
+  if (path === '/login' || path.startsWith('/login?')) return '/dashboard'
+
+  return path
+}
+
 export async function loginAction(
   _prevState: LoginState,
   formData: FormData
 ): Promise<LoginState> {
   const email = formData.get('email') as string
   const password = formData.get('password') as string
+  const redirectTo = getSafeRedirectPath(formData.get('redirectTo'))
 
   // 验证凭据
   const user = await prisma.user.findFirst({
@@ -81,7 +92,7 @@ export async function loginAction(
   const isProduction = process.env.NODE_ENV === 'production'
   const cookieStore = await cookies()
   cookieStore.set('auth_token', String(token), {
-    httpOnly: false,
+    httpOnly: true,
     secure: isProduction,
     sameSite: 'lax',
     path: '/',
@@ -90,5 +101,5 @@ export async function loginAction(
 
   // 服务端重定向 — 不经过客户端路由缓存，彻底避免首次登录卡住的问题
   // redirect() 放在 try/catch 外面，让 Next.js 框架正常处理
-  redirect('/dashboard')
+  redirect(redirectTo)
 }

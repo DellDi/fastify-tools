@@ -1,7 +1,6 @@
 'use client'
 
-import { useEffect } from 'react'
-import { useFormStatus } from 'react-dom'
+import { useEffect, useTransition } from 'react'
 import { useActionState } from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
@@ -33,9 +32,8 @@ interface LoginFormProps {
   onErrorAction: (error: string) => void
 }
 
-/** 提交按钮内部组件，用于获取 pending 状态 */
-function SubmitButton() {
-  const { pending } = useFormStatus()
+/** 提交按钮内部组件 */
+function SubmitButton({ pending }: { pending: boolean }) {
   return (
     <Button type="submit" className="w-full" disabled={pending}>
       {pending ? '登录中...' : '登录'}
@@ -47,6 +45,7 @@ export function LoginForm({ onSuccessAction, onErrorAction }: LoginFormProps) {
   const searchParams = useSearchParams()
 
   const [state, formAction] = useActionState(loginAction, null)
+  const [isPending, startTransition] = useTransition()
 
   const form = useForm<LoginFormValues>({
     resolver: zodResolver(loginSchema),
@@ -90,7 +89,11 @@ export function LoginForm({ onSuccessAction, onErrorAction }: LoginFormProps) {
     const formData = new FormData()
     formData.append('email', data.email)
     formData.append('password', data.password)
-    formAction(formData)
+    formData.append('redirectTo', searchParams?.get('from') || '/dashboard')
+
+    startTransition(() => {
+      formAction(formData)
+    })
   }
 
   return (
@@ -139,7 +142,7 @@ export function LoginForm({ onSuccessAction, onErrorAction }: LoginFormProps) {
             </FormItem>
           )}
         />
-        <SubmitButton />
+        <SubmitButton pending={isPending} />
       </form>
     </Form>
   )
