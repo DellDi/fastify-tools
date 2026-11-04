@@ -50,8 +50,8 @@ async function useAiDeepArea(cityMap, orgMap) {
   //  for backward compatibility, you can still use `https://api.deepseek.com/v1` as `baseURL`.
   const openai = new OpenAI({
     // 支持 8K 最大输出长度进行 Beta 测试
-    baseURL: 'https://api.deepseek.com/beta',
-    apiKey: 'sk-da340bf2f8ea4a3d96296d745ed5bf86',
+    baseURL: process.env.EXCEL_LLM_BASE_URL,
+    apiKey: process.env.EXCEL_DEEPSEEK_API_KEY,
   })
   const userContent = Array.from(cityMap.keys()).join(',')
   const completion = await openai.chat.completions.create({
@@ -78,7 +78,7 @@ async function useAiDeepArea(cityMap, orgMap) {
       },
       { role: 'user', content: userContent },
     ],
-    model: 'deepseek-chat',
+    model: process.env.EXCEL_LLM_MODEL,
     max_tokens: 8000,
     response_format: { type: 'json_object' },
   })

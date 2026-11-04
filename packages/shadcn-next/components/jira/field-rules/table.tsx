@@ -79,6 +79,9 @@ export const FieldRulesTable = () => {
         fetchFieldRules({ ...query, take: 300 }),
         fetchFieldRuleCombos(),
       ])
+      if (!Array.isArray(list.values) || !Array.isArray(comboRes.values)) {
+        throw new Error('加载字段规则失败，请稍后重试')
+      }
       setRules(list.values)
       setTotal(list.total)
       setCombos(comboRes.values)

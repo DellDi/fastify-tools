@@ -1,7 +1,6 @@
 import fp from 'fastify-plugin'
 import fastifyEnv, { FastifyEnvOptions } from '@fastify/env'
 import { Type } from '@sinclair/typebox'
-import { config } from 'dotenv'
 
 const schema = Type.Object({
   // 端口与环境
@@ -24,6 +23,7 @@ const schema = Type.Object({
   // Jira 配置
   JIRA_USERNAME: Type.String(),
   JIRA_PASSWORD: Type.String(),
+  JIRA_PROXY_AUTH: Type.Optional(Type.String()),
   JIRA_BASE_URL: Type.Optional(Type.String({ default: 'http://bug.new-see.com:8088' })),
   JIRA_DEFAULT_PROJECT: Type.Optional(Type.String({ default: 'V10' })),
   JIRA_DEFAULT_ISSUE_TYPE: Type.Optional(Type.String({ default: '4' })),
@@ -40,15 +40,10 @@ const schema = Type.Object({
 })
 
 export default fp<FastifyEnvOptions>(async (fastify, opts) => {
-  // 优先加载 .env 文件，然后加载环境特定的 .env.{NODE_ENV} 文件
-  config() // 加载 .env
-  const nodeEnv = process.env.NODE_ENV || 'development'
-  config({ path: `.env.${nodeEnv}` }) // 加载 .env.development 等（如果存在会覆盖）
   // Register other plugins with options
   fastify
     .register(fastifyEnv, {
       schema: schema,
-      dotenv: true, // 如果你使用 .env 文件
     })
     .ready((err) => {
       if (err) console.error(err)

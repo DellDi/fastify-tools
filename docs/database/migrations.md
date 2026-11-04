@@ -45,7 +45,7 @@ pnpm prisma:deploy:all
 
 ## 环境准备
 
-1. 确保已安装 Node.js 18+ 和 pnpm
+1. 确保已安装 Node.js 20.12+ 和 pnpm
 2. 安装项目依赖：
    ```bash
    pnpm install
@@ -53,10 +53,10 @@ pnpm prisma:deploy:all
 3. 配置环境变量：
    ```bash
    # 复制示例环境变量文件
-   cp services/fastify/.env.example services/fastify/.env
+   cp .env.example .env
    
    # 修改数据库连接信息
-   # services/fastify/.env
+   # 根目录 .env
    ```
 
 ## 数据库迁移命令
@@ -341,17 +341,14 @@ pnpm -F <service-name> prisma:migrate:reset
 
 ### 环境变量配置
 
-每个服务都有自己的 `.env` 文件，需要分别配置：
+所有服务共用项目根目录的 `.env`：
 
-1. `services/fastify/.env` - 主后端服务配置
-   ```
-   DATABASE_URL="postgresql://user:password@localhost:5432/fastify_db"
-   ```
+```env
+FASTIFY_DATABASE_URL="postgresql://user:password@localhost:5432/fastify_db"
+NEXT_DATABASE_URL="postgresql://user:password@localhost:5432/shadcn_next"
+```
 
-2. `packages/shadcn-next/.env` - 前端认证服务配置
-   ```
-   DATABASE_URL="postgresql://user:password@localhost:5432/next_auth"
-   ```
+Docker 使用 DOCKER_FASTIFY_DATABASE_URL 和 DOCKER_NEXT_DATABASE_URL。各子项目的 pnpm prisma:* 脚本自动加载根配置。
 
 ### 开发建议
 

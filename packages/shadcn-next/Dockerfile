@@ -8,13 +8,18 @@ WORKDIR /app
 RUN corepack enable
 
 # 设置 corepack的环境变量
-ENV COREPACK_NPM_REGISTRY=https://registry.npmmirror.com
+ARG NPM_REGISTRY=https://registry.npmmirror.com
+ARG PRISMA_ENGINES_MIRROR=https://cdn.npmmirror.com/binaries/prisma
+ENV COREPACK_NPM_REGISTRY=${NPM_REGISTRY}
+ENV npm_config_registry=${NPM_REGISTRY}
+ENV PRISMA_ENGINES_MIRROR=${PRISMA_ENGINES_MIRROR}
 
 # Set the npm registry to the mirror
-RUN pnpm config set registry https://registry.npmmirror.com
+RUN pnpm config set registry ${NPM_REGISTRY}
 
 # 复制工作区配置和根目录依赖
-COPY pnpm-workspace.yaml package.json ./
+COPY pnpm-workspace.yaml package.json pnpm-lock.yaml ./
+COPY scripts ./scripts
 
 # 复制 Next.js 项目目录
 COPY packages/shadcn-next ./packages/shadcn-next

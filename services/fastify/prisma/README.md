@@ -16,17 +16,17 @@ pnpm add -D prisma
 ### 2. 初始化 Prisma
 
 ```bash
-npx prisma init
+# 项目已包含 Prisma schema，无需重复初始化
 ```
 
 这将创建基本的 Prisma 配置文件。
 
 ### 3. 配置数据库连接
 
-在 `.env` 文件中添加 Prisma 数据库连接 URL：
+在项目根目录的 `.env` 中配置数据库连接：
 
 ```
-DATABASE_URL="postgresql://postgres:postgres@localhost:5432/fastify_db"
+FASTIFY_DATABASE_URL="postgresql://postgres:postgres@localhost:5432/fastify_db"
 ```
 
 ### 4. 创建 Prisma 模型
@@ -46,7 +46,7 @@ DATABASE_URL="postgresql://postgres:postgres@localhost:5432/fastify_db"
 - 或者是手动执行了 SQL 脚本，需要告诉 Prisma 这个迁移已经应用。
 
 ```bash
-npx prisma migrate resolve --applied manual
+node ../../scripts/with-env.mjs fastify pnpm exec prisma migrate resolve --applied manual
 ```
 
 这将告诉 Prisma 该迁移已经应用，但不会实际执行这里的相关 SQL。
@@ -54,13 +54,13 @@ npx prisma migrate resolve --applied manual
 - 如果是新环境，可以跳过这一步。可以直接运行：
 
 ```bash
-npx prisma migrate deploy
+pnpm prisma:migrate:deploy
 ```
 
 #### 方式二：生成新的迁移（推荐用于开发环境）
 
 ```bash
-npx prisma migrate dev --name init
+pnpm prisma:migrate:dev --name init
 ```
 
 这将根据 schema.prisma 生成新的迁移文件并应用它。
@@ -68,7 +68,7 @@ npx prisma migrate dev --name init
 ### 6. 生成 Prisma 客户端
 
 ```bash
-npx prisma generate
+pnpm prisma:generate
 ```
 
 这将生成 TypeScript 类型和 Prisma 客户端代码。
@@ -86,7 +86,7 @@ npx prisma generate
 ### 查看数据库
 
 ```bash
-npx prisma studio
+pnpm prisma:studio
 ```
 
 这将启动一个 Web 界面，用于查看和编辑数据库内容。
@@ -94,7 +94,7 @@ npx prisma studio
 ### 重置数据库
 
 ```bash
-npx prisma migrate reset
+pnpm prisma:migrate:reset
 ```
 
 这将删除所有数据并重新应用迁移。

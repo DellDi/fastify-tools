@@ -7,16 +7,16 @@
     "seed": "tsx prisma/seed.ts"
   },
   "scripts": {
-    "dev": "concurrently -n \"NEXT,ANOTHER\" -c \"blue,green\" \"next dev -p 3001 --turbopack\"",
-    "build": "next build",
-    "start": "next start -p 3200",
-    "lint": "next lint",
-    "prisma:generate": "npx prisma generate",
-    "prisma:migrate:dev": "npx prisma migrate dev",
-    "prisma:seed": "npx prisma db seed",
-    "prisma:migrate:deploy": "npx prisma migrate deploy",
-    "prisma:migrate:reset": "npx prisma migrate reset --force",
-    "prisma:studio": "npx prisma studio"
+    "dev": "node ../../scripts/with-env.mjs next concurrently -n \"NEXT,ANOTHER\" -c \"blue,green\" \"next dev -p 3001 --turbopack\"",
+    "build": "node ../../scripts/with-env.mjs next next build",
+    "start": "node ../../scripts/with-env.mjs next next start -p 3200",
+    "lint": "node ../../scripts/with-env.mjs next next lint",
+    "prisma:generate": "node ../../scripts/with-env.mjs next prisma generate",
+    "prisma:migrate:dev": "node ../../scripts/with-env.mjs next prisma migrate dev",
+    "prisma:seed": "node ../../scripts/with-env.mjs next prisma db seed",
+    "prisma:migrate:deploy": "node ../../scripts/with-env.mjs next prisma migrate deploy",
+    "prisma:migrate:reset": "node ../../scripts/with-env.mjs next prisma migrate reset --force",
+    "prisma:studio": "node ../../scripts/with-env.mjs next prisma studio"
   },
   "dependencies": {
     "@hookform/resolvers": "^5.0.1",

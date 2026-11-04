@@ -8,13 +8,18 @@ WORKDIR /app
 RUN corepack enable
 
 # 设置 corepack的环境变量
-ENV COREPACK_NPM_REGISTRY=https://registry.npmmirror.com
+ARG NPM_REGISTRY=https://registry.npmmirror.com
+ARG PRISMA_ENGINES_MIRROR=https://cdn.npmmirror.com/binaries/prisma
+ENV COREPACK_NPM_REGISTRY=${NPM_REGISTRY}
+ENV npm_config_registry=${NPM_REGISTRY}
+ENV PRISMA_ENGINES_MIRROR=${PRISMA_ENGINES_MIRROR}
 
 # Set the npm registry to the mirror
-RUN pnpm config set registry https://registry.npmmirror.com
+RUN pnpm config set registry ${NPM_REGISTRY}
 
 # 复制工作区配置、根目录依赖和锁文件（确保依赖版本一致）
 COPY pnpm-workspace.yaml package.json pnpm-lock.yaml ./
+COPY scripts ./scripts
 
 # 复制服务目录
 COPY services/fastify ./services/fastify
@@ -31,6 +36,9 @@ RUN chmod +x services/fastify/docker-start.sh
 
 # 设置工作目录为服务目录
 WORKDIR /app/services/fastify
+
+# 在构建阶段生成客户端并缓存当前平台的 Prisma 引擎
+RUN pnpm exec prisma generate
 
 # Expose the port the app runs on
 EXPOSE 3100

@@ -4,12 +4,9 @@ import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
 
 export async function verifyAuth(request: NextRequest) {
-  // 输出所有 cookies，便于调试
-  console.log('中间件收到的所有 cookies：', request.cookies.getAll())
 
   // 尝试获取 auth_token
   const token = request.cookies.get('auth_token')?.value
-  console.log('中间件获取到的 auth_token：', token)
 
   if (!token) {
     console.log('未找到 auth_token cookies')

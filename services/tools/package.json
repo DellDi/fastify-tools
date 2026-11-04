@@ -6,10 +6,10 @@
   "type": "module",
   "scripts": {
     "test": "pnpm run test",
-    "exec": "node excel-chat/exec.js",
-    "fireCraw": "ts-node firecrawl/index.ts",
-    "excel:split": "node excels/split.js",
-    "excel:toKnow": "node excel-to-sql/excel-to-field.js"
+    "exec": "node ../../scripts/with-env.mjs tools node excel-chat/exec.js",
+    "fireCraw": "node ../../scripts/with-env.mjs tools ts-node firecraw/index.ts",
+    "excel:split": "node ../../scripts/with-env.mjs tools node excels/split.js",
+    "excel:toKnow": "node ../../scripts/with-env.mjs tools node excel-to-sql/excel-to-field.js"
   },
   "keywords": [
     "tools"

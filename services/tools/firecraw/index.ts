@@ -4,14 +4,14 @@ import * as path from 'path';
 
 async function main() {
     const app = new FirecrawlApp({
-        apiKey: 'fc-31f771ae71ad453e8927e9fa66c77dc1'
+        apiKey: process.env.FIRECRAWL_API_KEY!
     });
 
     // Create basic auth credentials
-    const credentials = Buffer.from('newsee:newsee').toString('base64');
+    const credentials = Buffer.from(process.env.FIRECRAWL_BASIC_AUTH!).toString('base64');
 
     // Scrape with basic authentication in headers and perform login actions
-    const scrapeResult = await app.scrapeUrl('http://kms.new-see.com:8090', {
+    const scrapeResult = await app.scrapeUrl(process.env.FIRECRAWL_URL!, {
         formats: ['markdown'],
         headers: {
             Authorization: `Basic ${credentials}`
@@ -20,8 +20,8 @@ async function main() {
             { type: 'wait', milliseconds: 1000 },  // 等待1秒
             { type: 'click', selector: '#login-link' },  // 点击登录链接
             { type: 'wait', milliseconds: 1000 },  // 等待1秒
-            { type: 'write', selector: '#os_username', text: 'zengdi' },  // 输入用户名
-            { type: 'write', selector: '#os_password', text: '808611' },  // 输入密码
+            { type: 'write', selector: '#os_username', text: process.env.FIRECRAWL_LOGIN_USERNAME! },  // 输入用户名
+            { type: 'write', selector: '#os_password', text: process.env.FIRECRAWL_LOGIN_PASSWORD! },  // 输入密码
             { type: 'click', selector: '#os_cookie' },  // 点击记住密码
             { type: 'click', selector: '#loginButton' },  // 点击登录按钮
             { type: 'wait', milliseconds: 1000 }  // 等待1秒

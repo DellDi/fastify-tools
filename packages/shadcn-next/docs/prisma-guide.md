@@ -8,10 +8,10 @@
 
 ## 数据库配置
 
-项目使用PostgreSQL数据库，通过环境变量`DATABASE_URL`配置数据库连接。在`.env`文件中配置：
+项目使用 PostgreSQL，在项目根目录的 `.env` 中配置前端数据库连接：
 
 ```env
-DATABASE_URL="postgresql://user:password@localhost:5432/db_name?schema=public"
+NEXT_DATABASE_URL="postgresql://user:password@localhost:5432/shadcn_next?schema=public"
 ```
 
 ## 数据模型
@@ -47,7 +47,7 @@ DATABASE_URL="postgresql://user:password@localhost:5432/db_name?schema=public"
 
 ```bash
 # 开发环境创建迁移
-npx prisma migrate dev --name your_migration_name
+pnpm prisma:migrate:dev --name your_migration_name
 ```
 
 这将：
@@ -61,7 +61,7 @@ npx prisma migrate dev --name your_migration_name
 
 ```bash
 # 执行所有待处理的迁移
-npx prisma migrate deploy
+pnpm prisma:migrate:deploy
 ```
 
 这个命令会：
@@ -86,7 +86,7 @@ prisma/
 
 ```bash
 # 执行所有初始化数据
-npx prisma db seed
+pnpm prisma:seed
 ```
 
 这将按顺序执行：
@@ -124,10 +124,10 @@ async function main() {
 
 ```bash
 # 1. 执行数据库迁移（包括表结构、注释和RLS）
-npx prisma migrate deploy
+pnpm prisma:migrate:deploy
 
 # 2. 初始化基础数据
-npx prisma db seed
+pnpm prisma:seed
 ```
 
 这样简化的流程更适合容器化部署，无需依赖额外的数据库命令行工具。
@@ -135,5 +135,5 @@ npx prisma db seed
 ## 重置数据库
 
 ```bash
-npx prisma migrate reset --force
+pnpm prisma:migrate:reset --force
 ```

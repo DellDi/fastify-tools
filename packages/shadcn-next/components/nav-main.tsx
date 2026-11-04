@@ -113,7 +113,7 @@ export function NavMain({
           <li>
             <div className="relative flex items-center">
               <Link
-                href={item.url}
+                href={item.items?.[0]?.url || item.url}
                 className={`min-w-8 flex h-8 flex-1 items-center gap-2 overflow-hidden rounded-md px-1.5 text-sm font-medium outline-hidden ring-ring transition-all hover:bg-accent hover:text-accent-foreground focus-visible:ring-2 ${
                   isActive(item.url) ? 'bg-accent text-accent-foreground' : ''
                 }`}

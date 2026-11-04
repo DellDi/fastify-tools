@@ -12,11 +12,11 @@ import { BatchUpload } from '@/components/upload/batch'
 import { uploadLargeFile } from '@/utils/upload/chunk-upload'
 import { toast } from '@/components/ui/use-toast'
 
-export default function FileUploader() {
+export default function FileUploader({ defaultTab = 'single' }: { defaultTab?: 'single' | 'multiple' | 'large' }) {
   const [files, setFiles] = useState<File[]>([])
   const [uploading, setUploading] = useState(false)
   const [progress, setProgress] = useState(0)
-  const [activeTab, setActiveTab] = useState<string>('single')
+  const [activeTab, setActiveTab] = useState<string>(defaultTab)
   const fileInputRef = useRef<HTMLInputElement>(null)
 
   const handleFileChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
@@ -98,7 +98,7 @@ export default function FileUploader() {
     <div className="container mx-auto p-4 min-w-full h-full">
       <Card className="w-full h-full">
         <CardContent className="p-6 h-full flex flex-col">
-          <Tabs defaultValue="single" className="h-full flex flex-col" onValueChange={setActiveTab}>
+          <Tabs defaultValue={defaultTab} className="h-full flex flex-col" onValueChange={setActiveTab}>
             <TabsList className="grid w-full grid-cols-3">
               <TabsTrigger value="single">单个上传</TabsTrigger>
               <TabsTrigger value="multiple">批量上传</TabsTrigger>

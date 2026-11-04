@@ -33,24 +33,31 @@ services:
     build:
       context: .
       dockerfile: services/fastify/Dockerfile
+      args:
+        NPM_REGISTRY: ${NPM_REGISTRY:-https://registry.npmmirror.com}
+        PRISMA_ENGINES_MIRROR: ${PRISMA_ENGINES_MIRROR:-https://cdn.npmmirror.com/binaries/prisma}
     container_name: fastify-service
     restart: unless-stopped
     ports:
       - '${EXPORT_FASTIFY_PORT:-4000}:3100'
     environment:
-      - NODE_ENV=${NODE_ENV:-production}
+      - NODE_ENV=${DOCKER_NODE_ENV:-production}
+      - PRISMA_ENGINES_MIRROR=${PRISMA_ENGINES_MIRROR:-https://cdn.npmmirror.com/binaries/prisma}
       - PORT=3100
+      - FASTIFY_CLOSE_GRACE_DELAY=${FASTIFY_CLOSE_GRACE_DELAY:-500}
       - BEARER_TOKEN=${BEARER_TOKEN}
       # API 前缀配置（生产环境使用 /fastify，开发环境留空）
       - API_PREFIX=${API_PREFIX:-/fastify}
       # 数据库连接配置
-      - DATABASE_URL=${FASTIFY_DATABASE_URL:-postgresql://postgres:postgres@postgres:5432/fastify_db}
+      - DATABASE_URL=${DOCKER_FASTIFY_DATABASE_URL:-postgresql://postgres:postgres@postgres:5432/fastify_db}
       - POSTGRES_HOST=postgres
       - POSTGRES_PORT=5432
       # Jira 配置
       - JIRA_USERNAME=${JIRA_USERNAME}
       - JIRA_PASSWORD=${JIRA_PASSWORD}
       - JIRA_BASE_URL=${JIRA_BASE_URL}
+      - JIRA_PROXY_AUTH=${JIRA_PROXY_AUTH}
+      - JIRA_ASSIGNEE_USER=${JIRA_ASSIGNEE_USER}
       - JIRA_DEFAULT_PROJECT=${JIRA_DEFAULT_PROJECT}
       - JIRA_DEFAULT_ISSUE_TYPE=${JIRA_DEFAULT_ISSUE_TYPE}
       - JIRA_DEFAULT_COMPONENT=${JIRA_DEFAULT_COMPONENT}
@@ -77,19 +84,23 @@ services:
       context: .
       dockerfile: packages/shadcn-next/Dockerfile
       args:
-        NEXT_PUBLIC_BASE_PATH: /next
-        NEXT_PUBLIC_API_URL: ${API_PREFIX:-/fastify}
-        NEXT_PUBLIC_FAST_API_URL: https://poc.new-see.com:88
+        NPM_REGISTRY: ${NPM_REGISTRY:-https://registry.npmmirror.com}
+        PRISMA_ENGINES_MIRROR: ${PRISMA_ENGINES_MIRROR:-https://cdn.npmmirror.com/binaries/prisma}
+        NEXT_PUBLIC_BASE_PATH: ${NEXT_PUBLIC_BASE_PATH:-/next}
+        NEXT_PUBLIC_API_URL: ${DOCKER_NEXT_PUBLIC_API_URL:-/fastify}
+        NEXT_PUBLIC_FAST_API_URL: ${NEXT_PUBLIC_FAST_API_URL}
         NEXT_PUBLIC_FAST_API_KEY: ${NEXT_PUBLIC_FAST_API_KEY:-your_fastapi_key}
     container_name: shadcn-next
     restart: unless-stopped
     ports:
       - '${EXPORT_NEXT_PORT:-4001}:3200'
     environment:
-      - NODE_ENV=${NODE_ENV:-production}
-      - SERVER_FASTIFY_API=${SERVER_FASTIFY_API:-http://fastify:3100}
+      - NODE_ENV=${DOCKER_NODE_ENV:-production}
+      - PRISMA_ENGINES_MIRROR=${PRISMA_ENGINES_MIRROR:-https://cdn.npmmirror.com/binaries/prisma}
+      - SITE_DOMAIN_URL=${SITE_DOMAIN_URL}
+      - SERVER_FASTIFY_API=${DOCKER_SERVER_FASTIFY_API:-http://fastify:3100/fastify}
       # 数据库连接配置
-      - DATABASE_URL=${NEXT_DATABASE_URL:-postgresql://postgres:postgres@postgres:5432/shadcn_next}
+      - DATABASE_URL=${DOCKER_NEXT_DATABASE_URL:-postgresql://postgres:postgres@postgres:5432/shadcn_next}
       - JWT_SECRET=${JWT_SECRET:?JWT_SECRET is required}
       - JIRA_USERNAME=${JIRA_USERNAME:?JIRA_USERNAME is required}
       - JIRA_PASSWORD=${JIRA_PASSWORD:?JIRA_PASSWORD is required}
