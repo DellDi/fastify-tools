@@ -21,6 +21,7 @@ export interface JiraFieldRuleRecord {
   strategy: FieldRuleStrategy
   learnedValue: unknown
   valueStreak: number
+  sourceHash: string | null
   required: boolean
   stale: boolean
   successCount: number
@@ -151,6 +152,7 @@ export class JiraFieldRuleRepository {
           strategy,
           learnedValue: null,
           valueStreak: 0,
+          sourceHash: null,
           required: true,
           stale: false,
           successCount: 0,
@@ -212,6 +214,7 @@ export class JiraFieldRuleRepository {
     metaValues: JiraMeta[],
     sentFields: Record<string, any>,
     rules: Map<string, JiraFieldRuleRecord>,
+    sourceHash?: string,
   ): Promise<void> {
     const metaById = new Map(metaValues.map((v) => [v.fieldId, v]))
     const now = new Date()
@@ -223,11 +226,17 @@ export class JiraFieldRuleRepository {
       const kind = (field ? classifyJiraField(field) : null) ?? 'unknown'
       const existing = rules.get(fieldId)
 
-      // 与上次成功值一致则累计连续命中，否则重置计数并以新值为当前候选
+      // 与上次成功值一致才累计连续命中；
+      // 且要求本次工单指纹不同——相同输入重复成功不构成新的稳定性证据
       const sameValue =
         existing?.learnedValue != null &&
         JSON.stringify(existing.learnedValue) === JSON.stringify(value)
-      const valueStreak = sameValue ? (existing?.valueStreak ?? 0) + 1 : 1
+      const isNewSource = !sourceHash || existing?.sourceHash !== sourceHash
+      const valueStreak = !sameValue
+        ? 1
+        : isNewSource
+          ? (existing?.valueStreak ?? 0) + 1
+          : existing?.valueStreak ?? 1
 
       // 连续 PROMOTE_TO_FIXED_STREAK 次一致才晋级 fixed；
       // 语义可变字段 streak 无法累计，保持 llm 持续由 LLM 推断
@@ -248,13 +257,19 @@ export class JiraFieldRuleRepository {
             strategy,
             learnedValue: value,
             valueStreak,
+            sourceHash: sourceHash ?? existing?.sourceHash ?? null,
             required: existing?.required ?? field?.required ?? true,
             stale: false,
             lastError: null,
             lastSeenAt: now,
             successCount: { increment: 1 },
           },
-          { strategy, learnedValue: value, valueStreak },
+          {
+            strategy,
+            learnedValue: value,
+            valueStreak,
+            sourceHash: sourceHash ?? null,
+          },
         ),
       )
 
@@ -262,6 +277,7 @@ export class JiraFieldRuleRepository {
         existing.strategy = strategy
         existing.learnedValue = value
         existing.valueStreak = valueStreak
+        existing.sourceHash = sourceHash ?? existing.sourceHash
         existing.successCount += 1
         existing.stale = false
         existing.lastError = null

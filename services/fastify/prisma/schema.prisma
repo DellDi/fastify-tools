@@ -87,6 +87,7 @@ model JiraFieldRule {
   strategy     String    @default("llm") @db.VarChar(20)
   learnedValue Json?     @map("learned_value")
   valueStreak  Int       @default(0) @map("value_streak")
+  sourceHash   String?   @map("source_hash") @db.VarChar(64)
   required     Boolean   @default(true)
   stale        Boolean   @default(false)
   successCount Int       @default(0) @map("success_count")

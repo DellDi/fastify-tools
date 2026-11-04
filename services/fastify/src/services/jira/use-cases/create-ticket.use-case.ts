@@ -1,4 +1,5 @@
 import type { FastifyBaseLogger } from 'fastify'
+import { createHash } from 'node:crypto'
 import { JiraCreateError, ValidationError } from '@/utils/errors.js'
 import type { JiraMeta } from '@/schema/jira/meta.js'
 import { isFillableRequiredField } from '../field-value.utils.js'
@@ -313,6 +314,12 @@ export class CreateTicketUseCase {
         throw new JiraCreateError('创建 Jira 工单返回数据缺少必要字段')
       }
 
+      // 工单内容指纹：相同内容的重复成功不构成新的稳定性证据
+      const sourceHash = createHash('sha256')
+        .update(`${data.title}\n${data.description}`)
+        .digest('hex')
+        .slice(0, 16)
+
       try {
         await this.jiraRestService.learnFieldValues(
           projectKey,
@@ -320,6 +327,7 @@ export class CreateTicketUseCase {
           metaResponse.values,
           sentFields,
           rules,
+          sourceHash,
         )
       } catch (learnError) {
         this.logger.warn(

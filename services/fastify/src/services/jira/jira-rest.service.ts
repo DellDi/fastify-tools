@@ -133,6 +133,7 @@ export class JiraRestService {
     metaValues: JiraMeta[],
     sentFields: Record<string, any>,
     rules: Map<string, JiraFieldRuleRecord>,
+    sourceHash?: string,
   ): Promise<void> {
     return this.jiraFieldRuleRepository.learnFromSuccess(
       projectKey,
@@ -140,6 +141,7 @@ export class JiraRestService {
       metaValues,
       sentFields,
       rules,
+      sourceHash,
     )
   }
 

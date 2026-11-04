@@ -9,6 +9,7 @@ CREATE TABLE "jira_field_rules" (
     "strategy" VARCHAR(20) NOT NULL DEFAULT 'llm',
     "learned_value" JSONB,
     "value_streak" INTEGER NOT NULL DEFAULT 0,
+    "source_hash" VARCHAR(64),
     "required" BOOLEAN NOT NULL DEFAULT true,
     "stale" BOOLEAN NOT NULL DEFAULT false,
     "success_count" INTEGER NOT NULL DEFAULT 0,
