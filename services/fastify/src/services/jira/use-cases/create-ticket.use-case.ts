@@ -314,9 +314,9 @@ export class CreateTicketUseCase {
         throw new JiraCreateError('创建 Jira 工单返回数据缺少必要字段')
       }
 
-      // 工单内容指纹：相同内容的重复成功不构成新的稳定性证据
+      // 工单指纹：与 LLM 输入上下文一致（标题/描述/经办人），相同输入的重复成功不构成新证据
       const sourceHash = createHash('sha256')
-        .update(`${data.title}\n${data.description}`)
+        .update(`${data.title}\n${data.description}\n${data.assignee ?? ''}`)
         .digest('hex')
         .slice(0, 16)
 
