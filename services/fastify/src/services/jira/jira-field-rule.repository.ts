@@ -20,12 +20,20 @@ export interface JiraFieldRuleRecord {
   kind: string
   strategy: FieldRuleStrategy
   learnedValue: unknown
+  valueStreak: number
   required: boolean
   stale: boolean
   successCount: number
   failCount: number
   lastError: string | null
 }
+
+/**
+ * fixed 晋级的连续一致次数阈值：
+ * LLM 连续 N 次对同一字段选出相同值，才认定该字段取值稳定并固化为 fixed。
+ * 语义可变字段因 LLM 每次选择不同，streak 无法累计，永远保持 llm。
+ */
+export const PROMOTE_TO_FIXED_STREAK = 3
 
 type RuleDelegate = {
   findMany(args: Record<string, unknown>): Promise<JiraFieldRuleRecord[]>
@@ -142,6 +150,7 @@ export class JiraFieldRuleRepository {
           kind,
           strategy,
           learnedValue: null,
+          valueStreak: 0,
           required: true,
           stale: false,
           successCount: 0,
@@ -212,8 +221,21 @@ export class JiraFieldRuleRepository {
       if (value === undefined) continue
       const field = metaById.get(fieldId)
       const kind = (field ? classifyJiraField(field) : null) ?? 'unknown'
-      const strategy = learnedStrategyForField(field, kind)
       const existing = rules.get(fieldId)
+
+      // 与上次成功值一致则累计连续命中，否则重置计数并以新值为当前候选
+      const sameValue =
+        existing?.learnedValue != null &&
+        JSON.stringify(existing.learnedValue) === JSON.stringify(value)
+      const valueStreak = sameValue ? (existing?.valueStreak ?? 0) + 1 : 1
+
+      // 连续 PROMOTE_TO_FIXED_STREAK 次一致才晋级 fixed；
+      // 语义可变字段 streak 无法累计，保持 llm 持续由 LLM 推断
+      const baseStrategy = learnedStrategyForField(field, kind)
+      const strategy: FieldRuleStrategy =
+        baseStrategy === 'fixed' && valueStreak < PROMOTE_TO_FIXED_STREAK
+          ? 'llm'
+          : baseStrategy
 
       ops.push(
         this.safeUpsert(
@@ -225,19 +247,21 @@ export class JiraFieldRuleRepository {
             kind,
             strategy,
             learnedValue: value,
+            valueStreak,
             required: existing?.required ?? field?.required ?? true,
             stale: false,
             lastError: null,
             lastSeenAt: now,
             successCount: { increment: 1 },
           },
-          { strategy, learnedValue: value },
+          { strategy, learnedValue: value, valueStreak },
         ),
       )
 
       if (existing) {
         existing.strategy = strategy
         existing.learnedValue = value
+        existing.valueStreak = valueStreak
         existing.successCount += 1
         existing.stale = false
         existing.lastError = null

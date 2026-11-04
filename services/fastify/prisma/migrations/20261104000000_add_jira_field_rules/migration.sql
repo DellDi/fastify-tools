@@ -8,6 +8,7 @@ CREATE TABLE "jira_field_rules" (
     "kind" VARCHAR(20) NOT NULL DEFAULT 'text',
     "strategy" VARCHAR(20) NOT NULL DEFAULT 'llm',
     "learned_value" JSONB,
+    "value_streak" INTEGER NOT NULL DEFAULT 0,
     "required" BOOLEAN NOT NULL DEFAULT true,
     "stale" BOOLEAN NOT NULL DEFAULT false,
     "success_count" INTEGER NOT NULL DEFAULT 0,
