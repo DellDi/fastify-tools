@@ -2,7 +2,7 @@ import { MenuWithChildren } from '@/types/prisma-extensions'
 import {
   SquareTerminal, Bot, BookOpen, Code2, Settings2,
   History, Rabbit, Bird, Turtle, Map, PieChart, Frame,
-  LucideIcon, FileIcon // 添加一个默认图标
+  LucideIcon, FileIcon, Database // 添加一个默认图标
 } from 'lucide-react'
 
 // 图标映射表
@@ -20,6 +20,7 @@ const iconMap: Record<string, LucideIcon> = {
   'PieChart': PieChart,
   'Frame': Frame,
   'Model': FileIcon,
+  'Database': Database,
   // 可以添加更多图标
 }
 

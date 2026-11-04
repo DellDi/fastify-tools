@@ -51,6 +51,7 @@ export async function seedInitRoleMenu() {
     { parentName: '文件系统', name: '大文件上传', url: '/file/big_upload', icon: 'Turtle', description: '最强大的复杂计算模型。' },
     { parentName: 'jira中心', name: '个人看板', url: '/jira/personal', icon: 'BookOpen', description: '个人看板' },
     { parentName: 'jira中心', name: '创建工单', url: '/jira/create', icon: 'BookOpen', description: '创建工单' },
+    { parentName: 'jira中心', name: '字段经验', url: '/jira/field-rules', icon: 'Database', description: '字段经验规则审计与校准' },
     { parentName: 'AIGC', name: 'Chat工具', url: '/aigc/chat', icon: 'SquareTerminal', description: 'Chat工具' },
     { parentName: 'AIGC', name: '模型调优', url: '/aigc/model', icon: 'Code2', description: '模型调优' },
     { parentName: 'AIGC', name: '爬虫管理', url: '/aigc/task', icon: 'Code2', description: '爬虫管理' },
