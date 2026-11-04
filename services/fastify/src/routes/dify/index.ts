@@ -83,6 +83,7 @@ async function handleAppExternalDataToolQuery(
     smartMatch,
     matchPrompt,
     autoDevReply,
+    customAutoFields,
   } = params || {}
 
   if (!jiraUser || !jiraPassword) {
@@ -104,6 +105,7 @@ async function handleAppExternalDataToolQuery(
       smartMatch,
       matchPrompt,
       autoDevReply,
+      customAutoFields,
     }
   )
 

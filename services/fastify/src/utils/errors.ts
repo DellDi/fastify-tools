@@ -87,8 +87,14 @@ export class JiraLoginError extends JiraError {
  * Jira 创建工单错误
  */
 export class JiraCreateError extends JiraError {
-  constructor(message: string = '创建 Jira 工单失败') {
+  public readonly jiraErrors?: Record<string, string>
+
+  constructor(
+    message: string = '创建 Jira 工单失败',
+    jiraErrors?: Record<string, string>,
+  ) {
     super(message, 422)
+    this.jiraErrors = jiraErrors
   }
 }
 

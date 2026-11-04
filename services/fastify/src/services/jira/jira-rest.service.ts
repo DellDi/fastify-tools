@@ -4,13 +4,16 @@ import { fastifyCache } from '@/utils/cache.js'
 import {
   getJiraConfig,
 } from '@/utils/config-helpers.js'
-import {
-  hasMeaningfulCustomerMatch,
-  matchCustomerOption,
-} from './customer-name.matcher.js'
+import { getCustomerFieldInfo } from './customer-field.utils.js'
 import { JiraLLMService } from './jira-llm.service.js'
 import { JiraMetaRepository } from './jira-meta.repository.js'
 import { JiraIssueRepository } from './jira-issue.repository.js'
+import { JiraFieldRuleRepository } from './jira-field-rule.repository.js'
+import type { JiraFieldRuleRecord } from './jira-field-rule.repository.js'
+import {
+  buildStaticFieldValue,
+  classifyJiraField,
+} from './field-value.utils.js'
 import {
     dayjs,
     parseVersionDate,
@@ -20,8 +23,6 @@ import {
     getMaxUsedDate,
 } from './utils.js'
 import type {
-  CustomerCandidate,
-  CustomerCandidateScore,
   JiraProject,
   JiraIssueType,
   JiraVersion,
@@ -33,53 +34,19 @@ import type {
   JiraUploadAttachmentResponse,
 } from './types.js'
 
-function toCustomerCandidate(value: {
-  id: string
-  value?: string
-  name?: string
-}): CustomerCandidate {
-  return {
-    id: value.id,
-    label: value.value ?? value.name ?? '',
-  }
-}
-
-function buildJiraCustomerFieldValue(
-  bestMatch: CustomerCandidateScore,
-  allowedValue: {
-    children?: Array<{
-      id: string
-    }>
-  },
-): {
-  id: string
-  child?: {
-    id: string
-  }
-} {
-  return {
-    id: bestMatch.id,
-    ...(allowedValue.children?.[0]?.id
-      ? {
-          child: {
-            id: allowedValue.children[0].id,
-          },
-        }
-      : {}),
-  }
-}
-
 export class JiraRestService {
   private jiraConfig: ReturnType<typeof getJiraConfig>
   private jiraLLMService: JiraLLMService
   private jiraMetaRepository: JiraMetaRepository
   private jiraIssueRepository: JiraIssueRepository
+  private jiraFieldRuleRepository: JiraFieldRuleRepository
 
   constructor(private fastify: FastifyInstance) {
     this.jiraConfig = getJiraConfig(fastify)
     this.jiraLLMService = new JiraLLMService(fastify)
     this.jiraMetaRepository = new JiraMetaRepository(fastify)
     this.jiraIssueRepository = new JiraIssueRepository(fastify)
+    this.jiraFieldRuleRepository = new JiraFieldRuleRepository(fastify)
 
     // 移除敏感信息日志记录，只记录用户名
     this.fastify.log.info(
@@ -137,9 +104,64 @@ export class JiraRestService {
       projectKey?: string
       issueTypeId?: string
       componentId?: string
+      onFieldsRemoved?: (
+        fieldIds: string[],
+        errors: Record<string, string>,
+      ) => void | Promise<void>
     },
   ) {
     return this.jiraIssueRepository.createIssue(restData, cookies, options)
+  }
+
+  /** 加载并与最新 createmeta 对齐字段经验规则 */
+  async getFieldRules(
+    projectKey: string,
+    issueTypeId: string,
+    metaValues: JiraMeta[],
+  ): Promise<Map<string, JiraFieldRuleRecord>> {
+    return this.jiraFieldRuleRepository.syncRulesWithMeta(
+      projectKey,
+      issueTypeId,
+      metaValues,
+    )
+  }
+
+  /** 建单成功后沉淀字段取值经验 */
+  async learnFieldValues(
+    projectKey: string,
+    issueTypeId: string,
+    metaValues: JiraMeta[],
+    sentFields: Record<string, any>,
+    rules: Map<string, JiraFieldRuleRecord>,
+  ): Promise<void> {
+    return this.jiraFieldRuleRepository.learnFromSuccess(
+      projectKey,
+      issueTypeId,
+      metaValues,
+      sentFields,
+      rules,
+    )
+  }
+
+  /** 记录被 Jira 拒绝下发的字段，后续建单主动跳过 */
+  async markFieldRulesAvoid(
+    projectKey: string,
+    issueTypeId: string,
+    fieldIds: string[],
+    errors: Record<string, string>,
+  ): Promise<void> {
+    return this.jiraFieldRuleRepository.markAvoid(
+      projectKey,
+      issueTypeId,
+      fieldIds,
+      errors,
+    )
+  }
+
+  /** 不依赖 LLM 的确定性字段取值（供 computed 策略复用） */
+  genStaticFieldValue(field: JiraMeta, assignee?: string): any {
+    const kind = classifyJiraField(field)
+    return kind ? buildStaticFieldValue(field, kind, assignee) : undefined
   }
 
   async createMeta(
@@ -159,6 +181,21 @@ export class JiraRestService {
   }
 
   /**
+   * 分页拉取全部创建字段元数据
+   */
+  async createMetaAll(
+    projectKey: string,
+    issueTypeId: string,
+    cookies: string,
+  ) {
+    return this.jiraMetaRepository.createMetaAll(
+      projectKey,
+      issueTypeId,
+      cookies,
+    )
+  }
+
+  /**
    * 获取自定义字段信息-动态遍历拼接，客户相关信息
    */
   getCustomInfo(
@@ -167,35 +204,7 @@ export class JiraRestService {
   ): {
     [key: string]: any
   } {
-    const nameList = ['客户名称', '客户信息']
-
-    const customInfo = values.filter((item) => nameList.includes(item.name))
-
-    const dynamicCustomField: {
-      [key: string]: any
-    } = {}
-
-    customInfo.forEach((item) => {
-      const bestValue = matchCustomerOption(
-        cusstomName,
-        item.allowedValues.map((allowedValue) =>
-          toCustomerCandidate(allowedValue),
-        ),
-      )
-
-      if (bestValue?.bestMatch && hasMeaningfulCustomerMatch(bestValue.bestMatch)) {
-        const matchedAllowedValue = item.allowedValues[bestValue.bestMatch.originalIndex]
-
-        dynamicCustomField[item.fieldId] = buildJiraCustomerFieldValue(
-          bestValue.bestMatch,
-          matchedAllowedValue,
-        )
-      }
-    })
-
-    return {
-      ...dynamicCustomField,
-    }
+    return getCustomerFieldInfo(values, cusstomName)
   }
 
   /**
@@ -433,7 +442,13 @@ export class JiraRestService {
     values: JiraMeta[],
     summary: string,
     description: string,
-  ): Promise<Record<string, string>> {
-    return this.jiraLLMService.genCustomInfo(values, summary, description)
+    assignee?: string,
+  ): Promise<Record<string, any>> {
+    return this.jiraLLMService.genCustomInfo(
+      values,
+      summary,
+      description,
+      assignee,
+    )
   }
 }

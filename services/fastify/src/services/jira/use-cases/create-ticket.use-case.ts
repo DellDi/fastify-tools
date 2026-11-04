@@ -1,5 +1,8 @@
 import type { FastifyBaseLogger } from 'fastify'
 import { JiraCreateError, ValidationError } from '@/utils/errors.js'
+import type { JiraMeta } from '@/schema/jira/meta.js'
+import { isFillableRequiredField } from '../field-value.utils.js'
+import type { JiraFieldRuleRecord } from '../jira-field-rule.repository.js'
 import type { JiraRestService } from '../jira-rest.service.js'
 import type { JiraSessionService } from '../jira-session.service.js'
 import type {
@@ -64,6 +67,128 @@ export class CreateTicketUseCase {
     }
   }
 
+  /**
+   * 从 JiraCreateError 中提取"必填字段缺失"类的字段 ID
+   * Jira 报错文案可能是中文（"是必需的"）或英文（"is required"）
+   */
+  private extractMissingRequiredFieldIds(error: unknown): string[] {
+    if (!(error instanceof JiraCreateError) || !error.jiraErrors) return []
+    const requiredPattern = /required|必需|必填|不能为空|cannot be empty/i
+    return Object.entries(error.jiraErrors)
+      .filter(
+        ([fieldKey, message]) =>
+          !['project', 'summary', 'issuetype'].includes(fieldKey) &&
+          requiredPattern.test(String(message)),
+      )
+      .map(([fieldKey]) => fieldKey)
+  }
+
+  /**
+   * 按经验规则拆分必填字段：
+   * - presetFields: fixed 复用成功值 / computed 确定性重算，无需 LLM
+   * - llmFields: 无可用规则的字段交给 LLM
+   * - avoidFieldIds: 曾被 Jira 拒绝下发的字段，主动剔除
+   */
+  private planFieldFill(
+    metaValues: JiraMeta[],
+    rules: Map<string, JiraFieldRuleRecord>,
+    assignee: string,
+  ): {
+    presetFields: Record<string, any>
+    llmFields: JiraMeta[]
+    avoidFieldIds: Set<string>
+  } {
+    const presetFields: Record<string, any> = {}
+    const avoidFieldIds = new Set<string>()
+
+    for (const rule of rules.values()) {
+      if (rule.strategy === 'avoid') avoidFieldIds.add(rule.fieldId)
+    }
+
+    const llmFields = metaValues.filter((field) => {
+      if (!isFillableRequiredField(field)) return false
+      const rule = rules.get(field.fieldId)
+      if (!rule || rule.stale) return true
+
+      if (rule.strategy === 'fixed' && rule.learnedValue != null) {
+        presetFields[field.fieldId] = rule.learnedValue
+        return false
+      }
+      if (rule.strategy === 'computed') {
+        const value = this.jiraRestService.genStaticFieldValue(field, assignee)
+        if (value !== undefined) {
+          presetFields[field.fieldId] = value
+          return false
+        }
+      }
+      return true
+    })
+
+    return { presetFields, llmFields, avoidFieldIds }
+  }
+
+  /**
+   * 创建工单；若因缺失必填字段失败，针对缺失字段生成值后重试一次
+   * 返回创建结果与实际上送的自定义字段（用于经验回写）
+   */
+  private async createIssueWithRequiredFieldRetry(
+    metaValues: JiraMeta[],
+    base: { title: string; description: string; assignee: string },
+    customAutoFields: Record<string, any>,
+    cookies: string,
+    options: {
+      projectKey: string
+      issueTypeId: string
+      componentId?: string
+      onFieldsRemoved?: (
+        fieldIds: string[],
+        errors: Record<string, string>,
+      ) => void | Promise<void>
+    },
+  ): Promise<{
+    createResponse: Awaited<ReturnType<JiraRestService['createIssue']>>
+    sentFields: Record<string, any>
+  }> {
+    try {
+      const createResponse = await this.jiraRestService.createIssue(
+        { ...base, customAutoFields },
+        cookies,
+        options,
+      )
+      return { createResponse, sentFields: customAutoFields }
+    } catch (error) {
+      const missingIds = this.extractMissingRequiredFieldIds(error)
+      const missingMeta = metaValues.filter((field) =>
+        missingIds.includes(field.fieldId),
+      )
+      if (missingMeta.length === 0) throw error
+
+      this.logger.warn(
+        {
+          missingFieldIds: missingIds,
+          projectKey: options.projectKey,
+          issueTypeId: options.issueTypeId,
+        },
+        'Jira create failed: required fields missing, generating values and retrying',
+      )
+
+      const filled = await this.jiraRestService.genCustomInfo(
+        missingMeta,
+        base.title,
+        base.description,
+        base.assignee,
+      )
+
+      const mergedFields = { ...customAutoFields, ...filled }
+      const createResponse = await this.jiraRestService.createIssue(
+        { ...base, customAutoFields: mergedFields },
+        cookies,
+        options,
+      )
+      return { createResponse, sentFields: mergedFields }
+    }
+  }
+
   async createTicket(
     credentials: JiraLoginCredentials,
     data: JiraCreateTicketData,
@@ -117,21 +242,46 @@ export class CreateTicketUseCase {
         }
       }
 
-      const metaResponse = await this.jiraRestService.createMeta(
+      const metaResponse = await this.jiraRestService.createMetaAll(
         projectKey,
         issueTypeId,
         session.cookies,
-        25,
-        0,
       )
 
-      const genCustomInfo = await this.jiraRestService.genCustomInfo(
+      const assignee = data.assignee || credentials.jiraUser
+
+      const rules = await this.jiraRestService.getFieldRules(
+        projectKey,
+        issueTypeId,
         metaResponse.values,
-        data.title,
-        data.description,
       )
 
-      this.logger.info(genCustomInfo, 'genCustomInfo')
+      const { presetFields, llmFields, avoidFieldIds } = this.planFieldFill(
+        metaResponse.values,
+        rules,
+        assignee,
+      )
+
+      const genCustomInfo =
+        llmFields.length > 0
+          ? await this.jiraRestService.genCustomInfo(
+              llmFields,
+              data.title,
+              data.description,
+              assignee,
+            )
+          : {}
+
+      this.logger.info(
+        { presetFieldIds: Object.keys(presetFields), llmFieldIds: llmFields.map((f) => f.fieldId), genCustomInfo },
+        'field fill plan',
+      )
+
+      const autoFields = { ...presetFields, ...genCustomInfo }
+      for (const fieldId of avoidFieldIds) {
+        delete autoFields[fieldId]
+      }
+      const customAutoFields = { ...autoFields, ...data.customAutoFields }
 
       const componentId = await this.resolveComponentId(
         projectKey,
@@ -139,22 +289,42 @@ export class CreateTicketUseCase {
         session.cookies,
       )
 
-      const createResponse = await this.jiraRestService.createIssue(
-        {
-          title: data.title,
-          description: data.description,
-          assignee: data.assignee || credentials.jiraUser,
-          customAutoFields: {
-            ...genCustomInfo,
-            ...data.customAutoFields,
+      const { createResponse, sentFields } =
+        await this.createIssueWithRequiredFieldRetry(
+          metaResponse.values,
+          { title: data.title, description: data.description, assignee },
+          customAutoFields,
+          session.cookies,
+          {
+            projectKey,
+            issueTypeId,
+            componentId,
+            onFieldsRemoved: (fieldIds, errors) =>
+              this.jiraRestService.markFieldRulesAvoid(
+                projectKey,
+                issueTypeId,
+                fieldIds,
+                errors,
+              ),
           },
-        },
-        session.cookies,
-        { projectKey, issueTypeId, componentId },
-      )
+        )
 
       if (!createResponse.id || !createResponse.key) {
         throw new JiraCreateError('创建 Jira 工单返回数据缺少必要字段')
+      }
+
+      try {
+        await this.jiraRestService.learnFieldValues(
+          projectKey,
+          issueTypeId,
+          metaResponse.values,
+          sentFields,
+          rules,
+        )
+      } catch (learnError) {
+        this.logger.warn(
+          `Learn jira field values failed: ${learnError instanceof Error ? learnError.message : String(learnError)}`,
+        )
       }
 
       if (data.customerName) {

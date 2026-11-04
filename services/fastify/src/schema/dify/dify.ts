@@ -67,6 +67,13 @@ const DifyJiraCreateExportBody = Type.Object({
       description: '创建工单后是否自动执行“开发回复”工作流，包括自动选择修复版本和预计完成时间。',
     })
   ),
+  customAutoFields: Type.Optional(
+    Type.Object({}, {
+      additionalProperties: Type.Any(),
+      description:
+        'Jira 自定义字段键值对。用于手动指定字段值，优先级高于自动填充。例如 {"customfield_11801": {"id": "10101"}}。',
+    })
+  ),
 })
 
 const InputData = Type.Intersect([

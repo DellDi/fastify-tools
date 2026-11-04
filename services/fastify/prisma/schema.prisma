@@ -75,4 +75,29 @@ model Subscription {
   @@map("subscriptions")
 }
 
+// Jira 建单字段经验规则表
+// 按 projectKey+issueTypeId 维度沉淀必填/自定义字段的取值策略，减少 LLM 调用与 422 重试
+model JiraFieldRule {
+  id           String    @id @default(uuid()) @db.Uuid
+  projectKey   String    @map("project_key") @db.VarChar(50)
+  issueTypeId  String    @map("issue_type_id") @db.VarChar(50)
+  fieldId      String    @map("field_id") @db.VarChar(100)
+  fieldName    String    @default("") @map("field_name") @db.VarChar(255)
+  kind         String    @default("text") @db.VarChar(20)
+  strategy     String    @default("llm") @db.VarChar(20)
+  learnedValue Json?     @map("learned_value")
+  required     Boolean   @default(true)
+  stale        Boolean   @default(false)
+  successCount Int       @default(0) @map("success_count")
+  failCount    Int       @default(0) @map("fail_count")
+  lastError    String?   @map("last_error")
+  lastSeenAt   DateTime? @map("last_seen_at") @db.Timestamptz()
+  createdAt    DateTime  @default(now()) @map("created_at") @db.Timestamptz()
+  updatedAt    DateTime  @default(now()) @map("updated_at") @db.Timestamptz()
+
+  @@unique([projectKey, issueTypeId, fieldId])
+  @@index([projectKey, issueTypeId])
+  @@map("jira_field_rules")
+}
+
 // 添加字段注释

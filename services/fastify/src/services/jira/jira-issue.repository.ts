@@ -124,6 +124,7 @@ export class JiraIssueRepository {
 
     return new JiraCreateError(
       `创建 Jira 工单失败${retried ? '（重试后仍失败）' : ''}: ${errorMsg}`,
+      responseBody.errors,
     )
   }
 
@@ -199,6 +200,10 @@ export class JiraIssueRepository {
       projectKey?: string
       issueTypeId?: string
       componentId?: string
+      onFieldsRemoved?: (
+        fieldIds: string[],
+        errors: Record<string, string>,
+      ) => void | Promise<void>
     },
   ) {
     const projectKey =
@@ -249,6 +254,19 @@ export class JiraIssueRepository {
       },
       'Jira create issue failed with removable fields, retrying once',
     )
+
+    if (options?.onFieldsRemoved) {
+      try {
+        await options.onFieldsRemoved(
+          retryableFields,
+          firstAttempt.responseBody.errors ?? {},
+        )
+      } catch (callbackError) {
+        this.fastify.log.warn(
+          `onFieldsRemoved callback failed: ${callbackError instanceof Error ? callbackError.message : String(callbackError)}`,
+        )
+      }
+    }
 
     const retryIssueData = this.buildCreateIssueData(
       restData,

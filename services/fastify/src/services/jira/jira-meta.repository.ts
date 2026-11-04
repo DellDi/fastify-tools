@@ -141,6 +141,56 @@ export class JiraMetaRepository {
     return result
   }
 
+  /**
+   * 分页拉取全部创建字段元数据，避免 maxResults 截断导致必填字段缺失
+   */
+  async createMetaAll(
+    projectKey: string,
+    issueTypeId: string,
+    cookies: string,
+  ): Promise<{ total: number; values: JiraMeta[] }> {
+    const allCacheKey = `${this.cacheConfig.metaPrefix}-all-${projectKey}-${issueTypeId}`
+    const cached = fastifyCache.get(allCacheKey) as
+      | { total: number; values: JiraMeta[] }
+      | undefined
+    if (cached) {
+      return cached
+    }
+
+    const pageSize = 50
+    const maxPages = 10
+    const values: JiraMeta[] = []
+    let total = 0
+    let startAt = 0
+
+    for (let page = 0; page < maxPages; page++) {
+      const pageResult = await this.createMeta(
+        projectKey,
+        issueTypeId,
+        cookies,
+        pageSize,
+        startAt,
+      )
+
+      values.push(...pageResult.values)
+      total = pageResult.total
+      startAt += pageResult.values.length
+
+      if (
+        pageResult.isLast ||
+        pageResult.values.length === 0 ||
+        startAt >= pageResult.total
+      ) {
+        break
+      }
+    }
+
+    const result = { total, values }
+    fastifyCache.set(allCacheKey, result)
+
+    return result
+  }
+
   async getProjectVersions(
     projectKey: string,
     cookies: string,

@@ -1,6 +1,14 @@
 import { FastifyInstance } from 'fastify'
 import { JiraMeta } from '@/schema/jira/meta.js'
 import { getJiraConfig, getLLMConfig } from '@/utils/config-helpers.js'
+import {
+  buildStaticFieldValue,
+  classifyJiraField,
+  coerceFieldValue,
+  optionLabel,
+  PROTECTED_FIELD_IDS,
+  type FillableFieldKind,
+} from './field-value.utils.js'
 import type {
   JiraIssueType,
   JiraProject,
@@ -151,45 +159,84 @@ ${prompt || '无'}
     values: JiraMeta[],
     summary: string,
     description: string,
-  ): Promise<Record<string, string>> {
-    const requiredCustomFields = values.filter((field) => {
-      const isCustomField = field.fieldId?.startsWith('customfield')
-      const isRequired = field.required
-      const isStringType = field.schema?.type === 'string'
-      return isCustomField && isRequired && isStringType && field.name
-    })
+    assignee?: string,
+  ): Promise<Record<string, any>> {
+    const fillableFields = values
+      .map((field) => ({ field, kind: classifyJiraField(field) }))
+      .filter(
+        ({ field, kind }) =>
+          kind !== null &&
+          Boolean(field.fieldId) &&
+          field.required &&
+          !field.hasDefaultValue &&
+          !PROTECTED_FIELD_IDS.has(field.fieldId) &&
+          Boolean(field.name) &&
+          (!field.operations || field.operations.includes('set')),
+      ) as Array<{ field: JiraMeta; kind: FillableFieldKind }>
 
-    if (requiredCustomFields.length === 0) {
+    const resolveFallback = (): Record<string, any> => {
+      const result: Record<string, any> = {}
+      for (const { field, kind } of fillableFields) {
+        const value = buildStaticFieldValue(field, kind, assignee)
+        if (value !== undefined) result[field.fieldId] = value
+      }
+      return result
+    }
+
+    if (fillableFields.length === 0) {
       return {}
     }
 
     if (!this.llmConfig.apiKey) {
       this.fastify.log.warn(
-        'DASHSCOPE_API_KEY not provided, using field names as values',
+        'DASHSCOPE_API_KEY not provided, using fallback values for required fields',
       )
-      return Object.fromEntries(
-        requiredCustomFields.map((field) => [field.fieldId, field.name]),
-      )
+      return resolveFallback()
     }
 
     try {
-      const fieldsInfo = requiredCustomFields.map((field) => ({
-        fieldId: field.fieldId,
-        name: field.name,
-        description:
-          'schema' in field &&
-          field.schema &&
-          typeof field.schema === 'object' &&
-          'custom' in field.schema
-            ? `字段类型：${field.schema.type}，控件类型:${field.schema.custom}`
-            : '无描述信息',
-      }))
+      const fieldsInfo = fillableFields.map(({ field, kind }) => {
+        const info: Record<string, any> = {
+          fieldId: field.fieldId,
+          name: field.name,
+          valueKind: kind,
+        }
+        const allowedValues = field.allowedValues ?? []
+        if (allowedValues.length > 0 && kind !== 'named') {
+          info.options = allowedValues.map((v) => ({
+            label: optionLabel(v),
+            ...(v.children?.length
+              ? { children: v.children.map((c) => optionLabel(c)) }
+              : {}),
+          }))
+        }
+        if (kind === 'date') {
+          info.format =
+            field.schema?.type === 'datetime'
+              ? 'YYYY-MM-DDTHH:mm:ss.SSSZZ'
+              : 'YYYY-MM-DD'
+        }
+        if (kind === 'named') {
+          info.hint = '返回合适的 Jira 用户名'
+        }
+        if (kind === 'multi' && field.schema?.items === 'user') {
+          info.hint = '返回逗号分隔的 Jira 用户名'
+        }
+        return info
+      })
 
       const systemPrompt = `你是一个专业的JIRA问题助手，负责根据问题描述为必填字段生成合适的值。
 
 ## 任务说明：
 - 请根据提供的"问题标题"和"问题描述"，为每个必填字段生成合适的值
-- 请确保生成的值符合字段的描述要求
+- 每个字段的 valueKind 指明取值方式：
+  - text: 返回合适的字符串
+  - option: 从 options 中选择最匹配的一项，返回其 label
+  - cascading: 返回 "父级label>子级label" 格式
+  - multi: 从 options 中选择一项或多项，label 用英文逗号分隔
+  - date: 按 format 指定的格式返回日期
+  - number: 返回数字
+  - named: 返回合适的 Jira 用户名
 - 如果无法确定合适的值，也要返回一个值。一定要是明确的，不能出现可能相关字眼
 - 必须返回有效的JSON对象，键是字段ID，值是字符串
 - 不要包含任何解释性文字，只返回JSON对象
@@ -214,18 +261,11 @@ ${description}
         { role: 'user', content: userPrompt },
       ])
 
-      let result: Record<string, string> = {}
+      let parsed: Record<string, unknown> = {}
       try {
-        const parsed = JSON.parse(response)
-        if (typeof parsed === 'object' && parsed !== null) {
-          result = Object.fromEntries(
-            Object.entries(parsed).filter(
-              ([key, value]) =>
-                typeof key === 'string' &&
-                key.startsWith('customfield') &&
-                typeof value === 'string',
-            ),
-          ) as Record<string, string>
+        const raw = JSON.parse(response)
+        if (typeof raw === 'object' && raw !== null) {
+          parsed = raw as Record<string, unknown>
         }
       } catch (parseError) {
         this.fastify.log.error(
@@ -234,10 +274,13 @@ ${description}
         throw new Error('解析LLM响应失败，返回的不是有效的JSON格式')
       }
 
-      for (const field of requiredCustomFields) {
-        if (!(field.fieldId in result)) {
-          result[field.fieldId] = field.name
-        }
+      const result: Record<string, any> = {}
+      for (const { field, kind } of fillableFields) {
+        const value =
+          field.fieldId in parsed
+            ? coerceFieldValue(field, kind, parsed[field.fieldId], assignee)
+            : buildStaticFieldValue(field, kind, assignee)
+        if (value !== undefined) result[field.fieldId] = value
       }
 
       return result
@@ -245,9 +288,7 @@ ${description}
       this.fastify.log.error(
         `Error in genCustomInfo: ${error instanceof Error ? error.message : String(error)}`,
       )
-      return Object.fromEntries(
-        requiredCustomFields.map((field) => [field.fieldId, field.name]),
-      )
+      return resolveFallback()
     }
   }
 
