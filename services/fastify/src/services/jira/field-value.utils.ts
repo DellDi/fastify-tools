@@ -203,7 +203,7 @@ function buildMultiValue(
   if (allowedValues.length > 0) {
     const matched = labels
       .map((label) => matchAllowedValue(label, allowedValues))
-      .filter((v): v is AllowedValueLike => Boolean(v))
+      .filter((v) => v !== undefined)
     const chosen = matched.length > 0 ? matched : [allowedValues[0]]
     return chosen.map((v) => ({ id: v.id }))
   }

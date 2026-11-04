@@ -1,5 +1,5 @@
 import { FastifyInstance } from 'fastify';
-import { EmailLog } from 'generated/client/index.js';
+import { EmailLog } from '../../../generated/client/index.js';
 import nodemailer from 'nodemailer';
 
 /**
