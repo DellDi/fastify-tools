@@ -5,6 +5,7 @@ import {
   buildStaticFieldValue,
   classifyJiraField,
   coerceFieldValue,
+  matchFieldOptionByText,
   optionLabel,
   PROTECTED_FIELD_IDS,
   type FillableFieldKind,
@@ -155,47 +156,28 @@ ${prompt || '无'}
     }
   }
 
-  async genCustomInfo(
-    values: JiraMeta[],
+  /**
+   * 单批字段的 LLM 填充：构造提示词、解析响应、逐字段转 Jira 值。
+   * 失败时整批回退为确定性取值，不向上抛错。
+   */
+  private async fillFieldsWithLLM(
+    items: Array<{ field: JiraMeta; kind: FillableFieldKind }>,
     summary: string,
     description: string,
     assignee?: string,
   ): Promise<Record<string, any>> {
-    const fillableFields = values
-      .map((field) => ({ field, kind: classifyJiraField(field) }))
-      .filter(
-        ({ field, kind }) =>
-          kind !== null &&
-          Boolean(field.fieldId) &&
-          field.required &&
-          !field.hasDefaultValue &&
-          !PROTECTED_FIELD_IDS.has(field.fieldId) &&
-          Boolean(field.name) &&
-          (!field.operations || field.operations.includes('set')),
-      ) as Array<{ field: JiraMeta; kind: FillableFieldKind }>
-
     const resolveFallback = (): Record<string, any> => {
       const result: Record<string, any> = {}
-      for (const { field, kind } of fillableFields) {
+      for (const { field, kind } of items) {
         const value = buildStaticFieldValue(field, kind, assignee)
         if (value !== undefined) result[field.fieldId] = value
       }
       return result
     }
 
-    if (fillableFields.length === 0) {
-      return {}
-    }
-
-    if (!this.llmConfig.apiKey) {
-      this.fastify.log.warn(
-        'DASHSCOPE_API_KEY not provided, using fallback values for required fields',
-      )
-      return resolveFallback()
-    }
-
     try {
-      const fieldsInfo = fillableFields.map(({ field, kind }) => {
+      const MAX_OPTIONS = 40
+      const fieldsInfo = items.map(({ field, kind }) => {
         const info: Record<string, any> = {
           fieldId: field.fieldId,
           name: field.name,
@@ -203,12 +185,15 @@ ${prompt || '无'}
         }
         const allowedValues = field.allowedValues ?? []
         if (allowedValues.length > 0 && kind !== 'named') {
-          info.options = allowedValues.map((v) => ({
+          info.options = allowedValues.slice(0, MAX_OPTIONS).map((v) => ({
             label: optionLabel(v),
             ...(v.children?.length
               ? { children: v.children.map((c) => optionLabel(c)) }
               : {}),
           }))
+          if (allowedValues.length > MAX_OPTIONS) {
+            info.optionsTruncated = allowedValues.length - MAX_OPTIONS
+          }
         }
         if (kind === 'date') {
           info.format =
@@ -237,12 +222,13 @@ ${prompt || '无'}
   - date: 按 format 指定的格式返回日期
   - number: 返回数字
   - named: 返回合适的 Jira 用户名
+- optionsTruncated 表示未展示的剩余候选数，若展示的选项都不匹配可返回你认为正确的 label
 - 如果无法确定合适的值，也要返回一个值。一定要是明确的，不能出现可能相关字眼
 - 必须返回有效的JSON对象，键是字段ID，值是字符串
 - 不要包含任何解释性文字，只返回JSON对象
 
 ## 必填字段信息：
-${JSON.stringify(fieldsInfo, null, 2)}`
+${JSON.stringify(fieldsInfo)}`
 
       const userPrompt = `## 问题标题：
 ${summary}
@@ -275,7 +261,7 @@ ${description}
       }
 
       const result: Record<string, any> = {}
-      for (const { field, kind } of fillableFields) {
+      for (const { field, kind } of items) {
         const value =
           field.fieldId in parsed
             ? coerceFieldValue(field, kind, parsed[field.fieldId], assignee)
@@ -290,6 +276,80 @@ ${description}
       )
       return resolveFallback()
     }
+  }
+
+  async genCustomInfo(
+    values: JiraMeta[],
+    summary: string,
+    description: string,
+    assignee?: string,
+  ): Promise<Record<string, any>> {
+    const fillableFields = values
+      .map((field) => ({ field, kind: classifyJiraField(field) }))
+      .filter(
+        ({ field, kind }) =>
+          kind !== null &&
+          Boolean(field.fieldId) &&
+          field.required &&
+          !field.hasDefaultValue &&
+          !PROTECTED_FIELD_IDS.has(field.fieldId) &&
+          Boolean(field.name) &&
+          (!field.operations || field.operations.includes('set')),
+      ) as Array<{ field: JiraMeta; kind: FillableFieldKind }>
+
+    if (fillableFields.length === 0) {
+      return {}
+    }
+
+    // 先用确定性文本匹配处理选项类字段，命中即选定、不进 LLM
+    const haystack = `${summary}\n${description}`
+    const result: Record<string, any> = {}
+    const llmFields = fillableFields.filter(({ field, kind }) => {
+      const hit = matchFieldOptionByText(field, kind, haystack)
+      if (hit !== undefined) {
+        result[field.fieldId] = hit
+        return false
+      }
+      return true
+    })
+
+    const resolveFallback = (): Record<string, any> => {
+      const fallback: Record<string, any> = {}
+      for (const { field, kind } of llmFields) {
+        const value = buildStaticFieldValue(field, kind, assignee)
+        if (value !== undefined) fallback[field.fieldId] = value
+      }
+      return fallback
+    }
+
+    if (llmFields.length === 0) {
+      return result
+    }
+
+    if (!this.llmConfig.apiKey) {
+      this.fastify.log.warn(
+        'DASHSCOPE_API_KEY not provided, using fallback values for required fields',
+      )
+      return { ...result, ...resolveFallback() }
+    }
+
+    // 分批并行调用，控制单次 prompt 体积；单批失败仅该批回退
+    const BATCH_SIZE = 10
+    const chunks: Array<Array<{ field: JiraMeta; kind: FillableFieldKind }>> = []
+    for (let i = 0; i < llmFields.length; i += BATCH_SIZE) {
+      chunks.push(llmFields.slice(i, i + BATCH_SIZE))
+    }
+
+    const filled = await Promise.all(
+      chunks.map((chunk) =>
+        this.fillFieldsWithLLM(chunk, summary, description, assignee),
+      ),
+    )
+
+    for (const part of filled) {
+      Object.assign(result, part)
+    }
+    return result
   }
 
   private async callLLM(

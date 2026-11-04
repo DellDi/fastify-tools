@@ -118,6 +118,54 @@ export function optionLabel(option: AllowedValueLike): string {
 }
 
 /**
+ * 统计候选 label 在文本中的命中数，仅当恰好一个命中时返回该项。
+ * 过短的 label（<2 字符，如"无"/"是"）不参与，避免高频误命中。
+ */
+export function matchSingleOptionByText<T extends AllowedValueLike>(
+  text: string,
+  allowedValues: T[],
+): T | undefined {
+  const haystack = text.toLowerCase()
+  const matched = allowedValues.filter((v) => {
+    const label = optionLabel(v).toLowerCase()
+    return label.length >= 2 && haystack.includes(label)
+  })
+  return matched.length === 1 ? matched[0] : undefined
+}
+
+/**
+ * 无需 LLM 的确定性选项填充：
+ * 标题/描述中恰好命中唯一候选 label 时直接选定；
+ * 级联字段要求父级唯一命中且子级也能确定（唯一子项或文本唯一命中）。
+ */
+export function matchFieldOptionByText(
+  field: JiraMeta,
+  kind: FillableFieldKind,
+  text: string,
+): any {
+  const allowedValues = field.allowedValues ?? []
+
+  if (kind === 'option') {
+    const matched = matchSingleOptionByText(text, allowedValues)
+    return matched ? { id: matched.id } : undefined
+  }
+
+  if (kind === 'cascading') {
+    const parent = matchSingleOptionByText(text, allowedValues)
+    if (!parent) return undefined
+    const children = parent.children ?? []
+    if (children.length === 0) return { id: parent.id }
+    if (children.length === 1) {
+      return { id: parent.id, child: { id: children[0].id } }
+    }
+    const child = matchSingleOptionByText(text, children)
+    return child ? { id: parent.id, child: { id: child.id } } : undefined
+  }
+
+  return undefined
+}
+
+/**
  * 按 id 精确匹配 → label 全等 → label 模糊包含，逐级匹配候选值
  */
 export function matchAllowedValue<T extends AllowedValueLike>(
