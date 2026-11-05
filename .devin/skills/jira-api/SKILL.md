@@ -85,8 +85,11 @@ curl -s -X POST https://delldiagi.top/fastify/jira/dev-reply \
 - **fixVersions**：现状恰好是 `[目标版本]`（单选）→ 不动；否则整体替换为单选目标版本（不是追加）。不传 `fixVersionId` 时自动选 unreleased 中最合适的版本
 - **devCompleteDate**：现状日期仍合法（≥今天、<版本日、工作日、非节假日）→ 保留；否则重新分配。本单旧日期不算"被占用"，所以**重复跑不会漂移**——天然幂等
 - **状态转换**：已是"开发已回复"→ 跳过转换记为成功，不算失败
-- **评论**：只有发生实际改动才自动补评论（"排期巡检自动同步：修复版本更新为…预计完成时间由X调整为Y…"）；已回复单的字段调整走独立评论接口，新回复单的评论随转换提交。`comment` 显式传入时覆盖自动文案
+- **计划开始时间**：`customfield_10100` 出现 `T00:00:00` 假时间 → 改写为同日期随机工作时段
+- **动态时间字段语义巡检**（`semanticDateReview`）：自动识别所有 date/datetime 自定义字段（计划开始/预计测试完成/计划测试开始/期望上线时间等，不硬编码）→ LLM 按字段名语义判断过期/冲突并建议 → 确定性校验（不早于今天、非周末/节假日、"开始"类字段不晚于预计开发完成）后才写入。LLM 挂了走硬规则兜底，巡检照常完成
+- **评论**：只有发生实际改动才自动补评论（拟人化客观陈述，如"修复版本更新为X，预计完成时间由X调整为Y"）；已回复单的字段调整走独立评论接口，新回复单的评论随转换提交。`comment` 显式传入时覆盖自动文案
 - **结果分类**：`success` / `partial_success`（字段改了但转换失败）/ `failure` / `unchanged`（什么都没动）；批量响应里 `unchangedIssueKeys` 单独列出未改动单
+- **审计**：每次巡检逐单落 `jira_reconcile_logs` 表（批次/状态/改动明细/耗时），`GET /jira/reconcile-logs` 可查
 
 **定时巡检配方**（cron / 定时任务直接用）：
 
@@ -100,6 +103,12 @@ curl -s -X POST https://delldiagi.top/fastify/jira/dev-reply \
   -d '{"issueKeys": ["NLC-3050","ARM-75059","NDE-4569"]}'
 # 已回复单自动跳过转换；超期日期自动重排；版本自动跟随各自项目最新 unreleased
 # unchangedIssueKeys = 本次巡检无需改动的单
+
+# 可选：extraHolidays 注入封网期/特殊休日（单日或 "起~止" 区间），排期与语义评审都会避开
+# '{"issueKeys": [...], "extraHolidays": ["2026-02-10~2026-02-18"]}'
+
+# 事后查巡检台账
+curl -s "https://delldiagi.top/fastify/jira/reconcile-logs?assignee=zhouxia&take=50"
 ```
 
 多个经办人要按人分批（`assignee` 决定占用日期的查询范围）。传 `reconcile: false` 可回退到旧的全量盲写行为。

@@ -132,19 +132,30 @@ JQL 分页搜索。响应里的每个 issue 额外带一个 `fields.customFieldC
 | `devCompleteDate` | string | `YYYY-MM-DD`，跳过自动分配 |
 | `comment` | string | 评论内容；不传且有实际改动时自动生成客观说明 |
 | `additionalFields` | object | 额外更新字段 `{fieldId: value}` |
+| `extraHolidays` | string[] | 额外注入的节假日/封网日期：单日 `YYYY-MM-DD` 或区间 `YYYY-MM-DD~YYYY-MM-DD`。日期分配与语义巡检都避开，且注入 LLM 评审上下文 |
 
 **reconcile 语义**（默认开启，幂等可重复巡检）：先读工单现状（`queryCurrentState` 步骤，取 fixVersions/customfield_10022/status），逐项决策：
 
 - **版本**：现状恰好是 `[目标版本]` 单选 → 不动；否则整体替换为单选目标版本（不追加；含目标的多选也算不符）
 - **日期**：现状仍合法（≥今天、<版本日、工作日、非节假日）→ 保留；否则重新分配。本单旧日期自动从占用集排除，重复跑不漂移
 - **状态**：已是"开发已回复"→ 跳过转换记为成功；有字段改动时走独立评论接口补说明（不依赖转换）
-- **评论**：只有实际改动才产生，文案为客观事实陈述（版本替换/日期重排）；无任何改动 → `unchanged`，不发评论
+- **计划开始时间**：`customfield_10100` 若为 `T00:00:00` 假时间 → 改写为同日期随机工作时段（09:00–17:59）
+- **动态时间字段语义巡检**（`semanticDateReview` 步骤）：`/rest/api/2/field` 识别所有 date/datetime 自定义字段（预计测试完成/计划测试开始/期望上线时间等动态识别，不硬编码）→ LLM 按字段名语义判断过期/冲突并给建议 → 服务端确定性校验（格式合法、不早于今天、非周末/节假日、"开始"类字段不晚于预计开发完成、新值≠现值）后才写入。**LLM 失败自动兜底**：开始类字段晚于预计开发完成一律回退到锚点日，巡检不受影响。被 LLM 建议但校验拒绝的值不会写入
+- **评论**：只有实际改动才产生，文案为客观事实陈述（版本替换/日期重排/字段名）；无任何改动 → `unchanged`，不发评论
 
 **自动行为**（未显式传参时）：选 `unreleased` 中最合适的修复版本 → 按版本 releaseDate 为基准，跳过经办人已占用日期和法定节假日分配 `devCompleteDate` → 更新 `fixVersions` + `customfield_10022` → 执行"开发回复"转换。批量且自动分配时，会跨工单预留日期避免撞期。
 
 **Response 200**: `{ total, successCount, failureCount, successfulIssueKeys[], failedIssueKeys[], unchangedIssueKeys[], results: [{ success, status(success|partial_success|failure|unchanged), issueKey, fixVersionName?, devCompleteDate?, transitionName?, message, steps?[], successfulSteps?[], failedSteps?[] }] }`
 
-`partial_success` = 字段更新成功但工作流转换失败；`unchanged` = reconcile 后无需改动；`steps` 含 `queryCurrentState / queryUsedDates / selectFixVersion / allocateDevCompleteDate / updateFields / getTransitions / doTransition / addComment` 逐步明细。
+`partial_success` = 字段更新成功但工作流转换失败；`unchanged` = reconcile 后无需改动；`steps` 含 `queryCurrentState / queryUsedDates / selectFixVersion / allocateDevCompleteDate / updateFields / getTransitions / doTransition / normalizeStartTime / semanticDateReview / addComment` 逐步明细。
+
+**巡检审计**：每次调用逐单写入 `jira_reconcile_logs` 表（批次 ID、工单、状态、改动明细、耗时），`GET /jira/reconcile-logs` 查询（query：`batchId/issueKey/status/assignee/from/to/take/skip`）。写库失败不阻塞巡检。
+
+## GET /jira/reconcile-logs
+
+查询巡检审计日志。Query：`batchId`/`issueKey`/`status`(success|partial_success|failure|unchanged)/`assignee`/`from`/`to`/`take`(≤200，默认50)/`skip`。
+
+**Response 200**: `{ total, values: [{ id, batchId, issueKey, projectKey, assignee, status, message, details, durationMs, createdAt }] }`
 
 ## GET /jira/link/types
 
