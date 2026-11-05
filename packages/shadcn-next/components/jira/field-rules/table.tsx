@@ -37,6 +37,8 @@ import {
   TableRow,
 } from '@/components/ui/table'
 
+const PAGE_SIZE = 50
+
 const compactDate = (s: string | null) =>
   s
     ? new Date(s).toLocaleString('zh-CN', {
@@ -67,16 +69,22 @@ export const FieldRulesTable = () => {
     stale: '',
     keyword: '',
   })
+  const [page, setPage] = useState(1)
   const [keywordInput, setKeywordInput] = useState('')
 
   const [editing, setEditing] = useState<JiraFieldRule | null>(null)
   const [deleting, setDeleting] = useState<JiraFieldRule | null>(null)
 
+  const updateFilters = (patch: FieldRuleQuery) => {
+    setPage(1)
+    setFilters((f) => ({ ...f, ...patch }))
+  }
+
   const load = useCallback(async (query: FieldRuleQuery) => {
     setLoading(true)
     try {
       const [list, comboRes] = await Promise.all([
-        fetchFieldRules({ ...query, take: 300 }),
+        fetchFieldRules(query),
         fetchFieldRuleCombos(),
       ])
       if (!Array.isArray(list.values) || !Array.isArray(comboRes.values)) {
@@ -85,6 +93,7 @@ export const FieldRulesTable = () => {
       setRules(list.values)
       setTotal(list.total)
       setCombos(comboRes.values)
+      if (list.values.length === 0 && (query.skip ?? 0) > 0) setPage(1)
     } catch (e) {
       toast.error(e instanceof Error ? e.message : '加载字段规则失败')
     } finally {
@@ -93,9 +102,9 @@ export const FieldRulesTable = () => {
   }, [])
 
   useEffect(() => {
-    load(filters)
+    load({ ...filters, take: PAGE_SIZE, skip: (page - 1) * PAGE_SIZE })
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [filters])
+  }, [filters, page])
 
   const issueTypeOptions = useMemo(
     () => combos.filter((c) => !filters.projectKey || c.projectKey === filters.projectKey),
@@ -107,7 +116,7 @@ export const FieldRulesTable = () => {
     try {
       await patchFieldRule(id, { strategy })
       toast.success('策略已更新')
-      await load(filters)
+      reload()
     } catch (e) {
       toast.error(e instanceof Error ? e.message : '更新失败')
     } finally {
@@ -115,7 +124,9 @@ export const FieldRulesTable = () => {
     }
   }
 
-  const reload = () => load(filters)
+  const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE))
+  const reload = () =>
+    load({ ...filters, take: PAGE_SIZE, skip: (page - 1) * PAGE_SIZE })
 
   return (
     <div className="flex flex-col gap-4">
@@ -124,7 +135,7 @@ export const FieldRulesTable = () => {
         <Select
           value={filters.projectKey || 'all'}
           onValueChange={(v) =>
-            setFilters((f) => ({ ...f, projectKey: v === 'all' ? '' : v, issueTypeId: '' }))
+            updateFilters({ projectKey: v === 'all' ? '' : v, issueTypeId: '' })
           }
         >
           <SelectTrigger className="w-[140px]">
@@ -142,7 +153,7 @@ export const FieldRulesTable = () => {
 
         <Select
           value={filters.issueTypeId || 'all'}
-          onValueChange={(v) => setFilters((f) => ({ ...f, issueTypeId: v === 'all' ? '' : v }))}
+          onValueChange={(v) => updateFilters({ issueTypeId: v === 'all' ? '' : v })}
         >
           <SelectTrigger className="w-[160px]">
             <SelectValue placeholder="问题类型" />
@@ -159,7 +170,7 @@ export const FieldRulesTable = () => {
 
         <Select
           value={filters.strategy || 'all'}
-          onValueChange={(v) => setFilters((f) => ({ ...f, strategy: v === 'all' ? '' : v }))}
+          onValueChange={(v) => updateFilters({ strategy: v === 'all' ? '' : v })}
         >
           <SelectTrigger className="w-[130px]">
             <SelectValue placeholder="策略" />
@@ -177,7 +188,7 @@ export const FieldRulesTable = () => {
         <Select
           value={filters.stale || 'all'}
           onValueChange={(v) =>
-            setFilters((f) => ({ ...f, stale: (v === 'all' ? '' : v) as 'true' | 'false' | '' }))
+            updateFilters({ stale: (v === 'all' ? '' : v) as 'true' | 'false' | '' })
           }
         >
           <SelectTrigger className="w-[130px]">
@@ -197,13 +208,13 @@ export const FieldRulesTable = () => {
             value={keywordInput}
             onChange={(e) => setKeywordInput(e.target.value)}
             onKeyDown={(e) => {
-              if (e.key === 'Enter') setFilters((f) => ({ ...f, keyword: keywordInput }))
+              if (e.key === 'Enter') updateFilters({ keyword: keywordInput })
             }}
           />
           <Button
             variant="outline"
             size="sm"
-            onClick={() => setFilters((f) => ({ ...f, keyword: keywordInput }))}
+            onClick={() => updateFilters({ keyword: keywordInput })}
           >
             搜索
           </Button>
@@ -225,8 +236,9 @@ export const FieldRulesTable = () => {
           暂无字段经验记录，先通过接口创建几张工单吧
         </div>
       ) : (
-        <div className="overflow-auto rounded-md border">
-          <Table>
+        <>
+          <div className="overflow-auto rounded-md border">
+            <Table>
             <TableHeader>
               <TableRow>
                 <TableHead className="w-[110px]">项目 / 类型</TableHead>
@@ -358,7 +370,29 @@ export const FieldRulesTable = () => {
               ))}
             </TableBody>
           </Table>
-        </div>
+          </div>
+          <div className="flex items-center justify-end gap-2 text-sm text-muted-foreground">
+            <span>
+              第 {page} / {totalPages} 页
+            </span>
+            <Button
+              variant="outline"
+              size="sm"
+              disabled={page <= 1}
+              onClick={() => setPage((p) => p - 1)}
+            >
+              上一页
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              disabled={page >= totalPages}
+              onClick={() => setPage((p) => p + 1)}
+            >
+              下一页
+            </Button>
+          </div>
+        </>
       )}
 
       <FieldRuleEditDialog

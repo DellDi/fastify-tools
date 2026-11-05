@@ -36,6 +36,8 @@ import {
   TableRow,
 } from '@/components/ui/table'
 
+const PAGE_SIZE = 20
+
 const STATUS_META: Record<
   string,
   { label: string; variant: 'default' | 'secondary' | 'destructive' | 'outline' }
@@ -74,18 +76,25 @@ export const ReconcileLogsTable = () => {
     status: '',
     assignee: '',
   })
+  const [page, setPage] = useState(1)
   const [issueKeyInput, setIssueKeyInput] = useState('')
   const [assigneeInput, setAssigneeInput] = useState('')
+
+  const updateFilters = (patch: ReconcileLogQuery) => {
+    setPage(1)
+    setFilters((f) => ({ ...f, ...patch }))
+  }
 
   const load = useCallback(async (query: ReconcileLogQuery) => {
     setLoading(true)
     try {
-      const list = await fetchReconcileLogs({ ...query, take: 200 })
+      const list = await fetchReconcileLogs(query)
       if (!Array.isArray(list.values)) {
         throw new Error('加载巡检日志失败，请稍后重试')
       }
       setLogs(list.values)
       setTotal(list.total)
+      if (list.values.length === 0 && (query.skip ?? 0) > 0) setPage(1)
     } catch (e) {
       toast.error(e instanceof Error ? e.message : '加载巡检日志失败')
     } finally {
@@ -94,11 +103,13 @@ export const ReconcileLogsTable = () => {
   }, [])
 
   useEffect(() => {
-    load(filters)
+    load({ ...filters, take: PAGE_SIZE, skip: (page - 1) * PAGE_SIZE })
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [filters])
+  }, [filters, page])
 
-  const reload = () => load(filters)
+  const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE))
+  const reload = () =>
+    load({ ...filters, take: PAGE_SIZE, skip: (page - 1) * PAGE_SIZE })
 
   return (
     <div className="flex flex-col gap-4">
@@ -111,8 +122,7 @@ export const ReconcileLogsTable = () => {
             value={issueKeyInput}
             onChange={(e) => setIssueKeyInput(e.target.value)}
             onKeyDown={(e) => {
-              if (e.key === 'Enter')
-                setFilters((f) => ({ ...f, issueKey: issueKeyInput }))
+              if (e.key === 'Enter') updateFilters({ issueKey: issueKeyInput })
             }}
           />
           <Input
@@ -121,19 +131,17 @@ export const ReconcileLogsTable = () => {
             value={assigneeInput}
             onChange={(e) => setAssigneeInput(e.target.value)}
             onKeyDown={(e) => {
-              if (e.key === 'Enter')
-                setFilters((f) => ({ ...f, assignee: assigneeInput }))
+              if (e.key === 'Enter') updateFilters({ assignee: assigneeInput })
             }}
           />
           <Button
             variant="outline"
             size="sm"
             onClick={() =>
-              setFilters((f) => ({
-                ...f,
+              updateFilters({
                 issueKey: issueKeyInput,
                 assignee: assigneeInput,
-              }))
+              })
             }
           >
             搜索
@@ -143,7 +151,7 @@ export const ReconcileLogsTable = () => {
         <Select
           value={filters.status || 'all'}
           onValueChange={(v) =>
-            setFilters((f) => ({ ...f, status: v === 'all' ? '' : v }))
+            updateFilters({ status: v === 'all' ? '' : v })
           }
         >
           <SelectTrigger className="w-[130px]">
@@ -176,8 +184,9 @@ export const ReconcileLogsTable = () => {
           暂无巡检记录，先跑一次 dev-reply 巡检吧
         </div>
       ) : (
-        <div className="overflow-auto rounded-md border">
-          <Table>
+        <>
+          <div className="overflow-auto rounded-md border">
+            <Table>
             <TableHeader>
               <TableRow>
                 <TableHead className="w-[40px]" />
@@ -292,6 +301,28 @@ export const ReconcileLogsTable = () => {
             </TableBody>
           </Table>
         </div>
+        <div className="flex items-center justify-end gap-2 text-sm text-muted-foreground">
+            <span>
+              第 {page} / {totalPages} 页
+            </span>
+            <Button
+              variant="outline"
+              size="sm"
+              disabled={page <= 1}
+              onClick={() => setPage((p) => p - 1)}
+            >
+              上一页
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              disabled={page >= totalPages}
+              onClick={() => setPage((p) => p + 1)}
+            >
+              下一页
+            </Button>
+          </div>
+        </>
       )}
     </div>
   )
