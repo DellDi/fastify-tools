@@ -12,6 +12,13 @@ interface SectionCardProps {
 }
 
 export function SectionCard({ id, title, description, linkText, linkHref }: SectionCardProps) {
+  const basePath = process.env.NEXT_PUBLIC_BASE_PATH || ''
+  // 内站路径补上部署 basePath（如 /next），外链保持原样
+  const href =
+    linkHref.startsWith('/') && !linkHref.startsWith('//')
+      ? `${basePath}${linkHref}`
+      : linkHref
+
   return (
     <motion.div
       key={id.toString()}
@@ -46,7 +53,7 @@ export function SectionCard({ id, title, description, linkText, linkHref }: Sect
 
         <div className="flex">
           <motion.a
-            href={linkHref}
+            href={href}
             className="inline-flex items-center text-sm font-medium text-primary group-hover:text-primary/80 transition-colors"
             whileHover={{ x: 3 }}
           >
