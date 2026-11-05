@@ -382,6 +382,7 @@ ${description}
 3. 排期建议值必须是工作日，且不得在节假日/封网日期中
 4. 拿不准或当前值合理的字段 action=keep，不要为改而改
 5. date 类型字段返回 YYYY-MM-DD；datetime 类型字段返回 YYYY-MM-DDTHH:mm:ss.SSS+0800
+6. 本次评审仅从开发排期视角出发；若字段语义属于测试/上线/发布/验收等其他角色的职责范围，一律 keep
 
 只输出 JSON 对象，不要任何解释文字：
 {"decisions":[{"fieldId":"字段ID","action":"keep|update","value":"新值(update时必填)","reason":"一句话中文理由"}]}`

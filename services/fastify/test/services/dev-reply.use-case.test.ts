@@ -184,6 +184,7 @@ const makeHarness = (overrides: {
   const comments: string[] = []
   const updates: Record<string, any>[] = []
   const audits: any[] = []
+  const llmInputs: any[] = []
   const version = futureVersion()
 
   const logger = { info() {}, warn() {}, error() {} } as any
@@ -198,7 +199,8 @@ const makeHarness = (overrides: {
       return { fields }
     },
     getFields: async () => overrides.fieldMeta ?? [],
-    reviewScheduleFields: async () => {
+    reviewScheduleFields: async (input: any) => {
+      llmInputs.push(input)
       if (overrides.llmError) {
         throw new Error(overrides.llmError)
       }
@@ -243,6 +245,7 @@ const makeHarness = (overrides: {
     comments,
     updates,
     audits,
+    llmInputs,
     useCase: new DevReplyUseCase(
       logger,
       jiraRestService,
@@ -384,31 +387,28 @@ test('devReplyBatch should collect unchangedIssueKeys', async () => {
   assert.equal(result.results[1].status, 'success')
 })
 
-test('semanticDateReview should apply a valid LLM suggestion for an expired field', async () => {
+test('semanticDateReview should apply a valid LLM suggestion for an expired dev-scope field', async () => {
   const anchor = nextWeekday()
   const { comments, updates, useCase } = makeHarness({
     issueDetails: {
       'NDE-3170': {
         fixVersions: [{ id: '23987' }],
         customfield_10022: anchor,
-        customfield_10100: `${anchor}T10:00:00.000+0800`,
-        customfield_10101: '2020-01-01',
+        customfield_10100: '2020-01-01T10:00:00.000+0800',
         status: { name: '开发已回复' },
       },
     },
     fieldMeta: [
       { id: 'customfield_10022', name: '预计开发完成', schema: { type: 'date' } },
       { id: 'customfield_10100', name: '计划开始时间', schema: { type: 'datetime' } },
-      { id: 'customfield_10101', name: '计划测试开始', schema: { type: 'date' } },
     ],
     llmDecisions: [
       {
-        fieldId: 'customfield_10101',
+        fieldId: 'customfield_10100',
         action: 'update',
-        value: anchor,
-        reason: '计划测试开始已过期',
+        value: `${anchor}T10:30:00.000+0800`,
+        reason: '计划开始时间已过期',
       },
-      { fieldId: 'customfield_10100', action: 'keep' },
     ],
   })
 
@@ -418,11 +418,54 @@ test('semanticDateReview should apply a valid LLM suggestion for an expired fiel
   )
 
   assert.equal(result.status, 'success')
-  const applied = updates.find((f) => f.customfield_10101)
-  assert.equal(applied?.customfield_10101, anchor)
+  const applied = updates.find((f) => f.customfield_10100)
+  // datetime 字段保留 LLM 给出的具体时刻
+  assert.equal(applied?.customfield_10100, `${anchor}T10:30:00.000+0800`)
   // 实际字段改动 → 评论中提及调整字段名
   assert.equal(comments.length, 1)
-  assert.match(comments[0], /计划测试开始/)
+  assert.match(comments[0], /计划开始时间/)
+})
+
+test('semanticDateReview should exclude non-dev fields from LLM review entirely', async () => {
+  const anchor = nextWeekday()
+  const { llmInputs, updates, useCase } = makeHarness({
+    issueDetails: {
+      'NDE-3173': {
+        fixVersions: [{ id: '23987' }],
+        customfield_10022: anchor,
+        customfield_10100: `${anchor}T10:00:00.000+0800`,
+        customfield_10041: '2020-01-01',
+        customfield_10101: '2020-01-01',
+        customfield_10051: '2020-01-01',
+        status: { name: '开发已回复' },
+      },
+    },
+    fieldMeta: [
+      { id: 'customfield_10041', name: '期望上线时间', schema: { type: 'date' } },
+      { id: 'customfield_10101', name: '计划测试开始', schema: { type: 'date' } },
+      { id: 'customfield_10051', name: '预计测试完成', schema: { type: 'date' } },
+      { id: 'customfield_10100', name: '计划开始时间', schema: { type: 'datetime' } },
+    ],
+    llmDecisions: [
+      // 即使 LLM 违规建议非开发域字段，也不会被采纳（它根本看不到这些字段）
+      { fieldId: 'customfield_10041', action: 'update', value: anchor },
+      { fieldId: 'customfield_10100', action: 'keep' },
+    ],
+  })
+
+  const result = await useCase.devReply(
+    { jiraUser: 'u', jiraPassword: 'p' },
+    { issueKey: 'NDE-3173', assignee: 'zhouxia' },
+  )
+
+  // 非开发域字段不进 LLM 输入
+  const reviewedIds = (llmInputs[0]?.fields ?? []).map(
+    (f: any) => f.fieldId,
+  )
+  assert.deepEqual(reviewedIds, ['customfield_10100'])
+  // 即便 LLM 建议改 期望上线时间，也不会写入
+  assert.equal(updates.find((f) => f.customfield_10041), undefined)
+  assert.equal(result.status, 'unchanged')
 })
 
 test('semanticDateReview should reject LLM suggestions violating deterministic rules', async () => {
@@ -432,18 +475,18 @@ test('semanticDateReview should reject LLM suggestions violating deterministic r
       'NDE-3171': {
         fixVersions: [{ id: '23987' }],
         customfield_10022: anchor,
-        customfield_10101: '2020-01-01',
+        customfield_10100: '2020-01-01T10:00:00.000+0800',
         status: { name: '开发已回复' },
       },
     },
     fieldMeta: [
-      { id: 'customfield_10101', name: '计划测试开始', schema: { type: 'date' } },
+      { id: 'customfield_10100', name: '计划开始时间', schema: { type: 'datetime' } },
     ],
     llmDecisions: [
       {
-        fieldId: 'customfield_10101',
+        fieldId: 'customfield_10100',
         action: 'update',
-        value: '2099-12-26',
+        value: '2099-12-26T10:00:00.000+0800',
         reason: '过期字段',
       },
       { fieldId: 'customfield_99999', action: 'update', value: '2099-01-01' },
@@ -461,7 +504,10 @@ test('semanticDateReview should reject LLM suggestions violating deterministic r
   )
 
   assert.equal(result.status, 'unchanged')
-  assert.equal(updates.find((f) => f.customfield_10101), undefined)
+  assert.equal(
+    updates.find((f) => f.customfield_10100 && !/T00:00:00/.test(f.customfield_10100)),
+    undefined,
+  )
 })
 
 test('semanticDateReview should fall back to the hard rule when LLM fails', async () => {

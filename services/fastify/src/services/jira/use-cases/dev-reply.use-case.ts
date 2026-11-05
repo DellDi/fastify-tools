@@ -620,8 +620,12 @@ export class DevReplyUseCase {
       }))
       .filter((item) => /^\d{4}-\d{2}-\d{2}/.test(item.value))
 
-    if (!candidates.length) {
-      pushStep('semanticDateReview', true, '动态时间字段均为空，无需评审')
+    // 开发视角：测试/上线/发布/验收类排期归其他角色管，不进 LLM 评审也不兜底
+    const NON_DEV_FIELD = /测试|上线|发布|验收|交付/
+    const devCandidates = candidates.filter((item) => !NON_DEV_FIELD.test(item.name))
+
+    if (!devCandidates.length) {
+      pushStep('semanticDateReview', true, '无开发域动态时间字段需要评审')
       return []
     }
 
@@ -636,7 +640,7 @@ export class DevReplyUseCase {
         ],
         holidays: [...holidays].sort(),
         anchorDate,
-        fields: candidates,
+        fields: devCandidates,
       })
     } catch (error) {
       llmError = error instanceof Error ? error.message : String(error)
@@ -651,7 +655,7 @@ export class DevReplyUseCase {
     }
     // date 字段写 YYYY-MM-DD；datetime 字段保留 LLM 给的时间，缺省随机工作时段
     const normalizeValue = (
-      field: (typeof candidates)[number],
+      field: (typeof devCandidates)[number],
       value: string,
     ): string | undefined => {
       const datePart = value.slice(0, 10)
@@ -670,7 +674,7 @@ export class DevReplyUseCase {
     const isStartField = (name: string) => name.includes('开始')
 
     for (const decision of decisions) {
-      const field = candidates.find((item) => item.fieldId === decision.fieldId)
+      const field = devCandidates.find((item) => item.fieldId === decision.fieldId)
       if (!field || decision.action !== 'update' || !decision.value) continue
       const datePart = decision.value.slice(0, 10)
       if (datePart === field.value.slice(0, 10)) continue
@@ -701,7 +705,7 @@ export class DevReplyUseCase {
 
     // 硬规则兜底（与 LLM 无关）：名称含"开始"的字段不得晚于「预计开发完成」
     if (anchorDate) {
-      for (const field of candidates) {
+      for (const field of devCandidates) {
         if (updates[field.fieldId] || !isStartField(field.name)) continue
         if (field.value.slice(0, 10) > anchorDate) {
           const normalized = normalizeValue(field, anchorDate)
@@ -722,7 +726,7 @@ export class DevReplyUseCase {
         llmError
           ? `LLM 不可用，硬规则校验通过无需调整（${llmError}）`
           : '动态时间字段评审通过，无需调整',
-        { reviewed: candidates.length, llmError },
+        { reviewed: devCandidates.length, llmError },
       )
       return []
     }
@@ -732,10 +736,10 @@ export class DevReplyUseCase {
       fields: updates,
     })
     const appliedNames = Object.keys(updates).map(
-      (id) => candidates.find((item) => item.fieldId === id)?.name ?? id,
+      (id) => devCandidates.find((item) => item.fieldId === id)?.name ?? id,
     )
     pushStep('semanticDateReview', true, `已调整 ${appliedNames.length} 项时间字段`, {
-      reviewed: candidates.length,
+      reviewed: devCandidates.length,
       applied: Object.keys(updates),
       notes,
       llmError,
