@@ -1,223 +1,169 @@
-import Link from 'next/link'
-import { Bell, CircleUser, Home, LineChart, Menu, Package, Package2, Search, ShoppingCart, Users } from 'lucide-react'
-import { Badge } from '@/components/ui/badge'
-import { Button } from '@/components/ui/button'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu'
-import { Input } from '@/components/ui/input'
-import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet'
+'use client'
 
-export default function Dashboard() {
+import { useState, useRef, useEffect } from 'react'
+import { motion, AnimatePresence } from 'motion/react'
+import { Plus, Send, MessageSquare, Sparkles } from 'lucide-react'
+import { Button } from '@/components/ui/button'
+import { Textarea } from '@/components/ui/textarea'
+
+interface Message {
+  id: number
+  role: 'user' | 'assistant'
+  content: string
+}
+
+const suggestions = [
+  '帮我总结本周的 Jira 工单进展',
+  '根据描述生成一个 Jira 工单',
+  '这段报错日志可能是什么原因',
+]
+
+export default function ChatPage() {
+  const [messages, setMessages] = useState<Message[]>([])
+  const [input, setInput] = useState('')
+  const [pending, setPending] = useState(false)
+  const bottomRef = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    bottomRef.current?.scrollIntoView({ behavior: 'smooth' })
+  }, [messages, pending])
+
+  const send = (text?: string) => {
+    const content = (text ?? input).trim()
+    if (!content || pending) return
+    setInput('')
+    setMessages((m) => [...m, { id: Date.now(), role: 'user', content }])
+    setPending(true)
+    // TODO: 接入 /dify/chat-workflow 后替换为真实流式回复
+    setTimeout(() => {
+      setMessages((m) => [
+        ...m,
+        {
+          id: Date.now() + 1,
+          role: 'assistant',
+          content: '对话服务尚未连接。请在 Fastify 服务中配置 Dify API 后重试。',
+        },
+      ])
+      setPending(false)
+    }, 800)
+  }
+
   return (
-    <div className="grid min-h-screen w-full md:grid-cols-[220px_1fr] lg:grid-cols-[280px_1fr]">
-      <div className="hidden border-r bg-muted/40 md:block">
-        <div className="flex h-full max-h-screen flex-col gap-2">
-          <div className="flex h-14 items-center border-b px-4 lg:h-[60px] lg:px-6">
-            <Link href="/" className="flex items-center gap-2 font-semibold">
-              <Package2 className="h-6 w-6"/>
-              <span className="">Acme Inc</span>
-            </Link>
-            <Button variant="outline" size="icon" className="ml-auto h-8 w-8">
-              <Bell className="h-4 w-4"/>
-              <span className="sr-only">Toggle notifications</span>
-            </Button>
-          </div>
-          <div className="flex-1">
-            <nav className="grid items-start px-2 text-sm font-medium lg:px-4">
-              <Link
-                href="#"
-                className="flex items-center gap-3 rounded-lg px-3 py-2 text-muted-foreground transition-all hover:text-primary"
-              >
-                <Home className="h-4 w-4"/>
-                Dashboard
-              </Link>
-              <Link
-                href="#"
-                className="flex items-center gap-3 rounded-lg px-3 py-2 text-muted-foreground transition-all hover:text-primary"
-              >
-                <ShoppingCart className="h-4 w-4"/>
-                Orders
-                <Badge
-                  className="ml-auto flex h-6 w-6 shrink-0 items-center justify-center rounded-full">
-                  6
-                </Badge>
-              </Link>
-              <Link
-                href="#"
-                className="flex items-center gap-3 rounded-lg bg-muted px-3 py-2 text-primary transition-all hover:text-primary"
-              >
-                <Package className="h-4 w-4"/>
-                Products{' '}
-              </Link>
-              <Link
-                href="#"
-                className="flex items-center gap-3 rounded-lg px-3 py-2 text-muted-foreground transition-all hover:text-primary"
-              >
-                <Users className="h-4 w-4"/>
-                Customers
-              </Link>
-              <Link
-                href="#"
-                className="flex items-center gap-3 rounded-lg px-3 py-2 text-muted-foreground transition-all hover:text-primary"
-              >
-                <LineChart className="h-4 w-4"/>
-                Analytics
-              </Link>
-            </nav>
-          </div>
-          <div className="mt-auto p-4">
-            <Card x-chunk="dashboard-02-chunk-0">
-              <CardHeader className="p-2 pt-0 md:p-4">
-                <CardTitle>Upgrade to Pro</CardTitle>
-                <CardDescription>
-                  Unlock all features and get unlimited access to our support
-                  team.
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="p-2 pt-0 md:p-4 md:pt-0">
-                <Button size="sm" className="w-full">
-                  Upgrade
-                </Button>
-              </CardContent>
-            </Card>
+    <div className="mx-auto flex h-full max-h-[calc(100vh-6rem)] w-full max-w-3xl flex-col">
+      <div className="flex items-center justify-between border-b border-border pb-4">
+        <div className="flex items-center gap-3">
+          <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-accent text-accent-foreground">
+            <Sparkles className="h-4 w-4" />
+          </span>
+          <div>
+            <h1 className="text-lg font-semibold tracking-tight">AI 对话</h1>
+            <p className="text-xs text-muted-foreground">接入 Dify 工作流的智能助手</p>
           </div>
         </div>
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={() => setMessages([])}
+          className="gap-1.5"
+        >
+          <Plus className="h-3.5 w-3.5" /> 新对话
+        </Button>
       </div>
-      <div className="flex flex-col">
-        <header className="flex h-14 items-center gap-4 border-b bg-muted/40 px-4 lg:h-[60px] lg:px-6">
-          <Sheet>
-            <SheetTrigger asChild>
-              <Button
-                variant="outline"
-                size="icon"
-                className="shrink-0 md:hidden"
-              >
-                <Menu className="h-5 w-5"/>
-                <span className="sr-only">Toggle navigation menu</span>
-              </Button>
-            </SheetTrigger>
-            <SheetContent side="left" className="flex flex-col">
-              <nav className="grid gap-2 text-lg font-medium">
-                <Link
-                  href="#"
-                  className="flex items-center gap-2 text-lg font-semibold"
-                >
-                  <Package2 className="h-6 w-6"/>
-                  <span className="sr-only">Acme Inc</span>
-                </Link>
-                <Link
-                  href="#"
-                  className="mx-[-0.65rem] flex items-center gap-4 rounded-xl px-3 py-2 text-muted-foreground hover:text-foreground"
-                >
-                  <Home className="h-5 w-5"/>
-                  Dashboard
-                </Link>
-                <Link
-                  href="#"
-                  className="mx-[-0.65rem] flex items-center gap-4 rounded-xl bg-muted px-3 py-2 text-foreground hover:text-foreground"
-                >
-                  <ShoppingCart className="h-5 w-5"/>
-                  Orders
-                  <Badge
-                    className="ml-auto flex h-6 w-6 shrink-0 items-center justify-center rounded-full">
-                    6
-                  </Badge>
-                </Link>
-                <Link
-                  href="#"
-                  className="mx-[-0.65rem] flex items-center gap-4 rounded-xl px-3 py-2 text-muted-foreground hover:text-foreground"
-                >
-                  <Package className="h-5 w-5"/>
-                  Products
-                </Link>
-                <Link
-                  href="#"
-                  className="mx-[-0.65rem] flex items-center gap-4 rounded-xl px-3 py-2 text-muted-foreground hover:text-foreground"
-                >
-                  <Users className="h-5 w-5"/>
-                  Customers
-                </Link>
-                <Link
-                  href="#"
-                  className="mx-[-0.65rem] flex items-center gap-4 rounded-xl px-3 py-2 text-muted-foreground hover:text-foreground"
-                >
-                  <LineChart className="h-5 w-5"/>
-                  Analytics
-                </Link>
-              </nav>
-              <div className="mt-auto">
-                <Card>
-                  <CardHeader>
-                    <CardTitle>Upgrade to Pro</CardTitle>
-                    <CardDescription>
-                      Unlock all features and get unlimited access to our
-                      support team.
-                    </CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    <Button size="sm" className="w-full">
-                      Upgrade
-                    </Button>
-                  </CardContent>
-                </Card>
-              </div>
-            </SheetContent>
-          </Sheet>
-          <div className="w-full flex-1">
-            <form>
-              <div className="relative">
-                <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground"/>
-                <Input
-                  type="search"
-                  placeholder="Search products..."
-                  className="w-full appearance-none bg-background pl-8 shadow-none md:w-2/3 lg:w-1/3"
-                />
-              </div>
-            </form>
-          </div>
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="secondary" size="icon" className="rounded-full">
-                <CircleUser className="h-5 w-5"/>
-                <span className="sr-only">Toggle user menu</span>
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
-              <DropdownMenuLabel>My Account</DropdownMenuLabel>
-              <DropdownMenuSeparator/>
-              <DropdownMenuItem>Settings</DropdownMenuItem>
-              <DropdownMenuItem>Support</DropdownMenuItem>
-              <DropdownMenuSeparator/>
-              <DropdownMenuItem>Logout</DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
-        </header>
-        <main className="flex flex-1 flex-col gap-4 p-4 lg:gap-6 lg:p-6">
-          <div className="flex items-center">
-            <h1 className="text-lg font-semibold md:text-2xl">Inventory</h1>
-          </div>
-          <div
-            className="flex flex-1 items-center justify-center rounded-lg border border-dashed shadow-xs"
-            x-chunk="dashboard-02-chunk-1"
-          >
-            <div className="flex flex-col items-center gap-1 text-center">
-              <h3 className="text-2xl font-bold tracking-tight">
-                You have no products
-              </h3>
-              <p className="text-sm text-muted-foreground">
-                You can start selling as soon as you add a product.
+
+      <div className="flex-1 overflow-y-auto py-6">
+        {messages.length === 0 ? (
+          <div className="flex h-full flex-col items-center justify-center gap-6">
+            <span className="flex h-14 w-14 items-center justify-center rounded-2xl bg-accent text-accent-foreground">
+              <MessageSquare className="h-6 w-6" />
+            </span>
+            <div className="text-center">
+              <p className="font-medium">开始一段新对话</p>
+              <p className="mt-1 text-sm text-muted-foreground">
+                试试下面的一个问题
               </p>
-              <Button className="mt-4">Add Product</Button>
+            </div>
+            <div className="grid w-full max-w-md gap-2">
+              {suggestions.map((s) => (
+                <button
+                  key={s}
+                  onClick={() => send(s)}
+                  className="rounded-xl border bg-card px-4 py-3 text-left text-sm text-muted-foreground shadow-card transition-all duration-200 hover:-translate-y-px hover:bg-accent/60 hover:text-foreground hover:shadow-lift"
+                >
+                  {s}
+                </button>
+              ))}
             </div>
           </div>
-        </main>
+        ) : (
+          <div className="space-y-4">
+            <AnimatePresence initial={false}>
+              {messages.map((m) => (
+                <motion.div
+                  key={m.id}
+                  initial={{ opacity: 0, y: 8 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.3, ease: [0.22, 1, 0.36, 1] }}
+                  className={
+                    m.role === 'user' ? 'flex justify-end' : 'flex justify-start'
+                  }
+                >
+                  <div
+                    className={
+                      m.role === 'user'
+                        ? 'max-w-[80%] rounded-2xl rounded-tr-sm bg-primary px-4 py-2.5 text-sm leading-relaxed text-primary-foreground'
+                        : 'max-w-[80%] rounded-2xl rounded-tl-sm border bg-card px-4 py-2.5 text-sm leading-relaxed shadow-card'
+                    }
+                  >
+                    {m.content}
+                  </div>
+                </motion.div>
+              ))}
+            </AnimatePresence>
+            {pending && (
+              <div className="flex justify-start">
+                <div className="flex items-center gap-1.5 rounded-2xl rounded-tl-sm border bg-card px-4 py-3 shadow-card">
+                  <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-muted-foreground/60" />
+                  <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-muted-foreground/60 [animation-delay:0.15s]" />
+                  <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-muted-foreground/60 [animation-delay:0.3s]" />
+                </div>
+              </div>
+            )}
+            <div ref={bottomRef} />
+          </div>
+        )}
+      </div>
+
+      <div className="border-t border-border pb-2 pt-4">
+        <form
+          onSubmit={(e) => {
+            e.preventDefault()
+            send()
+          }}
+          className="flex items-end gap-2"
+        >
+          <Textarea
+            value={input}
+            onChange={(e) => setInput(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault()
+                send()
+              }
+            }}
+            placeholder="输入消息，Enter 发送，Shift+Enter 换行"
+            rows={2}
+            className="max-h-32 min-h-[44px] flex-1 resize-none bg-card"
+          />
+          <Button
+            type="submit"
+            size="icon"
+            disabled={!input.trim() || pending}
+            className="h-10 w-10 shrink-0 rounded-xl"
+          >
+            <Send className="h-4 w-4" />
+            <span className="sr-only">发送</span>
+          </Button>
+        </form>
       </div>
     </div>
   )

@@ -115,7 +115,7 @@ export default function FileUploader({ defaultTab = 'single' }: { defaultTab?: '
 
             <TabsContent value="large" className="grow">
               <div
-                className="h-full flex items-center flex-col justify-center border-2 border-dashed rounded-lg p-4 text-center cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
+                className="h-full flex items-center flex-col justify-center border-2 border-dashed border-border rounded-lg p-4 text-center cursor-pointer hover:bg-accent/60 dark:hover:bg-accent/40 transition-colors"
                 onDrop={(e) => {
                   e.preventDefault()
                   if (e.dataTransfer.files) {
@@ -126,7 +126,7 @@ export default function FileUploader({ defaultTab = 'single' }: { defaultTab?: '
               >
                 <Upload className="mx-auto h-12 w-12 text-gray-400"/>
                 <p className="mt-1">选择大文件上传</p>
-                <p className="text-sm text-gray-500">支持分块上传，无大小限制</p>
+                <p className="text-sm text-muted-foreground">支持分块上传，无大小限制</p>
                 <input
                   type="file"
                   onChange={handleFileChange}

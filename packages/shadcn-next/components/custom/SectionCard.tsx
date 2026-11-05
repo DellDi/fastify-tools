@@ -26,7 +26,7 @@ export function SectionCard({ id, title, description, linkText, linkHref }: Sect
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.5 }}
       whileHover={{ y: -5 }}
-      className="group relative overflow-hidden rounded-xl border bg-card hover:shadow-lg transition-all duration-300"
+      className="group relative overflow-hidden rounded-xl border bg-card shadow-card hover:shadow-lift transition-all duration-300"
     >
       <motion.div
         className="absolute inset-0 bg-gradient-to-br from-primary/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500"

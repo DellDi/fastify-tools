@@ -1,98 +1,75 @@
-import { cn } from '@/lib/utils'
 import Marquee from '@/components/ui/marquee'
+import {
+  KanbanSquare,
+  ListFilter,
+  MessageSquare,
+  SlidersHorizontal,
+  ListTodo,
+  FileUp,
+  FolderOpen,
+  UploadCloud,
+  KeyRound,
+  History,
+  Users,
+  Search,
+  type LucideIcon,
+} from 'lucide-react'
 
-const reviews = [
-  {
-    name: '张伟',
-    username: '@zhangwei',
-    body: '这个产品真是太棒了！用户体验一流',
-    img: 'https://avatar.vercel.sh/jack',
-  },
-  {
-    name: '李娜',
-    username: '@lina',
-    body: '界面设计很美观，操作也很流畅',
-    img: 'https://avatar.vercel.sh/jill',
-  },
-  {
-    name: '王强',
-    username: '@wangqiang',
-    body: '功能非常强大，完全满足我的需求',
-    img: 'https://avatar.vercel.sh/john',
-  },
-  {
-    name: '赵敏',
-    username: '@zhaomin',
-    body: '客服响应很快，问题解决得很及时',
-    img: 'https://avatar.vercel.sh/jane',
-  },
-  {
-    name: '刘芳',
-    username: '@liufang',
-    body: '性价比超高，强烈推荐给大家',
-    img: 'https://avatar.vercel.sh/jenny',
-  },
-  {
-    name: '陈明',
-    username: '@chenming',
-    body: '使用起来非常顺手，学习曲线平缓',
-    img: 'https://avatar.vercel.sh/james',
-  },
+const tools: { icon: LucideIcon; name: string; desc: string }[] = [
+  { icon: KanbanSquare, name: 'Jira 工单', desc: '按模板快速创建与指派' },
+  { icon: Search, name: '我的工单', desc: '追踪个人待办与进展' },
+  { icon: ListFilter, name: '字段规则', desc: '可复用的 Jira 填表规则' },
+  { icon: MessageSquare, name: 'AI 对话', desc: '接入 Dify 的智能会话' },
+  { icon: SlidersHorizontal, name: '模型调优', desc: '对比不同模型的输出' },
+  { icon: ListTodo, name: '任务面板', desc: '异步任务队列一览' },
+  { icon: FileUp, name: '文件上传', desc: '单文件与批量上传' },
+  { icon: UploadCloud, name: '大文件续传', desc: '分片上传，断点续传' },
+  { icon: FolderOpen, name: '文件管理', desc: '已上传文件归档查询' },
+  { icon: KeyRound, name: '密码工具', desc: '密文解密与安全校验' },
+  { icon: History, name: '更新日志', desc: '平台版本与变更记录' },
+  { icon: Users, name: '团队管理', desc: '角色、权限与菜单配置' },
 ]
 
-const firstRow = reviews.slice(0, reviews.length / 2)
-const secondRow = reviews.slice(reviews.length / 2)
+const firstRow = tools.slice(0, tools.length / 2)
+const secondRow = tools.slice(tools.length / 2)
 
-const ReviewCard = ({
-  img,
+function ToolChip({
+  icon: Icon,
   name,
-  username,
-  body,
+  desc,
 }: {
-  img: string
+  icon: LucideIcon
   name: string
-  username: string
-  body: string
-}) => {
+  desc: string
+}) {
   return (
-    <figure
-      className={cn(
-        'relative w-64 cursor-pointer overflow-hidden rounded-xl border p-4',
-        // light styles
-        'border-gray-950/[.1] bg-gray-950/[.01] hover:bg-gray-950/[.05]',
-        // dark styles
-        'dark:border-gray-50/[.1] dark:bg-gray-50/[.10] dark:hover:bg-gray-50/[.15]'
-      )}
-    >
-      <div className="flex flex-row items-center gap-2">
-        <img className="rounded-full" width="32" height="32" alt="" src={img} />
-        <div className="flex flex-col">
-          <figcaption className="text-sm font-medium dark:text-white">
-            {name}
-          </figcaption>
-          <p className="text-xs font-medium dark:text-white/40">{username}</p>
-        </div>
+    <div className="flex w-64 items-center gap-3 rounded-xl border bg-card px-4 py-3 shadow-card">
+      <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-accent text-accent-foreground">
+        <Icon className="h-4 w-4" />
+      </span>
+      <div className="min-w-0">
+        <p className="text-sm font-medium leading-tight">{name}</p>
+        <p className="mt-0.5 truncate text-xs text-muted-foreground">{desc}</p>
       </div>
-      <blockquote className="mt-2 text-sm">{body}</blockquote>
-    </figure>
+    </div>
   )
 }
 
-export function MarqueeDemoVertical() {
+export function ToolTicker() {
   return (
-    <div className="relative flex h-[300px] w-full flex-col items-center justify-center overflow-hidden rounded-lg border bg-background md:shadow-xl">
-      <Marquee pauseOnHover className="[--duration:20s]">
-        {firstRow.map((review) => (
-          <ReviewCard key={review.username} {...review} />
+    <div className="relative flex w-full flex-col justify-center overflow-hidden py-2">
+      <Marquee pauseOnHover className="[--duration:32s]">
+        {firstRow.map((tool) => (
+          <ToolChip key={tool.name} {...tool} />
         ))}
       </Marquee>
-      <Marquee reverse pauseOnHover className="[--duration:20s]">
-        {secondRow.map((review) => (
-          <ReviewCard key={review.username} {...review} />
+      <Marquee reverse pauseOnHover className="[--duration:32s]">
+        {secondRow.map((tool) => (
+          <ToolChip key={tool.name} {...tool} />
         ))}
       </Marquee>
-      <div className="pointer-events-none absolute inset-y-0 left-0 w-1/3 bg-linear-to-r from-white dark:from-background"></div>
-      <div className="pointer-events-none absolute inset-y-0 right-0 w-1/3 bg-linear-to-l from-white dark:from-background"></div>
+      <div className="pointer-events-none absolute inset-y-0 left-0 w-1/4 bg-gradient-to-r from-background to-transparent" />
+      <div className="pointer-events-none absolute inset-y-0 right-0 w-1/4 bg-gradient-to-l from-background to-transparent" />
     </div>
   )
 }

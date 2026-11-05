@@ -1,11 +1,10 @@
 export const revalidate = 60 // 每60秒重新验证数据
 
 import ClientHeader from '@/components/custom/ClientHeader'
-import { MarqueeDemoVertical } from '@/components/custom/base/banner-list'
-import { SparklesPreview } from '@/components/custom/SparklesPreview'
+import { ToolTicker } from '@/components/custom/base/banner-list'
+import { BrandHero } from '@/components/custom/BrandHero'
 
 import { getAllSections, type Section } from '@/lib/db'
-import { toast } from 'sonner'
 import { SectionCard } from '@/components/custom/SectionCard'
 
 // 静态渲染
@@ -14,11 +13,10 @@ async function getData(): Promise<{ data: Section[]; error: string | null }> {
   try {
     const sections = await getAllSections()
     return { data: sections, error: null }
-  } catch (error) {
-    toast.error(`⛔获取数据失败，请稍后再试${error}`)
+  } catch {
     return {
       data: [],
-      error: '⛔⛔⛔⛔⛔⛔⛔⛔⛔⛔⛔⛔⛔⛔⛔⛔获取数据失败，请稍后再试',
+      error: '获取数据失败，请稍后再试',
     }
   }
 }
@@ -27,37 +25,42 @@ export default async function Home() {
   const { data: sections, error } = await getData()
 
   return (
-    <main className="flex min-h-screen flex-col items-center gap-12">
+    <main className="flex min-h-screen flex-col">
       <ClientHeader />
-      <div className="text-2xl font-bold">
-        <SparklesPreview />
-      </div>
-      <div className="w-full">
-        <MarqueeDemoVertical />
-      </div>
-      <div className="container mx-auto px-4 py-2">
+      <BrandHero />
+      <ToolTicker />
+      <section className="container mx-auto w-full max-w-7xl px-4 pb-20 pt-14">
+        <div className="mb-8">
+          <h2 className="text-2xl font-semibold tracking-tight">全部工具</h2>
+          <p className="mt-1 text-sm text-muted-foreground">
+            选择一个模块，直接进入工作
+          </p>
+        </div>
         {error ? (
-          <div className="text-center py-10">
-            <h2 className="text-2xl font-bold mb-4">数据加载失败</h2>
-            <p>{error}</p>
+          <div className="py-10 text-center">
+            <h3 className="mb-2 text-xl font-semibold">数据加载失败</h3>
+            <p className="text-sm text-muted-foreground">{error}</p>
           </div>
         ) : (
-          <div className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {sections.map((section) => (
-                <SectionCard
-                  key={section.id}
-                  id={section.id}
-                  title={section.title}
-                  description={section.description}
-                  linkText={section.linkText}
-                  linkHref={section.linkHref}
-                />
-              ))}
-            </div>
+          <div className="grid grid-cols-1 gap-5 md:grid-cols-2 lg:grid-cols-3">
+            {sections.map((section) => (
+              <SectionCard
+                key={section.id}
+                id={section.id}
+                title={section.title}
+                description={section.description}
+                linkText={section.linkText}
+                linkHref={section.linkHref}
+              />
+            ))}
           </div>
         )}
-      </div>
+      </section>
+      <footer className="mt-auto border-t py-8">
+        <p className="text-center text-xs text-muted-foreground">
+          Built by DellDi · Next.js 15 / Fastify 5 / Prisma 6 / PostgreSQL 17
+        </p>
+      </footer>
     </main>
   )
 }

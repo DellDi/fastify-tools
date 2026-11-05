@@ -3,13 +3,15 @@
 import { useState } from 'react'
 import { motion } from 'motion/react'
 import { Plus, Edit, Trash, X } from 'lucide-react'
+import { Button } from '@/components/ui/button'
+import { Card, CardContent, CardHeader } from '@/components/ui/card'
+import { Input } from '@/components/ui/input'
 
 interface ChangelogItem {
   id: string
   version: string
   date: string
   changes: string[]
-  color: string
 }
 
 const initialChangelogData: ChangelogItem[] = [
@@ -22,7 +24,6 @@ const initialChangelogData: ChangelogItem[] = [
       '新增AI驱动的内容推荐系统',
       '性能优化,页面加载速度提升50%',
     ],
-    color: 'from-purple-500 to-pink-500',
   },
   {
     id: '2',
@@ -33,16 +34,7 @@ const initialChangelogData: ChangelogItem[] = [
       '新增5种语言支持',
       '修复了几个关键的bug',
     ],
-    color: 'from-yellow-400 to-orange-500',
   },
-]
-
-const colorOptions = [
-  'from-purple-500 to-pink-500',
-  'from-yellow-400 to-orange-500',
-  'from-green-400 to-cyan-500',
-  'from-blue-500 to-indigo-500',
-  'from-red-500 to-yellow-500',
 ]
 
 export default function ChangelogAdmin() {
@@ -75,57 +67,88 @@ export default function ChangelogAdmin() {
       version: '',
       date: '',
       changes: [''],
-      color: colorOptions[0],
     })
     setEditingId(null)
   }
 
   return (
-    <div className="min-h-screen bg-linear-to-br from-violet-500 to-fuchsia-500 p-8">
-      <div className="max-w-4xl mx-auto">
-        <h1 className="text-6xl font-bold text-white mb-12 text-center">
-          更新日志管理
-        </h1>
-        <button
-          onClick={handleAddNew}
-          className="mb-8 bg-white text-purple-600 px-4 py-2 rounded-full flex items-center hover:bg-purple-100 transition-colors"
-        >
-          <Plus className="mr-2"/> 添加新版本
-        </button>
-        {(newItem ? [newItem, ...changelogData] : changelogData).map((item) => (
+    <div className="mx-auto w-full max-w-3xl px-6 py-10">
+      <div className="mb-10 flex flex-wrap items-end justify-between gap-4">
+        <div>
+          <h1 className="text-3xl font-semibold tracking-tight">更新日志管理</h1>
+          <p className="mt-1.5 text-sm text-muted-foreground">
+            维护对外展示的版本与变更记录
+          </p>
+        </div>
+        <Button onClick={handleAddNew}>
+          <Plus className="h-4 w-4" /> 添加新版本
+        </Button>
+      </div>
+
+      <div className="space-y-5">
+        {(newItem ? [newItem, ...changelogData] : changelogData).map((item, index) => (
           <motion.div
             key={item.id || 'new'}
-            className="bg-white rounded-lg shadow-lg overflow-hidden mb-8"
-            initial={{ opacity: 0, y: 50 }}
+            initial={{ opacity: 0, y: 16 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5 }}
+            transition={{
+              duration: 0.45,
+              delay: index * 0.05,
+              ease: [0.22, 1, 0.36, 1],
+            }}
           >
-            {(editingId === item.id || item === newItem) ? (
-              <EditForm item={item} onSave={handleSave} onCancel={() => {
-                setEditingId(null)
-                setNewItem(null)
-              }}/>
-            ) : (
-              <div className={`bg-linear-to-r ${item.color} p-6`}>
-                <div className="flex justify-between items-center">
-                  <h2 className="text-3xl font-bold text-white">版本 {item.version}</h2>
-                  <div>
-                    <button onClick={() => handleEdit(item.id)} className="text-white mr-2">
-                      <Edit/>
-                    </button>
-                    <button onClick={() => handleDelete(item.id)} className="text-white">
-                      <Trash/>
-                    </button>
-                  </div>
-                </div>
-                <p className="text-white opacity-75 mt-2">{item.date}</p>
-                <ul className="list-disc pl-5 space-y-2 mt-4 text-white">
-                  {item.changes.map((change, index) => (
-                    <li key={index}>{change}</li>
-                  ))}
-                </ul>
-              </div>
-            )}
+            <Card className="shadow-card">
+              {(editingId === item.id || item === newItem) ? (
+                <EditForm item={item} onSave={handleSave} onCancel={() => {
+                  setEditingId(null)
+                  setNewItem(null)
+                }}/>
+              ) : (
+                <>
+                  <CardHeader className="flex-row items-center justify-between space-y-0 p-5 pb-3">
+                    <div className="flex items-baseline gap-3">
+                      <h2 className="text-lg font-semibold tracking-tight">
+                        v{item.version}
+                      </h2>
+                      <span className="text-sm text-muted-foreground">
+                        {item.date}
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-1">
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-8 w-8"
+                        onClick={() => handleEdit(item.id)}
+                      >
+                        <Edit className="h-4 w-4" />
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-8 w-8 text-destructive hover:text-destructive"
+                        onClick={() => handleDelete(item.id)}
+                      >
+                        <Trash className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  </CardHeader>
+                  <CardContent className="p-5 pt-0">
+                    <ul className="space-y-2">
+                      {item.changes.map((change, i) => (
+                        <li
+                          key={i}
+                          className="flex items-start gap-2.5 text-sm leading-relaxed text-muted-foreground"
+                        >
+                          <span className="mt-[7px] h-1 w-1 shrink-0 rounded-full bg-primary" />
+                          {change}
+                        </li>
+                      ))}
+                    </ul>
+                  </CardContent>
+                </>
+              )}
+            </Card>
           </motion.div>
         ))}
       </div>
@@ -136,7 +159,7 @@ export default function ChangelogAdmin() {
 function EditForm({ item, onSave, onCancel }: { item: ChangelogItem, onSave: (item: ChangelogItem) => void, onCancel: () => void }) {
   const [editedItem, setEditedItem] = useState<ChangelogItem>(item)
 
-  const handleChangeInput = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+  const handleChangeInput = (e: React.ChangeEvent<HTMLInputElement>) => {
     setEditedItem({ ...editedItem, [e.target.name]: e.target.value })
   }
 
@@ -159,99 +182,75 @@ function EditForm({ item, onSave, onCancel }: { item: ChangelogItem, onSave: (it
     <form onSubmit={(e) => {
       e.preventDefault()
       onSave(editedItem)
-    }} className="p-6">
-      <div className="mb-4">
-        <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="version">
-          版本
-        </label>
-        <input
-          className="shadow-sm appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-hidden focus:shadow-outline"
-          id="version"
-          type="text"
-          name="version"
-          value={editedItem.version}
-          onChange={handleChangeInput}
-          required
-        />
+    }} className="space-y-5 p-6">
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+        <div className="space-y-1.5">
+          <label className="block text-sm font-medium text-foreground" htmlFor="version">
+            版本
+          </label>
+          <Input
+            id="version"
+            type="text"
+            name="version"
+            value={editedItem.version}
+            onChange={handleChangeInput}
+            required
+          />
+        </div>
+        <div className="space-y-1.5">
+          <label className="block text-sm font-medium text-foreground" htmlFor="date">
+            日期
+          </label>
+          <Input
+            id="date"
+            type="date"
+            name="date"
+            value={editedItem.date}
+            onChange={handleChangeInput}
+            required
+          />
+        </div>
       </div>
-      <div className="mb-4">
-        <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="date">
-          日期
-        </label>
-        <input
-          className="shadow-sm appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-hidden focus:shadow-outline"
-          id="date"
-          type="date"
-          name="date"
-          value={editedItem.date}
-          onChange={handleChangeInput}
-          required
-        />
-      </div>
-      <div className="mb-4">
-        <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="color">
-          颜色
-        </label>
-        <select
-          className="shadow-sm appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-hidden focus:shadow-outline"
-          id="color"
-          name="color"
-          value={editedItem.color}
-          onChange={handleChangeInput}
-        >
-          {colorOptions.map((color, index) => (
-            <option key={index} value={color}>
-              颜色 {index + 1}
-            </option>
-          ))}
-        </select>
-      </div>
-      <div className="mb-4">
-        <label className="block text-gray-700 text-sm font-bold mb-2">
+      <div className="space-y-2">
+        <label className="block text-sm font-medium text-foreground">
           更新内容
         </label>
         {editedItem.changes.map((change, index) => (
-          <div key={index} className="flex mb-2">
-            <input
-              className="shadow-sm appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-hidden focus:shadow-outline mr-2"
+          <div key={index} className="flex gap-2">
+            <Input
               type="text"
               value={change}
               onChange={(e) => handleChangeChange(index, e.target.value)}
               required
             />
-            <button
+            <Button
               type="button"
+              variant="ghost"
+              size="icon"
+              className="shrink-0 text-destructive hover:text-destructive"
               onClick={() => handleRemoveChange(index)}
-              className="bg-red-500 hover:bg-red-700 text-white font-bold py-2 px-4 rounded"
             >
-              <X size={16}/>
-            </button>
+              <X className="h-4 w-4" />
+            </Button>
           </div>
         ))}
-        <button
+        <Button
           type="button"
+          variant="outline"
+          size="sm"
           onClick={handleAddChange}
-          className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded mt-2"
         >
           添加更新内容
-        </button>
+        </Button>
       </div>
-      <div className="flex justify-end">
-        <button
-          type="button"
-          onClick={onCancel}
-          className="bg-gray-500 hover:bg-gray-700 text-white font-bold py-2 px-4 rounded mr-2"
-        >
+      <div className="flex justify-end gap-2">
+        <Button type="button" variant="outline" onClick={onCancel}>
           取消
-        </button>
-        <button
-          type="submit"
-          className="bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded"
-        >
+        </Button>
+        <Button type="submit">
           保存
-        </button>
+        </Button>
       </div>
     </form>
   )
 }
-

@@ -127,7 +127,7 @@ export function PasswordCard({
           </Button>
         </form>
         {result && (
-          <div className="mt-4 p-2 bg-gray-100 rounded dark:bg-gray-900">
+          <div className="mt-4 p-2 bg-muted rounded">
             <Label htmlFor="result">结果</Label>
             <p className="text-sm font-medium">{result}</p>
           </div>

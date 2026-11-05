@@ -47,7 +47,7 @@ export default function AuthPage() {
 
   return (
     <BackgroundBeamsWithCollision className="h-screen">
-      <div className="flex items-center justify-center min-h-screen bg-gray-100 w-full dark:bg-gray-900">
+      <div className="flex items-center justify-center min-h-screen bg-background w-full">
         <Card className="w-[400px]">
           <CardHeader>
             <CardTitle>

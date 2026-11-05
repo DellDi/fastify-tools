@@ -42,7 +42,7 @@ export default function NumberGuessingGame() {
 
   return (
     <div className="text-center">
-      <p className="text-gray-600 mb-4">猜一个 1 到 100 之间的数字</p>
+      <p className="text-muted-foreground mb-4">猜一个 1 到 100 之间的数字</p>
       <Input
         type="number"
         value={guess}
@@ -55,7 +55,7 @@ export default function NumberGuessingGame() {
         whileHover={{ scale: 1.05 }}
         whileTap={{ scale: 0.95 }}
         onClick={gameOver ? resetGame : handleGuess}
-        className="bg-indigo-500 px-4 py-2 rounded-md hover:bg-indigo-600 transition duration-300 w-full"
+        className="bg-primary text-primary-foreground px-4 py-2 rounded-md hover:bg-primary/90 transition duration-300 w-full"
       >
         {gameOver ? '重新开始' : '猜！'}
       </motion.button>
@@ -63,7 +63,7 @@ export default function NumberGuessingGame() {
         <motion.p
           initial={{ opacity: 0, y: -10 }}
           animate={{ opacity: 1, y: 0 }}
-          className="mt-4 text-indigo-600 font-semibold"
+          className="mt-4 text-primary font-semibold"
         >
           {message}
         </motion.p>

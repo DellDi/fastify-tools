@@ -18,22 +18,22 @@ export default function EmailVerificationWaiting({ email }: EmailVerificationWai
   }, [])
 
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center bg-linear-to-br from-blue-50 to-indigo-100 p-4">
+    <div className="min-h-screen flex flex-col items-center justify-center bg-background p-4">
       <motion.div
         initial={{ opacity: 0, y: -20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5 }}
-        className="bg-white rounded-xl shadow-xl p-8 max-w-md w-full text-center"
+        className="bg-card rounded-xl shadow-modal border p-8 max-w-md w-full text-center"
       >
         <motion.div
           animate={{ rotate: [0, 360] }}
           transition={{ duration: 2, repeat: Infinity, ease: "linear" }}
           className="mb-6"
         >
-          <Mail className="mx-auto h-16 w-16 text-blue-500" />
+          <Mail className="mx-auto h-16 w-16 text-primary" />
         </motion.div>
-        <h2 className="text-2xl font-bold text-gray-800 mb-4">查看您的邮箱</h2>
-        <p className="text-gray-600 mb-6">
+        <h2 className="text-2xl font-bold text-foreground mb-4">查看您的邮箱</h2>
+        <p className="text-muted-foreground mb-6">
           我们已经向 <span className="font-semibold">{email}</span> 发送了一封验证邮件。
           请查看您的收件箱并点击验证链接来完成注册过程。
         </p>
@@ -41,7 +41,7 @@ export default function EmailVerificationWaiting({ email }: EmailVerificationWai
           href={`https://${email.split('@')[1]}`}
           target="_blank"
           rel="noopener noreferrer"
-          className="bg-blue-500 text-white px-4 py-2 rounded-md hover:bg-blue-600 transition duration-300 flex items-center justify-center mx-auto"
+          className="bg-primary text-primary-foreground px-4 py-2 rounded-md hover:bg-primary/90 transition duration-300 flex items-center justify-center mx-auto"
         >
           <ExternalLink className="mr-2 h-4 w-4" />
           打开邮箱
@@ -55,9 +55,9 @@ export default function EmailVerificationWaiting({ email }: EmailVerificationWai
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: 20 }}
             transition={{ duration: 0.5 }}
-            className="mt-8 bg-white rounded-xl shadow-xl p-8 max-w-md w-full"
+            className="mt-8 bg-card rounded-xl shadow-modal border p-8 max-w-md w-full"
           >
-            <h3 className="text-xl font-semibold text-gray-800 mb-4">等待时玩个小游戏吧！</h3>
+            <h3 className="text-xl font-semibold text-foreground mb-4">等待时玩个小游戏吧！</h3>
             <NumberGuessingGame />
           </motion.div>
         )}

@@ -18,9 +18,12 @@ const navLinks = [
   {
     href: 'https://github.com/DellDi',
     label: 'GitHub',
-    icon: <GithubIcon className="h-5 w-5 dark:border-2 bg-white rounded-xl" />,
+    icon: <GithubIcon className="h-5 w-5 rounded-full ring-1 ring-border" />,
   },
 ]
+
+const linkClass =
+  'relative text-sm font-medium text-muted-foreground transition-colors hover:text-foreground after:absolute after:-bottom-1 after:left-0 after:h-px after:w-0 after:bg-primary after:transition-all after:duration-300 hover:after:w-full'
 
 export default function ClientHeader() {
   const basePath = process.env.NEXT_PUBLIC_BASE_PATH || ''
@@ -37,31 +40,28 @@ export default function ClientHeader() {
   }
 
   return (
-    <header className="sticky top-0 z-50 w-full backdrop-blur-md bg-white/50 dark:bg-gray-900/50 border-b border-gray-200 dark:border-gray-800">
-      <div className="container mx-auto px-4">
-        <div className="flex justify-between items-center py-4">
-          <Link href="/" className="flex items-center space-x-2">
+    <header className="sticky top-0 z-50 w-full border-b border-border bg-background/70 backdrop-blur-md">
+      <div className="container mx-auto max-w-7xl px-4">
+        <div className="flex items-center justify-between py-3.5">
+          <Link href="/" className="flex items-center gap-2.5">
             <Image
               src={`${basePath}/img/delldi-logo.png`}
-              width={32}
-              height={32}
+              width={30}
+              height={30}
               alt="Next Full Stack"
               className="h-8 w-8 rounded-full"
             />
-            <span className="text-xl font-bold bg-clip-text text-transparent bg-linear-to-r from-blue-500 to-purple-600">
+            <span className="text-lg font-semibold tracking-tight">
               DellDi
+              <span className="text-primary">.</span>
             </span>
           </Link>
 
-          <nav className="hidden md:flex items-center space-x-6">
+          <nav className="hidden items-center gap-7 md:flex">
             {navLinks.map((link, index) => (
-              <Link
-                key={index}
-                href={link.href}
-                className="text-sm font-medium text-gray-700 dark:text-gray-200 hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
-              >
+              <Link key={index} href={link.href} className={linkClass}>
                 {link.icon ? (
-                  <span className="flex items-center space-x-1">
+                  <span className="flex items-center gap-1.5">
                     {link.icon}
                     <span>{link.label}</span>
                   </span>
@@ -72,7 +72,7 @@ export default function ClientHeader() {
             ))}
           </nav>
 
-          <div className="flex items-center space-x-2">
+          <div className="flex items-center gap-2">
             <ToggleTheme />
             <Button
               variant="ghost"
@@ -97,18 +97,18 @@ export default function ClientHeader() {
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -10 }}
             transition={{ duration: 0.2 }}
-            className="md:hidden"
+            className="border-t border-border bg-background md:hidden"
           >
-            <nav className="container mx-auto px-4 py-4 flex flex-col space-y-4">
+            <nav className="container mx-auto flex flex-col gap-1 px-4 py-3">
               {navLinks.map((link, index) => (
                 <Link
                   key={index}
                   href={link.href}
-                  className="text-sm font-medium text-gray-700 dark:text-gray-200 hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
+                  className="rounded-lg px-3 py-2.5 text-sm font-medium text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
                   onClick={() => setMenuOpen(false)}
                 >
                   {link.icon ? (
-                    <span className="flex items-center space-x-2">
+                    <span className="flex items-center gap-2">
                       {link.icon}
                       <span>{link.label}</span>
                     </span>

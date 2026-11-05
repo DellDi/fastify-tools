@@ -21,7 +21,7 @@ export default async function AccountPage() {
     return (
       <div className="container mx-auto py-10">
         <h1 className="text-2xl font-bold mb-5">请先登录</h1>
-        <p className="text-gray-500">您需要先登录才能访问账户设置。</p>
+        <p className="text-muted-foreground">您需要先登录才能访问账户设置。</p>
         <Link href="/login" className="text-blue-500 hover:underline">
           登录
         </Link>
@@ -34,7 +34,7 @@ export default async function AccountPage() {
     return (
       <div className="container mx-auto py-10">
         <h1 className="text-2xl font-bold mb-5">账户设置</h1>
-        <p className="text-gray-500">获取用户信息失败，请稍后再试。</p>
+        <p className="text-muted-foreground">获取用户信息失败，请稍后再试。</p>
       </div>
     )
   }

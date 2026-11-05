@@ -78,7 +78,7 @@ export function BatchUpload() {
 
   return (
     <div
-      className="h-full flex items-center flex-col justify-center border-2 border-dashed rounded-lg p-4 text-center cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
+      className="h-full flex items-center flex-col justify-center border-2 border-dashed border-border rounded-lg p-4 text-center cursor-pointer hover:bg-accent/60 dark:hover:bg-accent/40 transition-colors"
       onDrop={(e) => handleDrop(e)}
       onDragOver={(e) => e.preventDefault()}
     >

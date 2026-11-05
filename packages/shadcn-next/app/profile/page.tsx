@@ -29,7 +29,7 @@ export default async function ProfilePage() {
             </Avatar>
             <div>
               <h2 className="text-xl font-semibold">{user.username}</h2>
-              <p className="text-gray-500">{user.email}</p>
+              <p className="text-muted-foreground">{user.email}</p>
             </div>
           </div>
           <div className="mt-6 space-y-4">

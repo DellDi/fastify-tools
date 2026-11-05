@@ -16,8 +16,8 @@ const Layout = async ({ children }: {
       defaultOpen={sidebar?.value === 'true'} // Now you can safely use sidebarState
     >
       <AppSidebar/>
-      <main className="h-screen w-full flex flex-col transition-all duration-300 ease-in-out box-border">
-        <header className="flex items-center justify-between p-2 border-b-2 border-border bg-card shadow-[4px_4px_0_hsl(var(--shadow-brutal))]">
+      <main className="h-screen w-full flex flex-col box-border">
+        <header className="sticky top-0 z-20 flex items-center justify-between px-4 py-2.5 border-b border-border bg-card/80 backdrop-blur-md">
           <div className="flex items-center justify-center">
             <SidebarTrigger className={`mr-2`}/>
             <DynamicBreadcrumb/>
@@ -29,14 +29,14 @@ const Layout = async ({ children }: {
                 <Input
                   type="search"
                   placeholder="Search products..."
-                  className="w-full appearance-none pl-8"
+                  className="w-full appearance-none pl-8 rounded-full bg-muted/60"
                 />
               </div>
             </form>
             <ToggleTheme className="ml-2"/>
           </div>
         </header>
-        <div className="grow rounded-none border-2 border-border bg-background p-3 box-border overflow-auto shadow-[4px_4px_0_hsl(var(--shadow-brutal))]">
+        <div className="grow bg-background p-4 box-border overflow-auto">
           {children}
         </div>
       </main>
