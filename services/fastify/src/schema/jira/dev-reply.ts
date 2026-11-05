@@ -21,6 +21,20 @@ const DevReplyResultSchema = Type.Object({
   success: Type.Boolean({
     description: '当前工单整体是否执行成功',
   }),
+  status: Type.Optional(
+    Type.Union(
+      [
+        Type.Literal('success'),
+        Type.Literal('partial_success'),
+        Type.Literal('failure'),
+        Type.Literal('unchanged'),
+      ],
+      {
+        description:
+          '执行结果分类：success 全部完成 / partial_success 字段已改但转换失败 / failure 失败 / unchanged reconcile 后无需改动',
+      },
+    )
+  ),
   issueKey: Type.String({
     description: '工单 Key',
   }),
