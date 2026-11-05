@@ -196,6 +196,7 @@ export interface DevReplyData {
 
 export type DevReplyStepName =
   | 'queryCurrentState'
+  | 'normalizeStartTime'
   | 'queryUsedDates'
   | 'selectFixVersion'
   | 'allocateDevCompleteDate'

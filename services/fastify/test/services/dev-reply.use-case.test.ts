@@ -169,6 +169,7 @@ const makeHarness = (overrides: {
     {
       fixVersions?: Array<{ id: string }>
       customfield_10022?: string
+      customfield_10100?: string
       status?: { name?: string }
     }
   >
@@ -309,6 +310,31 @@ test('devReply with reconcile=false should not read current state and blind-writ
   assert.equal(calls.some((c) => c.startsWith('getIssueDetail')), false)
   assert.equal(updates.length, 1)
   assert.equal(updates[0].customfield_10022, '2026-03-18')
+})
+
+test('devReply reconcile should normalize a 00:00 plan start time', async () => {
+  const { updates, useCase } = makeHarness({
+    issueDetails: {
+      'NDE-3160': {
+        fixVersions: [{ id: '23987' }],
+        customfield_10022: '2026-11-10',
+        customfield_10100: '2026-11-10T00:00:00.000+0800',
+        status: { name: '开发已回复' },
+      },
+    },
+    issues: [],
+  })
+
+  const result = await useCase.devReply(
+    { jiraUser: 'zengdi', jiraPassword: '1' },
+    { issueKey: 'NDE-3160', projectKey: 'NDE', assignee: 'zhouxia' },
+  )
+
+  assert.equal(result.success, true)
+  const startUpdate = updates.find((f) => f.customfield_10100)
+  assert.ok(startUpdate, '应当修正 00:00 的计划开始时间')
+  assert.doesNotMatch(startUpdate.customfield_10100, /T00:00:00/)
+  assert.match(startUpdate.customfield_10100, /^2026-11-10T(09|1[0-7]):[0-5]\d:00\.000\+0800$/)
 })
 
 test('devReplyBatch should collect unchangedIssueKeys', async () => {

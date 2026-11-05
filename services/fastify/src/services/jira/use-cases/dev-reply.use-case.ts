@@ -274,6 +274,7 @@ export class DevReplyUseCase {
         dateFrom?: string
         dateTo?: string
         additionalFields?: boolean
+        startTimeTo?: string
       } = {}
       if (versionNeedsUpdate) {
         changes.versionTo = fixVersion?.version.name ?? fixVersionId
@@ -452,6 +453,35 @@ export class DevReplyUseCase {
         }
       }
 
+      // "计划开始时间"(customfield_10100) 若为 T00:00:00（转换 post-function
+      // 或人工只选日期产生），在转换执行完之后校正为同日期+随机工作时段，
+      // 避免批量处理出的时间全是整点 00:00 一眼假
+      if (reconcile && this.updateTicket) {
+        try {
+          const latest = await this.jiraRestService.getIssueDetail<{
+            fields?: { customfield_10100?: string }
+          }>(issueKey, session.cookies, ['customfield_10100'])
+          const cur = latest.fields?.customfield_10100
+          if (cur && /T00:00:00/.test(cur)) {
+            const hh = String(9 + Math.floor(Math.random() * 9)).padStart(2, '0')
+            const mm = String(Math.floor(Math.random() * 60)).padStart(2, '0')
+            const newStart = `${cur.slice(0, 10)}T${hh}:${mm}:00.000+0800`
+            await this.updateTicket(credentials, {
+              issueIdOrKey: issueKey,
+              fields: { customfield_10100: newStart },
+            })
+            changes.startTimeTo = newStart
+            pushStep('normalizeStartTime', true, '已校正计划开始时间', {
+              planStartTime: newStart,
+            })
+          }
+        } catch (error) {
+          const message = `校正计划开始时间失败: ${error instanceof Error ? error.message : String(error)}`
+          this.logger.warn(message)
+          pushStep('normalizeStartTime', false, message)
+        }
+      }
+
       // 有字段改动但（已回复态）没有执行转换 → 用独立评论接口补一条说明
       if (!transitionSuccess && hasChanges) {
         await this.postCommentStep(
@@ -462,7 +492,8 @@ export class DevReplyUseCase {
         )
       }
 
-      const nothingChanged = !transitionSuccess && !hasChanges
+      const nothingChanged =
+        !transitionSuccess && !hasChanges && !changes.startTimeTo
 
       return {
         success: true,
