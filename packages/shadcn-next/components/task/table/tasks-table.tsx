@@ -32,7 +32,7 @@ import {
   PaginationPrevious,
 } from '@/components/ui/pagination'
 import { Badge } from '@/components/ui/badge'
-import { MoreHorizontal, Plus, RefreshCw, Download, Filter } from 'lucide-react'
+import { MoreHorizontal, Plus, RefreshCw, Download, Filter, Eye } from 'lucide-react'
 import { formatDate } from '@/lib/utils'
 import { useToast } from '@/components/ui/use-toast'
 import {
@@ -52,6 +52,7 @@ import { fetchFastApi } from '@/utils/fetch/fastFetch'
 import { CreateTaskDialog } from '../dialog/create-task-dialog'
 import { DeleteTaskDialog } from '../dialog/delete-task-dialog'
 import { UploadTaskDialog } from '../dialog/upload-task-dialog'
+import { MdPreviewDialog } from '../dialog/md-preview-dialog'
 
 import { Progress } from '@/components/ui/progress'
 import {
@@ -90,6 +91,12 @@ export function TasksTable() {
   const [downloadProgress, setDownloadProgress] = useState(0)
   const [downloadDialogOpen, setDownloadDialogOpen] = useState(false)
   const [downloadFileName, setDownloadFileName] = useState('')
+
+  // 预览状态
+  const [previewTask, setPreviewTask] = useState<{
+    taskId: string
+    mode: string
+  } | null>(null)
 
   const handleFilterChange = (value: string) => {
     setTypeFilter(value)
@@ -459,21 +466,36 @@ export function TasksTable() {
                     <TableCell>{formatDate(task.updated_at)}</TableCell>
                     <TableCell className=" min-w-[100px]">
                       {task.status.toLowerCase() === 'completed' && (
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          aria-placeholder="下载"
-                          onClick={() =>
-                            handleDownload(task.task_id, task.task_mode)
-                          }
-                          disabled={isDownloading}
-                        >
-                          <Download
-                            className={`h-2 w-2 ${
-                              isDownloading ? 'animate-pulse' : ''
-                            }`}
-                          />
-                        </Button>
+                        <>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            title="在线预览"
+                            onClick={() =>
+                              setPreviewTask({
+                                taskId: task.task_id,
+                                mode: task.task_mode,
+                              })
+                            }
+                          >
+                            <Eye className="h-4 w-4" />
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            aria-placeholder="下载"
+                            onClick={() =>
+                              handleDownload(task.task_id, task.task_mode)
+                            }
+                            disabled={isDownloading}
+                          >
+                            <Download
+                              className={`h-2 w-2 ${
+                                isDownloading ? 'animate-pulse' : ''
+                              }`}
+                            />
+                          </Button>
+                        </>
                       )}
 
                       <DropdownMenu>
@@ -590,6 +612,15 @@ export function TasksTable() {
         crawlerTaskId={selectedTask?.task_id || ''}
         onUpload={handleUploadTask}
       />
+
+      {previewTask && (
+        <MdPreviewDialog
+          open={!!previewTask}
+          onOpenChange={(o) => !o && setPreviewTask(null)}
+          taskId={previewTask.taskId}
+          mode={previewTask.mode}
+        />
+      )}
     </Card>
   )
 }
