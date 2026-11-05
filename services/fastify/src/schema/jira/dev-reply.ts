@@ -80,9 +80,19 @@ const JiraDevReplyBody = Type.Object({
     default: process.env.JIRA_DEFAULT_PROJECT || 'V10',
     description: '项目Key，用于查询版本信息',
   }),
-  assignee: Type.String({
-    description: '经办人，用于查询已占用的预计开发完成时间',
-  }),
+  assignee: Type.Optional(
+    Type.String({
+      default: 'zhouxia',
+      description: '经办人，用于查询已占用的预计开发完成时间。不传默认 zhouxia。',
+    }),
+  ),
+  reconcile: Type.Optional(
+    Type.Boolean({
+      default: true,
+      description:
+        '对账模式，默认开启。逐项检查工单现状（修复版本/预计完成时间/回复状态），只改写漂移项：版本已是目标单选版本则不动、日期仍合法则保留、已是回复态则跳过转换；有实际改动时自动补一条说明评论。传 false 回退到全量盲写。',
+    }),
+  ),
   transitionId: Type.Optional(
     Type.String({
       description: '转换ID，执行工作流的 id',
@@ -109,6 +119,9 @@ const JiraDevReplyResponse = Type.Object({
   failureCount: Type.Number(),
   successfulIssueKeys: Type.Array(Type.String()),
   failedIssueKeys: Type.Array(Type.String()),
+  unchangedIssueKeys: Type.Array(
+    Type.String({ description: 'reconcile 模式下未发生任何改动的工单' }),
+  ),
   results: Type.Array(DevReplyResultSchema),
 })
 

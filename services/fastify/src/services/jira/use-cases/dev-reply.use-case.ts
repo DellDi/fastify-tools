@@ -1,5 +1,6 @@
 import type { FastifyBaseLogger } from 'fastify'
 import { JiraError, ValidationError } from '@/utils/errors.js'
+import { isValidDevCompleteDate } from '../utils.js'
 import type { JiraRestService } from '../jira-rest.service.js'
 import type { JiraSessionService } from '../jira-session.service.js'
 import type {
@@ -66,6 +67,7 @@ export class DevReplyUseCase {
     batchAllocationState?: DevReplyBatchAllocationState,
   ): Promise<DevReplyResponse> {
     const { issueKey, projectKey, assignee } = data
+    const reconcile = data.reconcile !== false
     const steps: DevReplyStepResult[] = []
     let fieldUpdateSuccess = false
     let transitionSuccess = false
@@ -79,6 +81,40 @@ export class DevReplyUseCase {
     }
 
     try {
+      let currentFixVersionIds: string[] = []
+      let currentDevDate: string | undefined
+      let currentStatusName = ''
+
+      if (reconcile) {
+        try {
+          const detail = await this.jiraRestService.getIssueDetail<{
+            fields?: {
+              fixVersions?: Array<{ id: string }>
+              customfield_10022?: string
+              status?: { name?: string }
+            }
+          }>(issueKey, session.cookies, [
+            'fixVersions',
+            'customfield_10022',
+            'status',
+          ])
+          currentFixVersionIds = (detail.fields?.fixVersions ?? []).map(
+            (version) => version.id,
+          )
+          currentDevDate = detail.fields?.customfield_10022
+          currentStatusName = detail.fields?.status?.name ?? ''
+          pushStep('queryCurrentState', true, '已读取工单现状', {
+            fixVersions: currentFixVersionIds,
+            devCompleteDate: currentDevDate,
+            status: currentStatusName,
+          })
+        } catch (error) {
+          const message = `读取工单现状失败: ${error instanceof Error ? error.message : String(error)}`
+          this.logger.warn(message)
+          pushStep('queryCurrentState', false, message)
+        }
+      }
+
       let usedDates = new Set<string>()
       let maxUsedDate: string | undefined
 
@@ -98,6 +134,11 @@ export class DevReplyUseCase {
           for (const reservedDate of batchAllocationState.reservedDates) {
             usedDates.add(reservedDate)
           }
+        }
+        // reconcile 模式下本单旧日期不视为占用：保留校验和重新分配都以"他人占用"为准，
+        // 否则重复执行会把日期一天天往后顺延（漂移）
+        if (reconcile && currentDevDate) {
+          usedDates.delete(currentDevDate)
         }
         maxUsedDate = this.jiraRestService.getMaxUsedDate(usedDates)
         this.logger.info(
@@ -165,19 +206,34 @@ export class DevReplyUseCase {
               ? await this.jiraRestService.getHolidays(currentYear + 1)
               : new Set<string>()
           const allHolidays = new Set([...holidays, ...nextYearHolidays])
-          const { findAvailableDate } = await import('../utils.js')
-          devCompleteDate = findAvailableDate(
-            fixVersion.date,
-            usedDates,
-            allHolidays,
-          )
-          if (batchAllocationState) {
-            batchAllocationState.reservedDates.add(devCompleteDate)
+
+          if (
+            reconcile &&
+            currentDevDate &&
+            isValidDevCompleteDate(currentDevDate, fixVersion.date, allHolidays)
+          ) {
+            devCompleteDate = currentDevDate
+            pushStep(
+              'allocateDevCompleteDate',
+              true,
+              '现有预计开发完成时间仍有效，保留原值',
+              { devCompleteDate, kept: true },
+            )
+          } else {
+            const { findAvailableDate } = await import('../utils.js')
+            devCompleteDate = findAvailableDate(
+              fixVersion.date,
+              usedDates,
+              allHolidays,
+            )
+            if (batchAllocationState) {
+              batchAllocationState.reservedDates.add(devCompleteDate)
+            }
+            this.logger.info(`Allocated dev complete date: ${devCompleteDate}`)
+            pushStep('allocateDevCompleteDate', true, '已自动分配预计开发完成时间', {
+              devCompleteDate,
+            })
           }
-          this.logger.info(`Allocated dev complete date: ${devCompleteDate}`)
-          pushStep('allocateDevCompleteDate', true, '已自动分配预计开发完成时间', {
-            devCompleteDate,
-          })
         } catch (error) {
           const message = `分配预计开发完成时间失败: ${error instanceof Error ? error.message : String(error)}`
           this.logger.warn(message)
@@ -187,16 +243,45 @@ export class DevReplyUseCase {
         pushStep('allocateDevCompleteDate', false, '缺少可用修复版本，无法自动分配预计开发完成时间')
       }
 
+      // fixVersions 是单选语义：仅当现状恰好是 [目标版本] 时才视为符合预期，
+      // 多选包含目标或其他版本都要整体替换为单选
+      const versionNeedsUpdate =
+        !!fixVersionId &&
+        !(
+          reconcile &&
+          currentFixVersionIds.length === 1 &&
+          currentFixVersionIds[0] === fixVersionId
+        )
+      const dateNeedsUpdate =
+        !!devCompleteDate && !(reconcile && currentDevDate === devCompleteDate)
+
       const updateFields: Record<string, any> = {
         ...data.additionalFields,
       }
 
-      if (fixVersionId) {
+      if (versionNeedsUpdate) {
         updateFields.fixVersions = [{ id: fixVersionId }]
       }
 
-      if (devCompleteDate) {
+      if (dateNeedsUpdate) {
         updateFields.customfield_10022 = devCompleteDate
+      }
+
+      const changedParts: string[] = []
+      if (versionNeedsUpdate) {
+        changedParts.push(
+          `修复版本更新为「${fixVersion?.version.name ?? fixVersionId}」`,
+        )
+      }
+      if (dateNeedsUpdate && devCompleteDate) {
+        changedParts.push(
+          currentDevDate
+            ? `预计开发完成时间由 ${currentDevDate} 调整为 ${devCompleteDate}`
+            : `预计开发完成时间设置为 ${devCompleteDate}`,
+        )
+      }
+      if (data.additionalFields && Object.keys(data.additionalFields).length > 0) {
+        changedParts.push('补充字段已更新')
       }
 
       if (Object.keys(updateFields).length > 0 && this.updateTicket) {
@@ -214,18 +299,25 @@ export class DevReplyUseCase {
           this.logger.warn(message)
           pushStep('updateFields', false, message)
         }
+      } else {
+        pushStep('updateFields', true, '字段均符合预期，无需更新', {
+          skipped: true,
+        })
       }
 
       const transitionId = data.transitionId || '11'
       let resolvedTransitionId = transitionId
       let transitionName = '开发回复'
+      let matchedTransition: Awaited<
+        ReturnType<JiraRestService['getTransitions']>
+      >[number] | undefined
 
       try {
         const transitions = await this.jiraRestService.getTransitions(
           issueKey,
           session.cookies,
         )
-        const matchedTransition =
+        matchedTransition =
           transitions.find((transition) => transition.id === transitionId) ||
           transitions.find(
             (transition) =>
@@ -235,23 +327,40 @@ export class DevReplyUseCase {
           )
 
         if (!matchedTransition) {
-          this.logger.warn(
-            `Available transitions: ${transitions.map((transition) => `${transition.id}:${transition.name}`).join(', ')}`,
-          )
-          throw new JiraError(`找不到开发回复工作流转换 (ID: ${transitionId})`)
+          if (reconcile && currentStatusName.includes('回复')) {
+            pushStep(
+              'getTransitions',
+              true,
+              `工单已是「${currentStatusName}」状态，无需转换`,
+              { statusName: currentStatusName, skipped: true },
+            )
+          } else {
+            this.logger.warn(
+              `Available transitions: ${transitions.map((transition) => `${transition.id}:${transition.name}`).join(', ')}`,
+            )
+            throw new JiraError(
+              `找不到开发回复工作流转换 (ID: ${transitionId})`,
+            )
+          }
+        } else {
+          resolvedTransitionId = matchedTransition.id
+          transitionName = matchedTransition.name
+          pushStep('getTransitions', true, '已获取并匹配工作流转换', {
+            transitionId: resolvedTransitionId,
+            transitionName,
+          })
         }
-
-        resolvedTransitionId = matchedTransition.id
-        transitionName = matchedTransition.name
-        pushStep('getTransitions', true, '已获取并匹配工作流转换', {
-          transitionId: resolvedTransitionId,
-          transitionName,
-        })
       } catch (error) {
         const message = `获取工作流转换失败: ${error instanceof Error ? error.message : String(error)}`
         this.logger.warn(message)
         pushStep('getTransitions', false, message)
         if (fieldUpdateSuccess) {
+          await this.postCommentStep(
+            issueKey,
+            session,
+            data.comment ?? this.buildAutoComment({ changedParts }),
+            pushStep,
+          )
           return {
             success: true,
             status: 'partial_success',
@@ -273,59 +382,95 @@ export class DevReplyUseCase {
         })
       }
 
-      const transitionFields: Record<string, any> = {
-        ...(data.comment ? {} : updateFields),
-      }
+      if (matchedTransition) {
+        const resolvedComment =
+          data.comment ??
+          this.buildAutoComment({
+            transitionName,
+            fixVersionName: fixVersion?.version.name,
+            devCompleteDate,
+            changedParts,
+          })
+        const transitionFields: Record<string, any> = {
+          ...(resolvedComment ? {} : updateFields),
+        }
 
-      try {
-        await this.jiraRestService.doTransition(
-          issueKey,
-          session.cookies,
-          resolvedTransitionId,
-          Object.keys(transitionFields).length > 0 ? transitionFields : undefined,
-          data.comment,
-        )
-        transitionSuccess = true
-        pushStep('doTransition', true, '工作流转换执行成功', {
-          transitionId: resolvedTransitionId,
-          transitionName,
-        })
-      } catch (error) {
-        const message = `执行工作流转换失败: ${error instanceof Error ? error.message : String(error)}`
-        this.logger.warn(message)
-        pushStep('doTransition', false, message)
-        if (fieldUpdateSuccess) {
-          return {
-            success: true,
-            status: 'partial_success',
+        try {
+          await this.jiraRestService.doTransition(
             issueKey,
+            session.cookies,
+            resolvedTransitionId,
+            Object.keys(transitionFields).length > 0
+              ? transitionFields
+              : undefined,
+            resolvedComment,
+          )
+          transitionSuccess = true
+          pushStep('doTransition', true, '工作流转换执行成功', {
+            transitionId: resolvedTransitionId,
+            transitionName,
+          })
+        } catch (error) {
+          const message = `执行工作流转换失败: ${error instanceof Error ? error.message : String(error)}`
+          this.logger.warn(message)
+          pushStep('doTransition', false, message)
+          if (fieldUpdateSuccess) {
+            await this.postCommentStep(
+              issueKey,
+              session,
+              data.comment ?? this.buildAutoComment({ changedParts }),
+              pushStep,
+            )
+            return {
+              success: true,
+              status: 'partial_success',
+              issueKey,
+              fixVersionName: fixVersion?.version.name,
+              devCompleteDate,
+              transitionName,
+              message: `工单 ${issueKey} 字段已更新，但工作流转换失败：${message}`,
+              fieldUpdateSuccess,
+              transitionSuccess,
+              steps,
+              ...this.buildStepSummary(steps),
+            }
+          }
+          return this.buildDevReplyFailure(issueKey, message, steps, {
             fixVersionName: fixVersion?.version.name,
             devCompleteDate,
             transitionName,
-            message: `工单 ${issueKey} 字段已更新，但工作流转换失败：${message}`,
             fieldUpdateSuccess,
             transitionSuccess,
-            steps,
-            ...this.buildStepSummary(steps),
-          }
+          })
         }
-        return this.buildDevReplyFailure(issueKey, message, steps, {
-          fixVersionName: fixVersion?.version.name,
-          devCompleteDate,
-          transitionName,
-          fieldUpdateSuccess,
-          transitionSuccess,
-        })
       }
+
+      // 有字段改动但（已回复态）没有执行转换 → 用独立评论接口补一条说明
+      if (!transitionSuccess && changedParts.length > 0) {
+        await this.postCommentStep(
+          issueKey,
+          session,
+          data.comment ??
+            this.buildAutoComment({ changedParts }),
+          pushStep,
+        )
+      }
+
+      const nothingChanged =
+        !transitionSuccess && changedParts.length === 0
 
       return {
         success: true,
-        status: 'success',
+        status: nothingChanged ? 'unchanged' : 'success',
         issueKey,
         fixVersionName: fixVersion?.version.name,
         devCompleteDate,
         transitionName,
-        message: `工单 ${issueKey} 已执行开发回复`,
+        message: nothingChanged
+          ? `工单 ${issueKey} 状态与字段均符合预期，无需调整`
+          : transitionSuccess
+            ? `工单 ${issueKey} 已执行开发回复`
+            : `工单 ${issueKey} 已是回复状态，字段已按需调整`,
         fieldUpdateSuccess,
         transitionSuccess,
         steps,
@@ -335,6 +480,49 @@ export class DevReplyUseCase {
       const message = `开发回复执行异常: ${error instanceof Error ? error.message : String(error)}`
       this.logger.error(message)
       return this.buildDevReplyFailure(issueKey, message, steps)
+    }
+  }
+
+  private buildAutoComment(options: {
+    transitionName?: string
+    fixVersionName?: string
+    devCompleteDate?: string
+    changedParts: string[]
+  }): string | undefined {
+    const parts: string[] = []
+    if (options.transitionName) {
+      parts.push(
+        `开发已回复${options.devCompleteDate ? `，预计 ${options.devCompleteDate} 完成` : ''}${options.fixVersionName ? `，修复版本「${options.fixVersionName}」` : ''}`,
+      )
+    }
+    parts.push(...options.changedParts)
+    if (parts.length === 0) {
+      return undefined
+    }
+    return `排期巡检自动同步：${parts.join('；')}。`
+  }
+
+  private async postCommentStep(
+    issueKey: string,
+    session: JiraSession,
+    comment: string | undefined,
+    pushStep: (
+      step: DevReplyStepName,
+      success: boolean,
+      message: string,
+      data?: Record<string, any>,
+    ) => void,
+  ): Promise<void> {
+    if (!comment) {
+      return
+    }
+    try {
+      await this.jiraRestService.addComment(issueKey, session.cookies, comment)
+      pushStep('addComment', true, '已补充评论说明')
+    } catch (error) {
+      const message = `补充评论失败: ${error instanceof Error ? error.message : String(error)}`
+      this.logger.warn(message)
+      pushStep('addComment', false, message)
     }
   }
 
@@ -380,6 +568,7 @@ export class DevReplyUseCase {
         failureCount: results.length,
         successfulIssueKeys: [],
         failedIssueKeys: results.map((item) => item.issueKey),
+        unchangedIssueKeys: [],
         results,
       }
     }
@@ -406,6 +595,7 @@ export class DevReplyUseCase {
                   devCompleteDate: data.devCompleteDate,
                   comment: data.comment,
                   additionalFields: data.additionalFields,
+                  reconcile: data.reconcile,
                 },
                 batchAllocationState,
               )
@@ -427,6 +617,7 @@ export class DevReplyUseCase {
               devCompleteDate: data.devCompleteDate,
               comment: data.comment,
               additionalFields: data.additionalFields,
+              reconcile: data.reconcile,
             }),
           ),
         )
@@ -449,6 +640,9 @@ export class DevReplyUseCase {
         .map((item) => item.issueKey),
       failedIssueKeys: results
         .filter((item) => !item.success)
+        .map((item) => item.issueKey),
+      unchangedIssueKeys: results
+        .filter((item) => item.status === 'unchanged')
         .map((item) => item.issueKey),
       results,
     }

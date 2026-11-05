@@ -430,6 +430,32 @@ export class JiraIssueRepository {
     }
   }
 
+  async addComment(
+    issueKey: string,
+    cookies: string,
+    body: string,
+  ): Promise<void> {
+    const response = await request(
+      `${this.jiraConfig.baseUrl}/rest/api/2/issue/${issueKey}/comment`,
+      {
+        method: 'POST',
+        headers: {
+          Cookie: cookies,
+          Authorization: this.jiraConfig.auth.proxyAuthToken,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ body }),
+      },
+    )
+
+    if (response.statusCode !== 201 && response.statusCode !== 200) {
+      const errorText = await response.body.text()
+      throw new Error(
+        `添加评论失败 (${issueKey}): HTTP ${response.statusCode} - ${errorText}`,
+      )
+    }
+  }
+
   async getIssueLinkTypes(cookies: string): Promise<Array<{ id: string; name: string; inward: string; outward: string }>> {
     const response = await request(
       `${this.jiraConfig.baseUrl}/rest/api/2/issueLinkType`,

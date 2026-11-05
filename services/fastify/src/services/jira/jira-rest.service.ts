@@ -322,6 +322,14 @@ export class JiraRestService {
     )
   }
 
+  async addComment(
+    issueKey: string,
+    cookies: string,
+    body: string,
+  ): Promise<void> {
+    return this.jiraIssueRepository.addComment(issueKey, cookies, body)
+  }
+
   async doTransition(
     issueKey: string,
     cookies: string,

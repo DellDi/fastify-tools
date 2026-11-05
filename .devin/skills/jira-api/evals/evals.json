@@ -1,0 +1,80 @@
+{
+  "skill_name": "jira-api",
+  "evals": [
+    {
+      "id": 1,
+      "name": "search-unresolved",
+      "prompt": "帮我查一下 Jira 上 NLC 项目还没解决（Unresolved）的工单，拿前 20 条，把工单 key、标题、当前状态、经办人列成表给我。",
+      "expected_output": "输出一个表格，包含 NLC-XXXX 格式的工单 key、标题、状态、经办人。需要两步调用：先 login 拿 cookies 再 search（或直接跑脚本）。",
+      "files": [],
+      "assertions": [
+        {
+          "id": "used-login-or-script",
+          "text": "通过 POST /jira/login 获取了 cookies（或使用了 skill 的 search.py 脚本，其内部完成登录）"
+        },
+        {
+          "id": "called-search-endpoint",
+          "text": "向 POST /jira/search 发起了实际调用并拿到 200"
+        },
+        {
+          "id": "jql-correct",
+          "text": "JQL 正确限定了 project = NLC 且包含 resolution = Unresolved（或等价的未解决条件）"
+        },
+        {
+          "id": "answer-has-real-issue-keys",
+          "text": "answer.md 包含真实工单 key（形如 NLC-数字），且附带标题、状态、经办人信息"
+        },
+        {
+          "id": "no-fabrication",
+          "text": "答案中的工单数据来自真实 API 响应，非编造（calls.md 有对应成功调用为证）"
+        }
+      ]
+    },
+    {
+      "id": 2,
+      "name": "issue-detail",
+      "prompt": "看下 NLC-3050 这个 Jira 单的情况，告诉我它的标题、当前状态和经办人。",
+      "expected_output": "给出 NLC-3050 的标题（【明德】设计中心-表单设计-表单管理数据缺失）、状态（开发已回复）、经办人（谢哲凯）。注意：详情接口 500，需要用 search + issuekey JQL 获取。",
+      "files": [],
+      "assertions": [
+        {
+          "id": "answer-correct-summary",
+          "text": "answer.md 给出的标题包含「设计中心-表单设计-表单管理数据缺失」"
+        },
+        {
+          "id": "answer-correct-status",
+          "text": "answer.md 给出的状态为「开发已回复」"
+        },
+        {
+          "id": "answer-correct-assignee",
+          "text": "answer.md 给出的经办人为「谢哲凯」"
+        },
+        {
+          "id": "handled-broken-detail-endpoint",
+          "text": "没有因 GET /jira/NLC-3050 返回 500 而失败——要么直接用了 search+issuekey，要么尝试了 detail 后正确回退到 search"
+        }
+      ]
+    },
+    {
+      "id": 3,
+      "name": "link-types",
+      "prompt": "我们 Jira 上两个工单之间都能建哪些关联关系？比如重复、相关这些，把支持的类型和含义列一下。",
+      "expected_output": "列出关联类型（如 相关问题/重复问题/Defect/Tests/Git Code Review）及其 inward/outward 含义。对应 GET /jira/link/types。",
+      "files": [],
+      "assertions": [
+        {
+          "id": "called-link-types-endpoint",
+          "text": "向 GET /jira/link/types 发起了实际调用并拿到 200"
+        },
+        {
+          "id": "answer-lists-real-types",
+          "text": "answer.md 至少列出 3 个真实关联类型（相关问题/重复问题/Defect/Tests/Git Code Review 中任意三个）"
+        },
+        {
+          "id": "answer-explains-meaning",
+          "text": "说明了类型的方向/含义（inward/outward 或 相关于/重复于 等中文文案）"
+        }
+      ]
+    }
+  ]
+}

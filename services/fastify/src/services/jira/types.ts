@@ -189,15 +189,19 @@ export interface DevReplyData {
   devCompleteDate?: string
   comment?: string
   additionalFields?: Record<string, any>
+  /** 对账模式：逐项检查现状，只改写漂移项，已是回复态则跳过转换。默认 true。 */
+  reconcile?: boolean
 }
 
 export type DevReplyStepName =
+  | 'queryCurrentState'
   | 'queryUsedDates'
   | 'selectFixVersion'
   | 'allocateDevCompleteDate'
   | 'updateFields'
   | 'getTransitions'
   | 'doTransition'
+  | 'addComment'
 
 export interface DevReplyStepResult {
   step: DevReplyStepName
@@ -208,7 +212,7 @@ export interface DevReplyStepResult {
 
 export interface DevReplyResponse {
   success: boolean
-  status?: 'success' | 'partial_success' | 'failure'
+  status?: 'success' | 'partial_success' | 'failure' | 'unchanged'
   issueKey: string
   fixVersionName?: string
   devCompleteDate?: string
@@ -238,6 +242,8 @@ export interface DevReplyBatchData {
   devCompleteDate?: string
   comment?: string
   additionalFields?: Record<string, any>
+  /** 对账模式：逐项检查现状，只改写漂移项。默认 true。 */
+  reconcile?: boolean
 }
 
 export interface DevReplyBatchResponse {
@@ -246,6 +252,8 @@ export interface DevReplyBatchResponse {
   failureCount: number
   successfulIssueKeys: string[]
   failedIssueKeys: string[]
+  /** reconcile 模式下未发生任何改动的工单 */
+  unchangedIssueKeys: string[]
   results: DevReplyResponse[]
 }
 

@@ -158,4 +158,26 @@ export function getMaxUsedDate(usedDates: Set<string>): string | undefined {
   return sorted[sorted.length - 1]
 }
 
+/**
+ * 校验现有预计开发完成时间是否仍然有效（reconcile 模式"保留原值"的判定）
+ * 规则与 findAvailableDate 一致：>= 今天、< 版本日期、工作日、非节假日
+ */
+export function isValidDevCompleteDate(
+  dateStr: string,
+  versionDate: Date,
+  holidays: Set<string>,
+): boolean {
+  const candidate = dayjs(dateStr)
+  if (!candidate.isValid()) {
+    return false
+  }
+  const maxDate = dayjs(versionDate).subtract(1, 'day').startOf('day')
+  return (
+    candidate.isSameOrAfter(dayjs().startOf('day')) &&
+    candidate.isSameOrBefore(maxDate) &&
+    !isWeekend(candidate) &&
+    !holidays.has(candidate.format('YYYY-MM-DD'))
+  )
+}
+
 export { dayjs }
