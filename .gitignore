@@ -82,3 +82,5 @@ services/fastify/api
 # windsurf
 .windsurf
 .shared
+.devin
+.openidea
