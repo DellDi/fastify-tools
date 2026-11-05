@@ -4,6 +4,7 @@ logs
 .trae
 *.log
 npm-debug.log*
+shots
 
 # Runtime data
 pids
