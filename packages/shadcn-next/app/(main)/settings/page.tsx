@@ -1,3 +1,4 @@
+import Link from 'next/link'
 import { cookies } from 'next/headers'
 import AccountForm from './account-form'
 import SecurityForm from './security-form'
@@ -21,9 +22,9 @@ export default async function AccountPage() {
       <div className="container mx-auto py-10">
         <h1 className="text-2xl font-bold mb-5">请先登录</h1>
         <p className="text-gray-500">您需要先登录才能访问账户设置。</p>
-        <a href="/login" className="text-blue-500 hover:underline">
+        <Link href="/login" className="text-blue-500 hover:underline">
           登录
-        </a>
+        </Link>
       </div>
     )
   }
