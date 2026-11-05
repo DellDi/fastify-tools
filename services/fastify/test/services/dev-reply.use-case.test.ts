@@ -287,9 +287,9 @@ test('devReply reconcile should fix drifted fields on an already-replied issue a
   assert.deepEqual(updates[0].fixVersions, [{ id: '23987' }])
   // 过期日期被重排
   assert.notEqual(updates[0].customfield_10022, '2020-01-01')
-  // 有改动 → 独立评论接口补一条说明
+  // 有改动 → 独立评论接口补一条说明（拟人化话术）
   assert.equal(comments.length, 1)
-  assert.match(comments[0], /排期巡检自动同步/)
+  assert.match(comments[0], /修复版本|预计|排期|实施/)
 })
 
 test('devReply with reconcile=false should not read current state and blind-write', async () => {

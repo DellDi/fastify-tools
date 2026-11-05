@@ -267,22 +267,27 @@ export class DevReplyUseCase {
         updateFields.customfield_10022 = devCompleteDate
       }
 
-      const changedParts: string[] = []
+      const changes: {
+        versionTo?: string
+        dateFrom?: string
+        dateTo?: string
+        additionalFields?: boolean
+      } = {}
       if (versionNeedsUpdate) {
-        changedParts.push(
-          `修复版本更新为「${fixVersion?.version.name ?? fixVersionId}」`,
-        )
+        changes.versionTo = fixVersion?.version.name ?? fixVersionId
       }
       if (dateNeedsUpdate && devCompleteDate) {
-        changedParts.push(
-          currentDevDate
-            ? `预计开发完成时间由 ${currentDevDate} 调整为 ${devCompleteDate}`
-            : `预计开发完成时间设置为 ${devCompleteDate}`,
-        )
+        changes.dateFrom = currentDevDate
+        changes.dateTo = devCompleteDate
       }
       if (data.additionalFields && Object.keys(data.additionalFields).length > 0) {
-        changedParts.push('补充字段已更新')
+        changes.additionalFields = true
       }
+      const hasChanges = !!(
+        changes.versionTo ||
+        changes.dateTo ||
+        changes.additionalFields
+      )
 
       if (Object.keys(updateFields).length > 0 && this.updateTicket) {
         try {
@@ -358,7 +363,7 @@ export class DevReplyUseCase {
           await this.postCommentStep(
             issueKey,
             session,
-            data.comment ?? this.buildAutoComment({ changedParts }),
+            data.comment ?? this.buildAutoComment({ changes }),
             pushStep,
           )
           return {
@@ -389,7 +394,7 @@ export class DevReplyUseCase {
             transitionName,
             fixVersionName: fixVersion?.version.name,
             devCompleteDate,
-            changedParts,
+            changes,
           })
         const transitionFields: Record<string, any> = {
           ...(resolvedComment ? {} : updateFields),
@@ -418,7 +423,7 @@ export class DevReplyUseCase {
             await this.postCommentStep(
               issueKey,
               session,
-              data.comment ?? this.buildAutoComment({ changedParts }),
+              data.comment ?? this.buildAutoComment({ changes }),
               pushStep,
             )
             return {
@@ -446,18 +451,16 @@ export class DevReplyUseCase {
       }
 
       // 有字段改动但（已回复态）没有执行转换 → 用独立评论接口补一条说明
-      if (!transitionSuccess && changedParts.length > 0) {
+      if (!transitionSuccess && hasChanges) {
         await this.postCommentStep(
           issueKey,
           session,
-          data.comment ??
-            this.buildAutoComment({ changedParts }),
+          data.comment ?? this.buildAutoComment({ changes }),
           pushStep,
         )
       }
 
-      const nothingChanged =
-        !transitionSuccess && changedParts.length === 0
+      const nothingChanged = !transitionSuccess && !hasChanges
 
       return {
         success: true,
@@ -487,19 +490,60 @@ export class DevReplyUseCase {
     transitionName?: string
     fixVersionName?: string
     devCompleteDate?: string
-    changedParts: string[]
+    changes: {
+      versionTo?: string
+      dateFrom?: string
+      dateTo?: string
+      additionalFields?: boolean
+    }
   }): string | undefined {
-    const parts: string[] = []
+    const pick = <T>(pool: T[]): T =>
+      pool[Math.floor(Math.random() * pool.length)]
+    const { changes } = options
+
     if (options.transitionName) {
+      const ver = options.fixVersionName
+      const date = options.devCompleteDate
+      if (ver && date) {
+        return pick([
+          `开发已回复，修复版本「${ver}」，预计 ${date} 完成`,
+          `已回复，预计 ${date} 完成，修复版本「${ver}」`,
+          `已安排开发，修复版本「${ver}」，预计 ${date} 完成`,
+        ])
+      }
+      if (date) {
+        return pick([
+          `开发已回复，预计 ${date} 完成`,
+          `已回复，预计 ${date} 完成`,
+        ])
+      }
+      return '开发已回复'
+    }
+
+    const parts: string[] = []
+    if (changes.versionTo) {
       parts.push(
-        `开发已回复${options.devCompleteDate ? `，预计 ${options.devCompleteDate} 完成` : ''}${options.fixVersionName ? `，修复版本「${options.fixVersionName}」` : ''}`,
+        pick([
+          `修复版本调整为「${changes.versionTo}」`,
+          `修复版本更新至「${changes.versionTo}」`,
+          `按最新发版计划，修复版本调整至「${changes.versionTo}」`,
+        ]),
       )
     }
-    parts.push(...options.changedParts)
-    if (parts.length === 0) {
-      return undefined
+    if (changes.dateTo) {
+      const from = changes.dateFrom ? `（原 ${changes.dateFrom}）` : ''
+      parts.push(
+        pick([
+          `预计完成时间调整为 ${changes.dateTo}${from}`,
+          `排期顺延，预计 ${changes.dateTo} 完成`,
+          `与实施沟通过，预计 ${changes.dateTo} 完成`,
+        ]),
+      )
     }
-    return `排期巡检自动同步：${parts.join('；')}。`
+    if (parts.length === 0 && changes.additionalFields) {
+      parts.push('工单信息已同步更新')
+    }
+    return parts.length ? `${parts.join('，')}。` : undefined
   }
 
   private async postCommentStep(
