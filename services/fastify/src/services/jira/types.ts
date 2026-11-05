@@ -182,7 +182,8 @@ export interface JiraCreateTicketResponse {
 
 export interface DevReplyData {
   issueKey: string
-  projectKey: string
+  /** 用于查询修复版本的项目 key；不传时按工单号前缀推导（如 ARM-75059 → ARM） */
+  projectKey?: string
   assignee: string
   transitionId?: string
   fixVersionId?: string
@@ -235,7 +236,8 @@ export interface DevReplyOptions {
 
 export interface DevReplyBatchData {
   issueKeys: string[]
-  projectKey: string
+  /** 用于查询修复版本的项目 key；不传时每个工单按单号前缀各自推导，支持跨项目混投 */
+  projectKey?: string
   assignee: string
   transitionId?: string
   fixVersionId?: string

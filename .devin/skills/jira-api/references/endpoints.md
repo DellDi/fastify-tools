@@ -124,7 +124,7 @@ JQL 分页搜索。响应里的每个 issue 额外带一个 `fields.customFieldC
 | 字段 | 类型 | 说明 |
 |---|---|---|
 | `issueKeys` | string[] \| string | **必填**。如 `["NLC-3050","NLC-3049"]` 或 `"NLC-3050,NLC-3049"` |
-| `projectKey` | string | **必填**。用于查版本 |
+| `projectKey` | string | 用于查版本。**不传时按每个工单号前缀自动推导项目**（`ARM-75059` → `ARM`），跨项目可混投 |
 | `assignee` | string | 用于查已占用的预计开发完成日期。**默认 `zhouxia`** |
 | `reconcile` | boolean | **默认 `true` 对账模式**：先读现状逐项对比、只改漂移项（见下）；`false` 回退到全量盲写 |
 | `transitionId` | string | 工作流转换 ID，默认 `'11'`；找不到时按名称含"开发回复/dev reply/development"兜底匹配 |

@@ -66,7 +66,9 @@ export class DevReplyUseCase {
     data: DevReplyData,
     batchAllocationState?: DevReplyBatchAllocationState,
   ): Promise<DevReplyResponse> {
-    const { issueKey, projectKey, assignee } = data
+    const { issueKey, assignee } = data
+    // 未显式指定项目时按工单号前缀推导（ARM-75059 → ARM），支持跨项目混投
+    const projectKey = data.projectKey || issueKey.split('-')[0]
     const reconcile = data.reconcile !== false
     const steps: DevReplyStepResult[] = []
     let fieldUpdateSuccess = false

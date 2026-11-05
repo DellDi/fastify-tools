@@ -79,7 +79,7 @@ curl -s -X POST https://delldiagi.top/fastify/jira/dev-reply \
   -d '{"issueKeys": ["NLC-3050", "NLC-3049"], "projectKey": "NLC"}'
 ```
 
-`assignee` 不传默认 `zhouxia`。服务端对每个工单逐项检查现状、只改写漂移项：
+`assignee` 不传默认 `zhouxia`；`projectKey` 不传时**按每个工单号前缀自动推导项目**（`ARM-75059` → `ARM`），跨项目工单可混投一次调用。服务端对每个工单逐项检查现状、只改写漂移项：
 
 - **现状读取**（`queryCurrentState`）：先取 fixVersions / customfield_10022 / status
 - **fixVersions**：现状恰好是 `[目标版本]`（单选）→ 不动；否则整体替换为单选目标版本（不是追加）。不传 `fixVersionId` 时自动选 unreleased 中最合适的版本
@@ -94,11 +94,11 @@ curl -s -X POST https://delldiagi.top/fastify/jira/dev-reply \
 # 1. 捞某人所有未解决单（用 scripts/search.py 一步完成）
 python3 scripts/search.py 'assignee = "zhouxia" AND resolution = Unresolved' 0 100
 
-# 2. 全部 issueKeys 原样丢给 dev-reply，服务端自己对账
+# 2. 全部 issueKeys 原样丢给 dev-reply（不用传 projectKey，跨项目自动按单号前缀分流）
 curl -s -X POST https://delldiagi.top/fastify/jira/dev-reply \
   -H 'Content-Type: application/json' \
-  -d '{"issueKeys": ["NLC-3050","NLC-3049","..."], "projectKey": "NLC"}'
-# 已回复单自动跳过转换；超期日期自动重排；版本自动跟随最新 unreleased
+  -d '{"issueKeys": ["NLC-3050","ARM-75059","NDE-4569"]}'
+# 已回复单自动跳过转换；超期日期自动重排；版本自动跟随各自项目最新 unreleased
 # unchangedIssueKeys = 本次巡检无需改动的单
 ```
 

@@ -76,10 +76,12 @@ const JiraDevReplyBody = Type.Object({
     Type.Array(Type.String({ minLength: 1 })),
     Type.String({ description: '支持逗号分隔的工单 Key 字符串' }),
   ]),
-  projectKey: Type.String({
-    default: process.env.JIRA_DEFAULT_PROJECT || 'V10',
-    description: '项目Key，用于查询版本信息',
-  }),
+  projectKey: Type.Optional(
+    Type.String({
+      description:
+        '项目Key，用于查询版本信息。不传时每个工单按单号前缀自动推导项目（如 ARM-75059 → ARM），支持跨项目混投。',
+    }),
+  ),
   assignee: Type.Optional(
     Type.String({
       default: 'zhouxia',
