@@ -14,6 +14,8 @@ import type {
   JiraIssueType,
   JiraProject,
   ProjectIssueTypeMatch,
+  ScheduleFieldDecision,
+  ScheduleFieldReviewInput,
 } from './types.js'
 
 export class JiraLLMService {
@@ -350,6 +352,69 @@ ${description}
       Object.assign(result, part)
     }
     return result
+  }
+
+  /**
+   * 动态时间字段语义评审：让 LLM 根据字段名语义判断哪些排期字段过期/冲突，
+   * 返回 keep/update 建议。调用方必须做确定性校验后才可写入；
+   * 本方法失败（无 key / 网络 / JSON 非法）时向上抛错由调用方兜底。
+   */
+  async reviewScheduleFields(
+    input: ScheduleFieldReviewInput,
+  ): Promise<ScheduleFieldDecision[]> {
+    if (!this.llmConfig.apiKey) {
+      throw new Error('LLM_API_KEY 未配置，跳过语义评审')
+    }
+    if (input.fields.length === 0) {
+      return []
+    }
+
+    const systemPrompt = `你是 Jira 排期巡检助手，负责审查工单上的计划/预计类时间字段是否合理。
+
+## 背景
+- 今天是 ${input.today}（${input.weekday}）
+- 法定节假日或封网日期：${input.holidays.length ? input.holidays.join('、') : '无'}
+- 锚点字段「预计开发完成」当前值：${input.anchorDate || '未设置'}
+
+## 判定规则
+1. 已过期（早于今天）的"计划/预计"类字段视为失效，建议 update
+2. 名称含"开始"的字段不应晚于锚点「预计开发完成」时间
+3. 排期建议值必须是工作日，且不得在节假日/封网日期中
+4. 拿不准或当前值合理的字段 action=keep，不要为改而改
+5. date 类型字段返回 YYYY-MM-DD；datetime 类型字段返回 YYYY-MM-DDTHH:mm:ss.SSS+0800
+
+只输出 JSON 对象，不要任何解释文字：
+{"decisions":[{"fieldId":"字段ID","action":"keep|update","value":"新值(update时必填)","reason":"一句话中文理由"}]}`
+
+    const userPrompt = `工单 ${input.issueKey} 的时间类字段当前值：
+${JSON.stringify(input.fields, null, 2)}`
+
+    const response = await this.callLLM([
+      { role: 'system', content: systemPrompt },
+      { role: 'user', content: userPrompt },
+    ])
+
+    let parsed: { decisions?: unknown }
+    try {
+      parsed = JSON.parse(response)
+    } catch {
+      throw new Error('LLM 返回的不是有效 JSON')
+    }
+
+    const raw = Array.isArray(parsed?.decisions) ? parsed.decisions : []
+    return raw
+      .filter(
+        (d): d is ScheduleFieldDecision =>
+          !!d &&
+          typeof (d as any).fieldId === 'string' &&
+          ((d as any).action === 'keep' || (d as any).action === 'update'),
+      )
+      .map((d) => ({
+        fieldId: d.fieldId,
+        action: d.action,
+        value: typeof d.value === 'string' ? d.value : undefined,
+        reason: typeof d.reason === 'string' ? d.reason : undefined,
+      }))
   }
 
   private async callLLM(

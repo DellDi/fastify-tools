@@ -192,11 +192,44 @@ export interface DevReplyData {
   additionalFields?: Record<string, any>
   /** 对账模式：逐项检查现状，只改写漂移项，已是回复态则跳过转换。默认 true。 */
   reconcile?: boolean
+  /** 额外注入的节假日/封网日期，YYYY-MM-DD 或区间 YYYY-MM-DD~YYYY-MM-DD，供日期分配与语义巡检避开 */
+  extraHolidays?: string[]
+}
+
+// ============================================
+// 动态时间字段语义巡检相关
+// ============================================
+
+export interface ScheduleFieldReviewInput {
+  issueKey: string
+  /** 今天，YYYY-MM-DD */
+  today: string
+  /** 星期几中文名，如 星期四 */
+  weekday: string
+  /** 法定节假日/封网期日期集合 */
+  holidays: string[]
+  /** 锚点字段「预计开发完成」的最终值 */
+  anchorDate?: string
+  /** 待评审的动态时间字段（schema.type 为 date/datetime） */
+  fields: Array<{
+    fieldId: string
+    name: string
+    type: 'date' | 'datetime'
+    value: string
+  }>
+}
+
+export interface ScheduleFieldDecision {
+  fieldId: string
+  action: 'keep' | 'update'
+  value?: string
+  reason?: string
 }
 
 export type DevReplyStepName =
   | 'queryCurrentState'
   | 'normalizeStartTime'
+  | 'semanticDateReview'
   | 'queryUsedDates'
   | 'selectFixVersion'
   | 'allocateDevCompleteDate'
@@ -225,6 +258,8 @@ export interface DevReplyResponse {
   steps?: DevReplyStepResult[]
   successfulSteps?: DevReplyStepName[]
   failedSteps?: DevReplyStepName[]
+  /** 单工单执行耗时（内部审计记录用） */
+  durationMs?: number
 }
 
 export interface DevReplyOptions {
@@ -247,6 +282,8 @@ export interface DevReplyBatchData {
   additionalFields?: Record<string, any>
   /** 对账模式：逐项检查现状，只改写漂移项。默认 true。 */
   reconcile?: boolean
+  /** 额外注入的节假日/封网日期，YYYY-MM-DD 或区间 YYYY-MM-DD~YYYY-MM-DD */
+  extraHolidays?: string[]
 }
 
 export interface DevReplyBatchResponse {

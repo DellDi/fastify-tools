@@ -32,6 +32,8 @@ import type {
   JiraComponent,
   JiraUploadAttachmentData,
   JiraUploadAttachmentResponse,
+  ScheduleFieldReviewInput,
+  ScheduleFieldDecision,
 } from './types.js'
 
 export class JiraRestService {
@@ -305,6 +307,24 @@ export class JiraRestService {
     cookies: string,
   ): Promise<JiraTransition[]> {
     return this.jiraIssueRepository.getTransitions(issueKey, cookies)
+  }
+
+  /**
+   * 获取 Jira 全部字段元数据（含 schema.type），用于识别动态时间/语义字段
+   */
+  async getFields(
+    cookies: string,
+  ): Promise<Array<{ id: string; name: string; schema?: { type?: string } }>> {
+    return this.jiraIssueRepository.getFields(cookies)
+  }
+
+  /**
+   * LLM 排期语义评审：对动态时间字段给出调整建议（调用方负责校验与兜底）
+   */
+  async reviewScheduleFields(
+    input: ScheduleFieldReviewInput,
+  ): Promise<ScheduleFieldDecision[]> {
+    return this.jiraLLMService.reviewScheduleFields(input)
   }
 
   /**

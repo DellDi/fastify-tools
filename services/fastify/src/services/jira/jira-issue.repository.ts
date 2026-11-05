@@ -352,6 +352,35 @@ export class JiraIssueRepository {
     return data.transitions || []
   }
 
+  /**
+   * 获取 Jira 全部字段元数据（含 schema.type），用于识别动态时间/语义字段
+   */
+  async getFields(
+    cookies: string,
+  ): Promise<Array<{ id: string; name: string; schema?: { type?: string } }>> {
+    const response = await request(
+      `${this.jiraConfig.baseUrl}/rest/api/2/field`,
+      {
+        method: 'GET',
+        headers: {
+          Cookie: cookies,
+          Authorization: this.jiraConfig.auth.proxyAuthToken,
+          'Content-Type': 'application/json',
+        },
+      },
+    )
+
+    if (response.statusCode !== 200) {
+      throw new Error(`获取字段元数据失败: HTTP ${response.statusCode}`)
+    }
+
+    return (await response.body.json()) as Array<{
+      id: string
+      name: string
+      schema?: { type?: string }
+    }>
+  }
+
   async getIssueDetail<T = Record<string, any>>(
     issueIdOrKey: string,
     cookies: string,

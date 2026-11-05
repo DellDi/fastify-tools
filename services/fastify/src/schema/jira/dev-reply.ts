@@ -127,6 +127,12 @@ const JiraDevReplyBody = Type.Object({
         '额外字段，可选，格式为 { "fieldId": "value" }，例如 { "customfield_10001": "test" }',
     })
   ),
+  extraHolidays: Type.Optional(
+    Type.Array(Type.String(), {
+      description:
+        '额外注入的节假日/封网日期，支持单日 "YYYY-MM-DD" 或区间 "YYYY-MM-DD~YYYY-MM-DD"。日期分配与动态时间字段语义巡检都会避开这些日期，且会注入 LLM 评审上下文。',
+    })
+  ),
 })
 
 const JiraDevReplyResponse = Type.Object({

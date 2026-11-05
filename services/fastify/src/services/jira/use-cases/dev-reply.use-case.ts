@@ -1,8 +1,10 @@
+import { randomUUID } from 'node:crypto'
 import type { FastifyBaseLogger } from 'fastify'
 import { JiraError, ValidationError } from '@/utils/errors.js'
-import { isValidDevCompleteDate } from '../utils.js'
+import { dayjs, expandHolidayDates, isValidDevCompleteDate } from '../utils.js'
 import type { JiraRestService } from '../jira-rest.service.js'
 import type { JiraSessionService } from '../jira-session.service.js'
+import type { ReconcileLogEntry } from '../jira-reconcile-log.repository.js'
 import type {
   DevReplyBatchData,
   DevReplyBatchResponse,
@@ -13,12 +15,15 @@ import type {
   JiraLoginCredentials,
   JiraSession,
   JiraUpdateTicketData,
+  ScheduleFieldDecision,
 } from '../types.js'
 
 type UpdateTicketHandler = (
   credentials: JiraLoginCredentials,
   data: JiraUpdateTicketData,
 ) => Promise<{ message: string }>
+
+type ReconcileAuditWriter = (entry: ReconcileLogEntry) => Promise<void>
 
 type DevReplyBatchAllocationState = {
   reservedDates: Set<string>
@@ -30,6 +35,7 @@ export class DevReplyUseCase {
     private jiraRestService: JiraRestService,
     private sessionService: JiraSessionService,
     private updateTicket?: UpdateTicketHandler,
+    private auditWriter?: ReconcileAuditWriter,
   ) {}
 
   private buildStepSummary(steps: DevReplyStepResult[]) {
@@ -70,6 +76,9 @@ export class DevReplyUseCase {
     // 未显式指定项目时按工单号前缀推导（ARM-75059 → ARM），支持跨项目混投
     const projectKey = data.projectKey || issueKey.split('-')[0]
     const reconcile = data.reconcile !== false
+    // 调用方注入的节假日/封网日期（单日或区间），并入节假日集合统一避开
+    const extraHolidayDates = expandHolidayDates(data.extraHolidays ?? [])
+    let allHolidays = new Set<string>(extraHolidayDates)
     const steps: DevReplyStepResult[] = []
     let fieldUpdateSuccess = false
     let transitionSuccess = false
@@ -207,7 +216,11 @@ export class DevReplyUseCase {
             fixVersion.date.getFullYear() > currentYear
               ? await this.jiraRestService.getHolidays(currentYear + 1)
               : new Set<string>()
-          const allHolidays = new Set([...holidays, ...nextYearHolidays])
+          allHolidays = new Set([
+            ...holidays,
+            ...nextYearHolidays,
+            ...extraHolidayDates,
+          ])
 
           if (
             reconcile &&
@@ -275,6 +288,7 @@ export class DevReplyUseCase {
         dateTo?: string
         additionalFields?: boolean
         startTimeTo?: string
+        semanticFieldNames?: string[]
       } = {}
       if (versionNeedsUpdate) {
         changes.versionTo = fixVersion?.version.name ?? fixVersionId
@@ -482,8 +496,32 @@ export class DevReplyUseCase {
         }
       }
 
-      // 有字段改动但（已回复态）没有执行转换 → 用独立评论接口补一条说明
-      if (!transitionSuccess && hasChanges) {
+      // 动态时间字段语义巡检：识别 date/datetime 自定义字段 → LLM 按语义建议
+      // → 确定性校验 → "开始类字段不晚于预计开发完成"硬规则兜底；失败只记 step
+      if (reconcile && this.updateTicket) {
+        try {
+          const appliedNames = await this.reviewSemanticDateFields({
+            issueKey,
+            credentials,
+            session,
+            anchorDate: devCompleteDate,
+            holidays: allHolidays,
+            pushStep,
+          })
+          if (appliedNames.length) {
+            changes.semanticFieldNames = appliedNames
+          }
+        } catch (error) {
+          const message = `动态时间字段语义巡检失败: ${error instanceof Error ? error.message : String(error)}`
+          this.logger.warn(message)
+          pushStep('semanticDateReview', false, message)
+        }
+      }
+
+      // 有字段改动但（已回复态）没有执行转换 → 用独立评论接口补一条说明；
+      // 转换已执行但语义巡检另有调整时，转换评论覆盖不到，也需补评
+      const semanticChanged = !!changes.semanticFieldNames?.length
+      if ((hasChanges || semanticChanged) && (!transitionSuccess || semanticChanged)) {
         await this.postCommentStep(
           issueKey,
           session,
@@ -493,7 +531,10 @@ export class DevReplyUseCase {
       }
 
       const nothingChanged =
-        !transitionSuccess && !hasChanges && !changes.startTimeTo
+        !transitionSuccess &&
+        !hasChanges &&
+        !changes.startTimeTo &&
+        !semanticChanged
 
       return {
         success: true,
@@ -519,6 +560,224 @@ export class DevReplyUseCase {
     }
   }
 
+  /**
+   * 动态时间字段语义巡检（reconcile 模式）
+   * 1) /rest/api/2/field 识别 date/datetime 自定义字段（排除确定性负责的 customfield_10022）
+   * 2) LLM 按字段名语义给 keep/update 建议（注入节假日、锚点日期）
+   * 3) 确定性校验：格式、不早于今天、工作日、开始类字段不晚于锚点、新值≠现值
+   * 4) 硬规则兜底：无论 LLM 成败，"开始"类字段晚于锚点的一律回退到锚点日
+   * 返回实际写入的字段名；失败不向上抛，由调用方记 step
+   */
+  private async reviewSemanticDateFields(args: {
+    issueKey: string
+    credentials: JiraLoginCredentials
+    session: JiraSession
+    anchorDate?: string
+    holidays: Set<string>
+    pushStep: (
+      step: DevReplyStepName,
+      success: boolean,
+      message: string,
+      data?: Record<string, any>,
+    ) => void
+  }): Promise<string[]> {
+    const { issueKey, credentials, session, anchorDate, pushStep } = args
+    if (!this.updateTicket) return []
+
+    const today = dayjs()
+    const todayStr = today.format('YYYY-MM-DD')
+    const holidays = args.holidays.size
+      ? args.holidays
+      : await this.jiraRestService.getHolidays(today.year())
+
+    const meta = await this.jiraRestService.getFields(session.cookies)
+    const dateMeta = meta.filter(
+      (field) =>
+        field.id.startsWith('customfield_') &&
+        field.id !== 'customfield_10022' &&
+        (field.schema?.type === 'date' || field.schema?.type === 'datetime'),
+    )
+    if (!dateMeta.length) {
+      pushStep('semanticDateReview', true, '无动态时间字段需要评审')
+      return []
+    }
+
+    const detail = await this.jiraRestService.getIssueDetail<{
+      fields?: Record<string, any>
+    }>(
+      issueKey,
+      session.cookies,
+      dateMeta.map((field) => field.id),
+    )
+    const rawFields = detail.fields ?? {}
+
+    const candidates = dateMeta
+      .map((field) => ({
+        fieldId: field.id,
+        name: field.name,
+        type: field.schema!.type as 'date' | 'datetime',
+        value: typeof rawFields[field.id] === 'string' ? rawFields[field.id] : '',
+      }))
+      .filter((item) => /^\d{4}-\d{2}-\d{2}/.test(item.value))
+
+    if (!candidates.length) {
+      pushStep('semanticDateReview', true, '动态时间字段均为空，无需评审')
+      return []
+    }
+
+    let decisions: ScheduleFieldDecision[] = []
+    let llmError: string | undefined
+    try {
+      decisions = await this.jiraRestService.reviewScheduleFields({
+        issueKey,
+        today: todayStr,
+        weekday: ['周日', '周一', '周二', '周三', '周四', '周五', '周六'][
+          today.day()
+        ],
+        holidays: [...holidays].sort(),
+        anchorDate,
+        fields: candidates,
+      })
+    } catch (error) {
+      llmError = error instanceof Error ? error.message : String(error)
+      this.logger.warn(
+        `LLM 语义评审失败(${issueKey})，转入硬规则兜底: ${llmError}`,
+      )
+    }
+
+    const isWorkDay = (date: string) => {
+      const day = dayjs(date).day()
+      return day !== 0 && day !== 6 && !holidays.has(date)
+    }
+    // date 字段写 YYYY-MM-DD；datetime 字段保留 LLM 给的时间，缺省随机工作时段
+    const normalizeValue = (
+      field: (typeof candidates)[number],
+      value: string,
+    ): string | undefined => {
+      const datePart = value.slice(0, 10)
+      if (!/^\d{4}-\d{2}-\d{2}$/.test(datePart) || !dayjs(datePart).isValid()) {
+        return undefined
+      }
+      if (field.type === 'date') return datePart
+      const tm = /T(\d{2}):(\d{2})/.exec(value)
+      const hh = tm ? tm[1] : String(9 + Math.floor(Math.random() * 9)).padStart(2, '0')
+      const mm = tm ? tm[2] : String(Math.floor(Math.random() * 60)).padStart(2, '0')
+      return `${datePart}T${hh}:${mm}:00.000+0800`
+    }
+
+    const updates: Record<string, string> = {}
+    const notes: string[] = []
+    const isStartField = (name: string) => name.includes('开始')
+
+    for (const decision of decisions) {
+      const field = candidates.find((item) => item.fieldId === decision.fieldId)
+      if (!field || decision.action !== 'update' || !decision.value) continue
+      const datePart = decision.value.slice(0, 10)
+      if (datePart === field.value.slice(0, 10)) continue
+      if (datePart < todayStr) {
+        notes.push(`${field.name}: 建议值 ${datePart} 早于今天，拒绝`)
+        continue
+      }
+      if (!isWorkDay(datePart)) {
+        notes.push(`${field.name}: 建议值 ${datePart} 为周末/节假日，拒绝`)
+        continue
+      }
+      if (anchorDate && isStartField(field.name) && datePart > anchorDate) {
+        notes.push(
+          `${field.name}: 建议值 ${datePart} 晚于预计开发完成 ${anchorDate}，拒绝`,
+        )
+        continue
+      }
+      const normalized = normalizeValue(field, decision.value)
+      if (!normalized) {
+        notes.push(`${field.name}: 建议值格式非法，拒绝`)
+        continue
+      }
+      updates[field.fieldId] = normalized
+      notes.push(
+        `${field.name}: ${decision.reason || '按语义建议调整'} → ${datePart}`,
+      )
+    }
+
+    // 硬规则兜底（与 LLM 无关）：名称含"开始"的字段不得晚于「预计开发完成」
+    if (anchorDate) {
+      for (const field of candidates) {
+        if (updates[field.fieldId] || !isStartField(field.name)) continue
+        if (field.value.slice(0, 10) > anchorDate) {
+          const normalized = normalizeValue(field, anchorDate)
+          if (normalized) {
+            updates[field.fieldId] = normalized
+            notes.push(
+              `${field.name}: 现值晚于预计开发完成，回退至 ${anchorDate}`,
+            )
+          }
+        }
+      }
+    }
+
+    if (!Object.keys(updates).length) {
+      pushStep(
+        'semanticDateReview',
+        true,
+        llmError
+          ? `LLM 不可用，硬规则校验通过无需调整（${llmError}）`
+          : '动态时间字段评审通过，无需调整',
+        { reviewed: candidates.length, llmError },
+      )
+      return []
+    }
+
+    await this.updateTicket(credentials, {
+      issueIdOrKey: issueKey,
+      fields: updates,
+    })
+    const appliedNames = Object.keys(updates).map(
+      (id) => candidates.find((item) => item.fieldId === id)?.name ?? id,
+    )
+    pushStep('semanticDateReview', true, `已调整 ${appliedNames.length} 项时间字段`, {
+      reviewed: candidates.length,
+      applied: Object.keys(updates),
+      notes,
+      llmError,
+    })
+    return appliedNames
+  }
+
+  /**
+   * 巡检审计：把单工单执行结果写入审计表；写库失败只告警不阻塞
+   */
+  private async writeAudit(
+    batchId: string,
+    result: DevReplyResponse,
+    assignee?: string,
+    projectKey?: string,
+  ): Promise<void> {
+    if (!this.auditWriter) return
+    try {
+      await this.auditWriter({
+        batchId,
+        issueKey: result.issueKey,
+        projectKey,
+        assignee,
+        status: result.status ?? (result.success ? 'success' : 'failure'),
+        message: result.message,
+        durationMs: result.durationMs,
+        details: {
+          fixVersionName: result.fixVersionName,
+          devCompleteDate: result.devCompleteDate,
+          transitionName: result.transitionName,
+          successfulSteps: result.successfulSteps,
+          failedSteps: result.failedSteps,
+          steps: result.steps,
+        },
+      })
+    } catch (error) {
+      this.logger.warn(
+        `巡检审计写入失败(${result.issueKey}): ${error instanceof Error ? error.message : String(error)}`,
+      )
+    }
+  }
+
   private buildAutoComment(options: {
     transitionName?: string
     fixVersionName?: string
@@ -528,6 +787,7 @@ export class DevReplyUseCase {
       dateFrom?: string
       dateTo?: string
       additionalFields?: boolean
+      semanticFieldNames?: string[]
     }
   }): string | undefined {
     const pick = <T>(pool: T[]): T =>
@@ -573,6 +833,16 @@ export class DevReplyUseCase {
         ]),
       )
     }
+    if (changes.semanticFieldNames?.length) {
+      const names = changes.semanticFieldNames.join('、')
+      parts.push(
+        pick([
+          `「${names}」已同步调整`,
+          `相关计划时间（${names}）已同步更新`,
+          `一并校正了「${names}」`,
+        ]),
+      )
+    }
     if (parts.length === 0 && changes.additionalFields) {
       parts.push('工单信息已同步更新')
     }
@@ -611,7 +881,20 @@ export class DevReplyUseCase {
 
     try {
       const session = await this.sessionService.getSession(resolvedCredentials)
-      return await this.executeDevReplyWorkflow(resolvedCredentials, session, data)
+      const startedAt = Date.now()
+      const result = await this.executeDevReplyWorkflow(
+        resolvedCredentials,
+        session,
+        data,
+      )
+      result.durationMs = Date.now() - startedAt
+      await this.writeAudit(
+        randomUUID(),
+        result,
+        data.assignee,
+        data.projectKey ?? data.issueKey.split('-')[0],
+      )
+      return result
     } catch (error) {
       return this.buildDevReplyFailure(
         data.issueKey,
@@ -629,6 +912,7 @@ export class DevReplyUseCase {
     }
 
     const resolvedCredentials = this.sessionService.resolveCredentials(credentials)
+    const batchId = randomUUID()
 
     let session: JiraSession
     try {
@@ -637,6 +921,17 @@ export class DevReplyUseCase {
       const message = `开发回复前置登录失败: ${error instanceof Error ? error.message : String(error)}`
       const results = data.issueKeys.map((issueKey) =>
         this.buildDevReplyFailure(issueKey, message),
+      )
+
+      await Promise.all(
+        results.map((item) =>
+          this.writeAudit(
+            batchId,
+            item,
+            data.assignee,
+            data.projectKey ?? item.issueKey.split('-')[0],
+          ),
+        ),
       )
 
       return {
@@ -660,6 +955,7 @@ export class DevReplyUseCase {
           const results: PromiseSettledResult<DevReplyResponse>[] = []
           for (const issueKey of data.issueKeys) {
             try {
+              const startedAt = Date.now()
               const value = await this.executeDevReplyWorkflow(
                 resolvedCredentials,
                 session,
@@ -673,9 +969,11 @@ export class DevReplyUseCase {
                   comment: data.comment,
                   additionalFields: data.additionalFields,
                   reconcile: data.reconcile,
+                  extraHolidays: data.extraHolidays,
                 },
                 batchAllocationState,
               )
+              value.durationMs = Date.now() - startedAt
               results.push({ status: 'fulfilled', value })
             } catch (reason) {
               results.push({ status: 'rejected', reason })
@@ -684,19 +982,27 @@ export class DevReplyUseCase {
           return results
         })()
       : await Promise.allSettled(
-          data.issueKeys.map((issueKey) =>
-            this.executeDevReplyWorkflow(resolvedCredentials, session, {
-              issueKey,
-              projectKey: data.projectKey,
-              assignee: data.assignee,
-              transitionId: data.transitionId,
-              fixVersionId: data.fixVersionId,
-              devCompleteDate: data.devCompleteDate,
-              comment: data.comment,
-              additionalFields: data.additionalFields,
-              reconcile: data.reconcile,
-            }),
-          ),
+          data.issueKeys.map(async (issueKey) => {
+            const startedAt = Date.now()
+            const value = await this.executeDevReplyWorkflow(
+              resolvedCredentials,
+              session,
+              {
+                issueKey,
+                projectKey: data.projectKey,
+                assignee: data.assignee,
+                transitionId: data.transitionId,
+                fixVersionId: data.fixVersionId,
+                devCompleteDate: data.devCompleteDate,
+                comment: data.comment,
+                additionalFields: data.additionalFields,
+                reconcile: data.reconcile,
+                extraHolidays: data.extraHolidays,
+              },
+            )
+            value.durationMs = Date.now() - startedAt
+            return value
+          }),
         )
 
     const results = settledResults.map((result, index) =>
@@ -706,6 +1012,17 @@ export class DevReplyUseCase {
             data.issueKeys[index],
             `开发回复执行异常: ${result.reason instanceof Error ? result.reason.message : String(result.reason)}`,
           ),
+    )
+
+    await Promise.all(
+      results.map((item) =>
+        this.writeAudit(
+          batchId,
+          item,
+          data.assignee,
+          data.projectKey ?? item.issueKey.split('-')[0],
+        ),
+      ),
     )
 
     return {

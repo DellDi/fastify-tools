@@ -102,4 +102,22 @@ model JiraFieldRule {
   @@map("jira_field_rules")
 }
 
+model JiraReconcileLog {
+  id          String    @id @default(uuid()) @db.Uuid
+  batchId     String    @map("batch_id") @db.VarChar(64)
+  issueKey    String    @map("issue_key") @db.VarChar(50)
+  projectKey  String?   @map("project_key") @db.VarChar(50)
+  assignee    String?   @db.VarChar(50)
+  status      String    @db.VarChar(20)
+  message     String?
+  details     Json?
+  durationMs  Int?      @map("duration_ms")
+  createdAt   DateTime  @default(now()) @map("created_at") @db.Timestamptz()
+
+  @@index([batchId])
+  @@index([issueKey])
+  @@index([createdAt])
+  @@map("jira_reconcile_logs")
+}
+
 // 添加字段注释

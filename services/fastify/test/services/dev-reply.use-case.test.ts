@@ -164,21 +164,26 @@ const nextWeekday = (): string => {
 }
 
 const makeHarness = (overrides: {
-  issueDetails?: Record<
-    string,
-    {
-      fixVersions?: Array<{ id: string }>
-      customfield_10022?: string
-      customfield_10100?: string
-      status?: { name?: string }
-    }
-  >
+  issueDetails?: Record<string, Record<string, any>>
   issues?: Array<{ fields: { customfield_10022?: string } }>
   transitions?: Array<{ id: string; name: string }>
+  fieldMeta?: Array<{
+    id: string
+    name: string
+    schema?: { type?: string }
+  }>
+  llmDecisions?: Array<{
+    fieldId: string
+    action: 'keep' | 'update'
+    value?: string
+    reason?: string
+  }>
+  llmError?: string
 }) => {
   const calls: string[] = []
   const comments: string[] = []
   const updates: Record<string, any>[] = []
+  const audits: any[] = []
   const version = futureVersion()
 
   const logger = { info() {}, warn() {}, error() {} } as any
@@ -191,6 +196,13 @@ const makeHarness = (overrides: {
         throw new Error('issue not found')
       }
       return { fields }
+    },
+    getFields: async () => overrides.fieldMeta ?? [],
+    reviewScheduleFields: async () => {
+      if (overrides.llmError) {
+        throw new Error(overrides.llmError)
+      }
+      return overrides.llmDecisions ?? []
     },
     searchIssuesByJql: async () => ({
       issues: overrides.issues ?? [],
@@ -230,11 +242,15 @@ const makeHarness = (overrides: {
     calls,
     comments,
     updates,
+    audits,
     useCase: new DevReplyUseCase(
       logger,
       jiraRestService,
       sessionService,
       updateTicket,
+      async (entry: any) => {
+        audits.push(entry)
+      },
     ),
   }
 }
@@ -366,4 +382,150 @@ test('devReplyBatch should collect unchangedIssueKeys', async () => {
   assert.deepEqual(result.unchangedIssueKeys, ['NDE-3149'])
   assert.equal(result.results[0].status, 'unchanged')
   assert.equal(result.results[1].status, 'success')
+})
+
+test('semanticDateReview should apply a valid LLM suggestion for an expired field', async () => {
+  const anchor = nextWeekday()
+  const { comments, updates, useCase } = makeHarness({
+    issueDetails: {
+      'NDE-3170': {
+        fixVersions: [{ id: '23987' }],
+        customfield_10022: anchor,
+        customfield_10100: `${anchor}T10:00:00.000+0800`,
+        customfield_10101: '2020-01-01',
+        status: { name: '开发已回复' },
+      },
+    },
+    fieldMeta: [
+      { id: 'customfield_10022', name: '预计开发完成', schema: { type: 'date' } },
+      { id: 'customfield_10100', name: '计划开始时间', schema: { type: 'datetime' } },
+      { id: 'customfield_10101', name: '计划测试开始', schema: { type: 'date' } },
+    ],
+    llmDecisions: [
+      {
+        fieldId: 'customfield_10101',
+        action: 'update',
+        value: anchor,
+        reason: '计划测试开始已过期',
+      },
+      { fieldId: 'customfield_10100', action: 'keep' },
+    ],
+  })
+
+  const result = await useCase.devReply(
+    { jiraUser: 'u', jiraPassword: 'p' },
+    { issueKey: 'NDE-3170', assignee: 'zhouxia' },
+  )
+
+  assert.equal(result.status, 'success')
+  const applied = updates.find((f) => f.customfield_10101)
+  assert.equal(applied?.customfield_10101, anchor)
+  // 实际字段改动 → 评论中提及调整字段名
+  assert.equal(comments.length, 1)
+  assert.match(comments[0], /计划测试开始/)
+})
+
+test('semanticDateReview should reject LLM suggestions violating deterministic rules', async () => {
+  const anchor = nextWeekday()
+  const { updates, useCase } = makeHarness({
+    issueDetails: {
+      'NDE-3171': {
+        fixVersions: [{ id: '23987' }],
+        customfield_10022: anchor,
+        customfield_10101: '2020-01-01',
+        status: { name: '开发已回复' },
+      },
+    },
+    fieldMeta: [
+      { id: 'customfield_10101', name: '计划测试开始', schema: { type: 'date' } },
+    ],
+    llmDecisions: [
+      {
+        fieldId: 'customfield_10101',
+        action: 'update',
+        value: '2099-12-26',
+        reason: '过期字段',
+      },
+      { fieldId: 'customfield_99999', action: 'update', value: '2099-01-01' },
+    ],
+  })
+
+  // 注入封网区间：LLM 建议日落在区间内 → 拒绝；未知 fieldId 的建议 → 拒绝
+  const result = await useCase.devReply(
+    { jiraUser: 'u', jiraPassword: 'p' },
+    {
+      issueKey: 'NDE-3171',
+      assignee: 'zhouxia',
+      extraHolidays: ['2099-12-25~2099-12-31'],
+    },
+  )
+
+  assert.equal(result.status, 'unchanged')
+  assert.equal(updates.find((f) => f.customfield_10101), undefined)
+})
+
+test('semanticDateReview should fall back to the hard rule when LLM fails', async () => {
+  const anchor = nextWeekday()
+  const { updates, useCase } = makeHarness({
+    issueDetails: {
+      'NDE-3172': {
+        fixVersions: [{ id: '23987' }],
+        customfield_10022: anchor,
+        customfield_10100: '2030-01-01T10:00:00.000+0800',
+        status: { name: '开发已回复' },
+      },
+    },
+    fieldMeta: [
+      { id: 'customfield_10100', name: '计划开始时间', schema: { type: 'datetime' } },
+    ],
+    llmError: 'LLM API error: 503',
+  })
+
+  const result = await useCase.devReply(
+    { jiraUser: 'u', jiraPassword: 'p' },
+    { issueKey: 'NDE-3172', assignee: 'zhouxia' },
+  )
+
+  // LLM 挂了但巡检照常完成：开始类字段晚于预计开发完成 → 回退到锚点日
+  assert.equal(result.status, 'success')
+  const startUpdate = updates.find((f) => f.customfield_10100)
+  assert.ok(startUpdate, '硬规则兜底应修正晚于锚点的计划开始时间')
+  assert.match(
+    startUpdate.customfield_10100,
+    new RegExp(`^${anchor}T(09|1[0-7]):[0-5]\\d:00\\.000\\+0800$`),
+  )
+})
+
+test('devReplyBatch should write an audit row per issue with a shared batchId', async () => {
+  const validDate = nextWeekday()
+  const { audits, useCase } = makeHarness({
+    issueDetails: {
+      'NDE-3149': {
+        fixVersions: [{ id: '23987' }],
+        customfield_10022: validDate,
+        status: { name: '开发已回复' },
+      },
+      'NDE-3150': {
+        fixVersions: [{ id: '999' }],
+        customfield_10022: '2020-01-01',
+        status: { name: '开发已回复' },
+      },
+    },
+  })
+
+  await useCase.devReplyBatch(
+    { jiraUser: 'u', jiraPassword: 'p' },
+    { issueKeys: ['NDE-3149', 'NDE-3150'], assignee: 'zhouxia' },
+  )
+
+  assert.equal(audits.length, 2)
+  assert.equal(audits[0].batchId, audits[1].batchId)
+  assert.equal(audits[0].issueKey, 'NDE-3149')
+  assert.equal(audits[0].status, 'unchanged')
+  assert.equal(audits[1].issueKey, 'NDE-3150')
+  assert.equal(audits[1].status, 'success')
+  assert.equal(audits[0].assignee, 'zhouxia')
+  assert.equal(audits[0].projectKey, 'NDE')
+  assert.equal(typeof audits[0].durationMs, 'number')
+  assert.ok(audits[0].details.successfulSteps)
 })

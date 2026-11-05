@@ -5,6 +5,10 @@ import { DevReplyUseCase } from './use-cases/dev-reply.use-case.js'
 import { CreateTicketUseCase } from './use-cases/create-ticket.use-case.js'
 import { CreateTicketWithLabelsUseCase } from './use-cases/create-ticket-with-labels.use-case.js'
 import { UpdateTicketUseCase } from './use-cases/update-ticket.use-case.js'
+import {
+  JiraReconcileLogRepository,
+  type ReconcileLogQuery,
+} from './jira-reconcile-log.repository.js'
 import { getJiraConfig } from '@/utils/config-helpers.js'
 import { JiraError } from '@/utils/errors.js'
 import type {
@@ -47,11 +51,13 @@ export class JiraService {
   private createTicketUseCase: CreateTicketUseCase
   private createTicketWithLabelsUseCase: CreateTicketWithLabelsUseCase
   private updateTicketUseCase: UpdateTicketUseCase
+  private jiraReconcileLogRepository: JiraReconcileLogRepository
   private jiraConfig: ReturnType<typeof getJiraConfig>
 
   constructor(private fastify: FastifyInstance) {
     this.jiraRestService = new JiraRestService(fastify)
     this.jiraSessionService = new JiraSessionService(fastify)
+    this.jiraReconcileLogRepository = new JiraReconcileLogRepository(fastify)
     this.jiraConfig = getJiraConfig(fastify)
     this.updateTicketUseCase = new UpdateTicketUseCase(
       fastify.log,
@@ -63,6 +69,9 @@ export class JiraService {
       this.jiraRestService,
       this.jiraSessionService,
       this.updateTicket.bind(this),
+      this.jiraReconcileLogRepository.write.bind(
+        this.jiraReconcileLogRepository,
+      ),
     )
     this.createTicketUseCase = new CreateTicketUseCase(
       fastify.log,
@@ -195,6 +204,13 @@ export class JiraService {
     data: DevReplyBatchData,
   ): Promise<DevReplyBatchResponse> {
     return this.devReplyUseCase.devReplyBatch(credentials, data)
+  }
+
+  /**
+   * 查询巡检审计日志（dev-reply reconcile 每次执行逐单记录）
+   */
+  async getReconcileLogs(query: ReconcileLogQuery) {
+    return this.jiraReconcileLogRepository.query(query)
   }
 
   /**

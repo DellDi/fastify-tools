@@ -159,6 +159,28 @@ export function getMaxUsedDate(usedDates: Set<string>): string | undefined {
 }
 
 /**
+ * 展开节假日注入项：支持单日 "YYYY-MM-DD" 或区间 "YYYY-MM-DD~YYYY-MM-DD"（含端点）
+ */
+export function expandHolidayDates(items: string[]): string[] {
+  const dates: string[] = []
+  for (const raw of items) {
+    const [start, end] = String(raw).split('~').map((s) => s.trim())
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(start)) continue
+    if (!end || !/^\d{4}-\d{2}-\d{2}$/.test(end)) {
+      dates.push(start)
+      continue
+    }
+    let cursor = dayjs(start)
+    const last = dayjs(end)
+    while (!cursor.isAfter(last)) {
+      dates.push(cursor.format('YYYY-MM-DD'))
+      cursor = cursor.add(1, 'day')
+    }
+  }
+  return dates
+}
+
+/**
  * 校验现有预计开发完成时间是否仍然有效（reconcile 模式"保留原值"的判定）
  * 规则与 findAvailableDate 一致：>= 今天、< 版本日期、工作日、非节假日
  */
