@@ -48,8 +48,8 @@ services:
       - BEARER_TOKEN=${BEARER_TOKEN}
       # API 前缀配置（生产环境使用 /fastify，开发环境留空）
       - API_PREFIX=${API_PREFIX:-/fastify}
-      # 数据库连接配置
-      - DATABASE_URL=${DOCKER_FASTIFY_DATABASE_URL:-postgresql://postgres:postgres@postgres:5432/fastify_db}
+      # 数据库连接配置（由 POSTGRES_* 拼接，密码单一来源）
+      - DATABASE_URL=postgresql://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-postgres}@postgres:5432/fastify_db
       - POSTGRES_HOST=postgres
       - POSTGRES_PORT=5432
       # Jira 配置
@@ -62,10 +62,10 @@ services:
       - JIRA_DEFAULT_ISSUE_TYPE=${JIRA_DEFAULT_ISSUE_TYPE}
       - JIRA_DEFAULT_COMPONENT=${JIRA_DEFAULT_COMPONENT}
       - JIRA_DEFAULT_PRIORITY=${JIRA_DEFAULT_PRIORITY}
-      # 阿里百炼密钥
+      # 大模型
       - LLM_MODEL=${LLM_MODEL:-qwen3.5-flash}
       - LLM_BASE_URL=${LLM_BASE_URL:-https://dashscope.aliyuncs.com/compatible-mode/v1/chat/completions}
-      - DASHSCOPE_API_KEY=${DASHSCOPE_API_KEY}
+      - LLM_API_KEY=${LLM_API_KEY}
       # 邮箱服务
       - SMTP_HOST=${SMTP_HOST}
       - SMTP_PORT=${SMTP_PORT}
@@ -99,8 +99,8 @@ services:
       - PRISMA_ENGINES_MIRROR=${PRISMA_ENGINES_MIRROR:-https://cdn.npmmirror.com/binaries/prisma}
       - SITE_DOMAIN_URL=${SITE_DOMAIN_URL}
       - SERVER_FASTIFY_API=${DOCKER_SERVER_FASTIFY_API:-http://fastify:3100/fastify}
-      # 数据库连接配置
-      - DATABASE_URL=${DOCKER_NEXT_DATABASE_URL:-postgresql://postgres:postgres@postgres:5432/shadcn_next}
+      # 数据库连接配置（由 POSTGRES_* 拼接，密码单一来源）
+      - DATABASE_URL=postgresql://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-postgres}@postgres:5432/shadcn_next
       - JWT_SECRET=${JWT_SECRET:?JWT_SECRET is required}
       - JIRA_USERNAME=${JIRA_USERNAME:?JIRA_USERNAME is required}
       - JIRA_PASSWORD=${JIRA_PASSWORD:?JIRA_PASSWORD is required}

@@ -27,7 +27,7 @@ declare module 'fastify' {
       JIRA_DEFAULT_COMPONENT?: string
       JIRA_DEFAULT_PRIORITY?: string
       BEARER_TOKEN: string
-      DASHSCOPE_API_KEY?: string
+      LLM_API_KEY?: string
       LLM_BASE_URL?: string
       LLM_MODEL?: string
     }

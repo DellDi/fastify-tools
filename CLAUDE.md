@@ -176,7 +176,7 @@ SMTP_PASS=
 SMTP_SECURE=false
 
 # AI
-DASHSCOPE_API_KEY=            # Alibaba Cloud DashScope (Qwen models)
+LLM_API_KEY=                 # LLM provider API key (DeepSeek, DashScope, etc.)
 NEXT_PUBLIC_FAST_API_KEY=     # Frontend Fastify API key
 
 # Docker export ports

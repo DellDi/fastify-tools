@@ -32,7 +32,7 @@ export class LLMService {
       const missingFields: string[] = []
 
       if (!llmConfig.apiKey) {
-        missingFields.push('DASHSCOPE_API_KEY')
+        missingFields.push('LLM_API_KEY')
       }
       if (!llmConfig.baseUrl) {
         missingFields.push('LLM_BASE_URL')
@@ -56,7 +56,7 @@ export class LLMService {
     }
 
     if (!llmConfig.apiKey) {
-      throw new Error('当前环境未配置 DASHSCOPE_API_KEY，无法执行 live 验证')
+      throw new Error('当前环境未配置 LLM_API_KEY，无法执行 live 验证')
     }
 
     const startedAt = Date.now()

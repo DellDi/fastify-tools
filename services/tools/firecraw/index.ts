@@ -7,14 +7,12 @@ async function main() {
         apiKey: process.env.FIRECRAWL_API_KEY!
     });
 
-    // Create basic auth credentials
-    const credentials = Buffer.from(process.env.FIRECRAWL_BASIC_AUTH!).toString('base64');
-
+    // JIRA_PROXY_AUTH 与内网服务共用同一套 Basic 凭据，值即 Authorization 头完整内容
     // Scrape with basic authentication in headers and perform login actions
     const scrapeResult = await app.scrapeUrl(process.env.FIRECRAWL_URL!, {
         formats: ['markdown'],
         headers: {
-            Authorization: `Basic ${credentials}`
+            Authorization: process.env.JIRA_PROXY_AUTH!
         },
         actions: [
             { type: 'wait', milliseconds: 1000 },  // 等待1秒

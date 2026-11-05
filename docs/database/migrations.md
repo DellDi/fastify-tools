@@ -348,7 +348,7 @@ FASTIFY_DATABASE_URL="postgresql://user:password@localhost:5432/fastify_db"
 NEXT_DATABASE_URL="postgresql://user:password@localhost:5432/shadcn_next"
 ```
 
-Docker 使用 DOCKER_FASTIFY_DATABASE_URL 和 DOCKER_NEXT_DATABASE_URL。各子项目的 pnpm prisma:* 脚本自动加载根配置。
+Docker Compose 使用 POSTGRES_USER/POSTGRES_PASSWORD 自动拼接容器内数据库地址，无需单独配置 DATABASE_URL。各子项目的 pnpm prisma:* 脚本自动加载根配置。
 
 ### 开发建议
 

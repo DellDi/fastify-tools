@@ -183,6 +183,6 @@ pnpm -F fastify-service prisma:studio
 
 所有服务共用项目根目录的 .env。首次运行时将根目录 .env.example 复制为 .env 并填写配置；不要在子项目中再创建环境变量文件。进程已有的环境变量优先于文件中的值。
 
-FASTIFY_DATABASE_URL 和 NEXT_DATABASE_URL 用于本机单独启动及对应 Prisma 脚本；DOCKER_FASTIFY_DATABASE_URL 和 DOCKER_NEXT_DATABASE_URL 用于 Docker 网络。容器内后端地址使用 DOCKER_SERVER_FASTIFY_API，本机使用 SERVER_FASTIFY_API。浏览器访问后端的本机地址使用 NEXT_PUBLIC_API_URL，Docker 构建使用 DOCKER_NEXT_PUBLIC_API_URL。数据库地址须包含各环境实际使用的端口和凭据。
+FASTIFY_DATABASE_URL 和 NEXT_DATABASE_URL 用于本机单独启动及对应 Prisma 脚本；Docker Compose 自动使用 POSTGRES_USER/POSTGRES_PASSWORD 拼接容器内数据库地址，无需单独配置。容器内后端地址使用 DOCKER_SERVER_FASTIFY_API，本机使用 SERVER_FASTIFY_API。浏览器访问后端的本机地址使用 NEXT_PUBLIC_API_URL，Docker 构建使用 DOCKER_NEXT_PUBLIC_API_URL。数据库地址须包含各环境实际使用的端口和凭据。
 
 在子项目目录执行 pnpm dev、pnpm start 或 pnpm prisma:* 会自动读取根文件。Docker Compose 直接读取根文件；修改 NEXT_PUBLIC_* 后需要重新构建前端镜像。Node.js 需为 20.12 或更新版本。

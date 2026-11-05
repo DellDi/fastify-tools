@@ -34,7 +34,7 @@ export class JiraLLMService {
   ): Promise<ProjectIssueTypeMatch> {
     if (!this.llmConfig.apiKey) {
       this.fastify.log.warn(
-        'DASHSCOPE_API_KEY not provided, using default project and issueType',
+        'LLM_API_KEY not provided, using default project and issueType',
       )
       return {
         componentId: this.jiraConfig.defaultComponent,
@@ -328,7 +328,7 @@ ${description}
 
     if (!this.llmConfig.apiKey) {
       this.fastify.log.warn(
-        'DASHSCOPE_API_KEY not provided, using fallback values for required fields',
+        'LLM_API_KEY not provided, using fallback values for required fields',
       )
       return { ...result, ...resolveFallback() }
     }

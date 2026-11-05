@@ -19,7 +19,7 @@ function createMockFastify() {
       JIRA_DEFAULT_COMPONENT: '15775',
       JIRA_DEFAULT_PRIORITY: '3',
       BEARER_TOKEN: 'token',
-      DASHSCOPE_API_KEY: '',
+      LLM_API_KEY: '',
       LLM_BASE_URL: 'http://llm.test',
       LLM_MODEL: 'qwen3.5-flash',
     },
