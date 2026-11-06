@@ -82,5 +82,7 @@ services/fastify/api
 # windsurf
 .windsurf
 .shared
-.devin
+.devin/*
+!.devin/skills/
+.devin/skills/jira-api-workspace/
 .openidea
