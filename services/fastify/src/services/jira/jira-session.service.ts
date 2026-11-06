@@ -15,8 +15,8 @@ export class JiraSessionService {
     this.cacheConfig = getCacheConfig(fastify)
   }
 
-  private getSessionKey(jiraUser: string): string {
-    return `${this.cacheConfig.sessionPrefix}-${createHash('md5').update(jiraUser).digest('hex')}`
+  private getSessionKey(jiraUser: string, jiraPassword: string): string {
+    return `${this.cacheConfig.sessionPrefix}-${createHash('md5').update(`${jiraUser}:${jiraPassword}`).digest('hex')}`
   }
 
   resolveCredentials(
@@ -41,7 +41,7 @@ export class JiraSessionService {
       throw new ValidationError('缺少 Jira 登录凭据: jiraUser 和 jiraPassword')
     }
 
-    const sessionKey = this.getSessionKey(credentials.jiraUser)
+    const sessionKey = this.getSessionKey(credentials.jiraUser, credentials.jiraPassword)
     const session = fastifyCache.get(sessionKey) || {}
     if (session.cookies && session.atlToken) {
       return { cookies: session.cookies, atlToken: session.atlToken }
@@ -63,14 +63,17 @@ export class JiraSessionService {
       })
 
       if (loginResponse.statusCode !== 200) {
+        const deniedReason = loginResponse.headers['x-authentication-denied-reason']
+        await loginResponse.body.dump()
         const errorMessages: Record<number, string> = {
           401: '用户名或密码错误',
           403: '账户被锁定或无权限访问',
           404: 'Jira 服务地址不正确',
           500: 'Jira 服务器内部错误',
         }
-        const friendlyMsg =
-          errorMessages[loginResponse.statusCode] || '未知错误'
+        const friendlyMsg = deniedReason
+          ? `Jira 拒绝登录（${deniedReason}），请到 Jira 页面人工登录一次解除限制`
+          : errorMessages[loginResponse.statusCode] || '未知错误'
         throw new JiraLoginError(
           `登录失败: ${friendlyMsg} (HTTP ${loginResponse.statusCode})`,
         )
@@ -107,7 +110,7 @@ export class JiraSessionService {
   }
 
   async getSession(credentials: JiraLoginCredentials): Promise<JiraSession> {
-    const sessionKey = this.getSessionKey(credentials.jiraUser)
+    const sessionKey = this.getSessionKey(credentials.jiraUser, credentials.jiraPassword)
     const session = fastifyCache.get(sessionKey)
     if (session?.cookies && session?.atlToken) {
       return session
