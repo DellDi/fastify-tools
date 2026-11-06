@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex">
+<title>服务即将恢复 — delldiagi</title>
+<style>
+  :root {
+    --background: hsl(48 33% 97%);
+    --card: hsl(36 33% 99%);
+    --foreground: hsl(24 10% 12%);
+    --muted-foreground: hsl(28 8% 42%);
+    --primary: hsl(15 65% 58%);
+    --primary-dim: hsl(15 45% 70%);
+    --border: hsl(30 15% 88%);
+    --accent: hsl(24 72% 95%);
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --background: hsl(26 10% 8%);
+      --card: hsl(26 9% 11%);
+      --foreground: hsl(40 20% 94%);
+      --muted-foreground: hsl(32 10% 60%);
+      --primary: hsl(17 72% 62%);
+      --primary-dim: hsl(17 45% 45%);
+      --border: hsl(26 8% 19%);
+      --accent: hsl(20 26% 18%);
+    }
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--background);
+    color: var(--foreground);
+    font-family: ui-sans-serif, system-ui, "PingFang SC", "Noto Sans SC", sans-serif;
+    padding: 24px 0;
+  }
+  .card {
+    width: min(440px, calc(100vw - 48px));
+    padding: 32px 32px 28px;
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    text-align: center;
+    box-shadow: 0 4px 12px -2px rgb(45 32 20 / 0.08);
+  }
+  .code {
+    font-family: ui-monospace, monospace;
+    font-size: 44px;
+    font-weight: 700;
+    color: var(--primary);
+    line-height: 1;
+  }
+  .dot {
+    width: 10px;
+    height: 10px;
+    margin: 18px auto 14px;
+    border-radius: 50%;
+    background: var(--primary);
+    animation: pulse 1.6s ease-in-out infinite;
+  }
+  @keyframes pulse {
+    0%, 100% { opacity: 1; transform: scale(1); }
+    50% { opacity: 0.4; transform: scale(0.8); }
+  }
+  h1 { margin: 0 0 6px; font-size: 17px; font-weight: 600; }
+  p { margin: 0 0 16px; font-size: 12.5px; line-height: 1.8; color: var(--muted-foreground); }
+  .status {
+    display: inline-block;
+    padding: 3px 12px;
+    border-radius: 999px;
+    background: var(--accent);
+    font-size: 11px;
+    color: var(--muted-foreground);
+  }
+  canvas {
+    display: block;
+    width: 100%;
+    margin: 20px 0 6px;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    background: var(--accent);
+    touch-action: none;
+  }
+  .hint { font-size: 11px; color: var(--muted-foreground); }
+</style>
+</head>
+<body>
+  <div class="card">
+    <div class="code">@STATUS@</div>
+    <div class="dot"></div>
+    <h1>服务即将恢复</h1>
+    <p>正在重启后端服务，恢复后此页面会自动跳转。</p>
+    <span class="status" id="status">正在重试</span>
+    <canvas id="game" width="376" height="240"></canvas>
+    <span class="hint">打发时间：移动鼠标或手指接住小球，打碎砖块　<span id="score">0</span> 分</span>
+  </div>
+  <script>
+    var el = document.getElementById('status'), attempts = 0;
+    function retry() {
+      el.textContent = '正在重试 (' + (++attempts) + ')';
+      fetch(location.href, { method: 'HEAD', cache: 'no-store' })
+        .then(function (r) {
+          if (r.status < 500) location.reload();
+          else setTimeout(retry, 4000);
+        })
+        .catch(function () { setTimeout(retry, 4000); });
+    }
+    setTimeout(retry, 4000);
+
+    var cv = document.getElementById('game'), ctx = cv.getContext('2d');
+    var W = cv.width, H = cv.height;
+    var css = getComputedStyle(document.documentElement);
+    var PRIMARY = css.getPropertyValue('--primary').trim();
+    var DIM = css.getPropertyValue('--primary-dim').trim();
+    var FG = css.getPropertyValue('--foreground').trim();
+    var MUTED = css.getPropertyValue('--muted-foreground').trim();
+
+    var paddle = { w: 64, h: 8, x: W / 2 - 32 };
+    var ball = { x: W / 2, y: H - 40, r: 4.5, vx: 2.2, vy: -2.6 };
+    var COLS = 8, ROWS = 4, BW = 40, BH = 12, GAP = 5, TOP = 14, LEFT = (W - COLS * (BW + GAP) + GAP) / 2;
+    var bricks = [];
+    for (var r = 0; r < ROWS; r++)
+      for (var c = 0; c < COLS; c++)
+        bricks.push({ x: LEFT + c * (BW + GAP), y: TOP + r * (BH + GAP), live: 1 });
+    var score = 0, alive = true, scoreEl = document.getElementById('score');
+
+    function move(clientX) {
+      var rect = cv.getBoundingClientRect();
+      var x = (clientX - rect.left) * (W / rect.width);
+      paddle.x = Math.max(0, Math.min(W - paddle.w, x - paddle.w / 2));
+    }
+    cv.addEventListener('mousemove', function (e) { move(e.clientX); });
+    cv.addEventListener('touchmove', function (e) { e.preventDefault(); move(e.touches[0].clientX); }, { passive: false });
+    cv.addEventListener('click', reset);
+
+    function reset() {
+      ball.x = W / 2; ball.y = H - 40; ball.vx = 2.2; ball.vy = -2.6;
+      alive = true;
+      bricks.forEach(function (b) { b.live = 1; });
+      score = 0;
+    }
+
+    function step() {
+      if (alive) {
+        ball.x += ball.vx; ball.y += ball.vy;
+        if (ball.x < ball.r || ball.x > W - ball.r) ball.vx = -ball.vx;
+        if (ball.y < ball.r) ball.vy = -ball.vy;
+        if (ball.y > H + ball.r) alive = false;
+        if (ball.vy > 0 && ball.y + ball.r > H - paddle.h - 6 &&
+            ball.x > paddle.x && ball.x < paddle.x + paddle.w) {
+          ball.vy = -Math.abs(ball.vy);
+          ball.vx = ((ball.x - (paddle.x + paddle.w / 2)) / (paddle.w / 2)) * 3;
+        }
+        bricks.forEach(function (b) {
+          if (b.live && ball.x > b.x && ball.x < b.x + BW && ball.y > b.y && ball.y < b.y + BH) {
+            b.live = 0; ball.vy = -ball.vy; score++; scoreEl.textContent = score;
+          }
+        });
+      }
+      ctx.clearRect(0, 0, W, H);
+      bricks.forEach(function (b) {
+        if (!b.live) return;
+        ctx.fillStyle = b.y < TOP + 2 * (BH + GAP) ? PRIMARY : DIM;
+        ctx.fillRect(b.x, b.y, BW, BH);
+      });
+      ctx.fillStyle = FG;
+      ctx.fillRect(paddle.x, H - paddle.h - 6, paddle.w, paddle.h);
+      ctx.beginPath();
+      ctx.arc(ball.x, ball.y, ball.r, 0, Math.PI * 2);
+      ctx.fillStyle = PRIMARY;
+      ctx.fill();
+      if (!alive) {
+        ctx.fillStyle = MUTED;
+        ctx.font = '12px sans-serif';
+        ctx.textAlign = 'center';
+        ctx.fillText('游戏结束 — 点击重新开始', W / 2, H / 2);
+      }
+      requestAnimationFrame(step);
+    }
+    step();
+  </script>
+</body>
+</html>
