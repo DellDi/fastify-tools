@@ -137,22 +137,21 @@ JQL 分页搜索。响应里的每个 issue 额外带一个 `fields.customFieldC
 | `additionalFields` | object | 额外更新字段 `{fieldId: value}` |
 | `extraHolidays` | string[] | 额外注入的节假日/封网日期：单日 `YYYY-MM-DD` 或区间 `YYYY-MM-DD~YYYY-MM-DD`。日期分配与语义巡检都避开，且注入 LLM 评审上下文 |
 
-**reconcile 语义**（默认开启，幂等可重复巡检）：先读工单现状（`queryCurrentState` 步骤，取 fixVersions/customfield_10022/status），逐项决策：
+**reconcile 语义**（默认开启，幂等可重复巡检）：先读工单现状（`queryCurrentState` 步骤，取 fixVersions/customfield_10022/status），再以**经办人工作负载**为上下文逐项决策——`queryUsedDates` 步骤一次 JQL 拉取该经办人全部未完成单的已承诺日期 + 版本分布，批次内共享：
 
-- **版本**：现状恰好是 `[目标版本]` 单选 → 不动；否则整体替换为单选目标版本（不追加；含目标的多选也算不符）
-- **日期**：现状仍合法（≥今天、<版本日、工作日、非节假日）→ 保留；否则重新分配。本单旧日期自动从占用集排除，重复跑不漂移
+- **版本（五级优先级）**：① 现挂版本仍在未发布池且窗口有余量 → 保留（历史参照最强，**绝不跨前缀换版**：ARM 单不会被换成同日 HD 版）；② 现挂版本失效/满员 → 同前缀车次；③ → 经办人工作负载主流版本（汇入）；④ → LLM 在**容量校验过的可行候选**内建议（候选集外一律忽略）；⑤ → 确定性兜底（发车日最近有余量车次）。选定后现状≠`[目标]`单选才整体替换（不追加；含目标的多选收敛为单选）
+- **日期**：现状仍合法（≥今天、<版本日、工作日、非节假日、未被他人占用）→ 保留；否则在选中版本窗口分配最近可工作日。**一日一单**：经办人其他单的承诺日期 + 批内已分配日期都避让；窗口可工作日 = 今天~发车日前一天扣周末/节假日/封网期，占满即换版或明确失败（不写假日期）。本单旧日期自动从占用集排除，重复跑不漂移
 - **状态**：已是"开发已回复"→ 跳过转换记为成功；有字段改动时走独立评论接口补说明（不依赖转换）
 - **计划开始时间**：`customfield_10100` 若为 `T00:00:00` 假时间 → 改写为同日期随机工作时段（09:00–17:59）
-- **动态时间字段语义巡检**（`semanticDateReview` 步骤，**仅开发视角**）：`/rest/api/2/field` 识别所有 date/datetime 自定义字段（计划开始时间等动态识别，不硬编码）；名称含测试/上线/发布/验收/交付的字段归其他角色管，**直接排除不进评审** → LLM 按字段名语义判断过期/冲突并给建议 → 服务端确定性校验（格式合法、不早于今天、非周末/节假日、"开始"类字段不晚于预计开发完成、新值≠现值）后才写入。**LLM 失败自动兜底**：开始类字段晚于预计开发完成一律回退到锚点日，巡检不受影响。被 LLM 建议但校验拒绝的值不会写入
-- **评论**：只有实际改动才产生，文案为客观事实陈述（版本替换/日期重排/字段名）；无任何改动 → `unchanged`，不发评论
+- **动态时间字段语义巡检**（`semanticDateReview` 步骤，**仅开发视角**）：`/rest/api/2/field` 识别所有 date/datetime 自定义字段；名称含测试/上线/发布/验收/交付的字段归其他角色管，**直接排除**。**违规预扫描先行**：只对存在确定性违规的字段（已过期/周末节假日/开始晚于完成/零点占位时间）才调 LLM——全部合规直接跳过，LLM 对无违规字段的建议一律忽略 → LLM 建议再经确定性校验（格式合法、不早于今天、非周末/节假日、"开始"类字段不晚于预计开发完成、新值≠现值）才写入。**LLM 失败自动兜底**：开始类字段晚于预计开发完成一律回退到锚点日
+- **评论**：只有实际改动才产生，文案为客观事实陈述；无任何改动 → `unchanged`，不发评论
+- **推理链**：每单返回 `reasoning[]`——每个决策点的逐条推理记录（保留/换版/日期分配/语义评审的理由与容量数字），末行为 `结论：...` 总结。同时写入审计 `details.reasoning`
 
-**自动行为**（未显式传参时）：选 `unreleased` 中最合适的修复版本 → 按版本 releaseDate 为基准，跳过经办人已占用日期和法定节假日分配 `devCompleteDate` → 更新 `fixVersions` + `customfield_10022` → 执行"开发回复"转换。批量且自动分配时，会跨工单预留日期避免撞期。
+**Response 200**: `{ total, successCount, failureCount, successfulIssueKeys[], failedIssueKeys[], unchangedIssueKeys[], results: [{ success, status(success|partial_success|failure|unchanged), issueKey, fixVersionName?, devCompleteDate?, transitionName?, message, reasoning?[], steps?[], successfulSteps?[], failedSteps?[] }] }`
 
-**Response 200**: `{ total, successCount, failureCount, successfulIssueKeys[], failedIssueKeys[], unchangedIssueKeys[], results: [{ success, status(success|partial_success|failure|unchanged), issueKey, fixVersionName?, devCompleteDate?, transitionName?, message, steps?[], successfulSteps?[], failedSteps?[] }] }`
+`partial_success` = 字段更新成功但工作流转换失败；`unchanged` = reconcile 后无需改动；`steps` 含 `queryCurrentState / queryUsedDates / selectFixVersion / allocateDevCompleteDate / updateFields / getTransitions / doTransition / normalizeStartTime / semanticDateReview / addComment` 逐步明细（`selectFixVersion`/`allocateDevCompleteDate`/`semanticDateReview` 的 `data.reasoning` 带分级决策记录）。
 
-`partial_success` = 字段更新成功但工作流转换失败；`unchanged` = reconcile 后无需改动；`steps` 含 `queryCurrentState / queryUsedDates / selectFixVersion / allocateDevCompleteDate / updateFields / getTransitions / doTransition / normalizeStartTime / semanticDateReview / addComment` 逐步明细。
-
-**巡检审计**：每次调用逐单写入 `jira_reconcile_logs` 表（批次 ID、工单、状态、改动明细、耗时），`GET /jira/reconcile-logs` 查询（query：`batchId/issueKey/status/assignee/from/to/take/skip`）。写库失败不阻塞巡检。
+**巡检审计**：每次调用逐单写入 `jira_reconcile_logs` 表（批次 ID、工单、状态、改动明细、`details.reasoning` 推理链、耗时），`GET /jira/reconcile-logs` 查询（query：`batchId/issueKey/status/assignee/from/to/take/skip`）。写库失败不阻塞巡检。
 
 ## GET /jira/reconcile-logs
 

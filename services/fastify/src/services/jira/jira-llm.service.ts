@@ -418,6 +418,58 @@ ${JSON.stringify(input.fields, null, 2)}`
       }))
   }
 
+  /**
+   * LLM 版本建议（排期模型的"整体需求"层）：
+   * 候选集合已由确定性层过滤为"窗口有余量"的可行版本，
+   * LLM 只负责结合现挂版本与工作负载分布做语义选择。
+   */
+  async suggestFixVersion(input: {
+    issueKey: string
+    today: string
+    currentVersionName?: string
+    workloadVersions: Array<{ name: string; count: number }>
+    candidates: Array<{ name: string; releaseDate: string; freeDays: number }>
+  }): Promise<{ version: string; reason?: string } | undefined> {
+    if (!this.llmConfig.apiKey) {
+      throw new Error('LLM_API_KEY 未配置，跳过版本建议')
+    }
+    if (!input.candidates.length) return undefined
+
+    const systemPrompt = `你是 Jira 版本排期助手，从候选版本里为工单选一个最合适的修复版本。
+
+## 判定规则
+1. 只能从 candidates 里选，不得编造版本名
+2. 与工单现挂版本同前缀（如 ARM_ 系）的车次优先——历史参照最重要
+3. 其次选经办人工作负载的主流版本（count 大的）
+4. 发车日越早越好，但 freeDays 越足越稳
+5. 无法判断就选 freeDays 最多且发车日最近的
+
+只输出 JSON 对象，不要任何解释文字：
+{"version":"候选版本名 或 null","reason":"一句话中文理由"}`
+
+    const userPrompt = `工单 ${input.issueKey}（今天 ${input.today}）
+现挂版本：${input.currentVersionName || '未挂版本'}
+经办人未完成单版本分布：${JSON.stringify(input.workloadVersions)}
+候选版本（均已通过容量校验）：${JSON.stringify(input.candidates)}`
+
+    const response = await this.callLLM([
+      { role: 'system', content: systemPrompt },
+      { role: 'user', content: userPrompt },
+    ])
+
+    let parsed: { version?: unknown; reason?: unknown }
+    try {
+      parsed = JSON.parse(response)
+    } catch {
+      throw new Error('LLM 返回的不是有效 JSON')
+    }
+    if (typeof parsed.version !== 'string' || !parsed.version) return undefined
+    return {
+      version: parsed.version,
+      reason: typeof parsed.reason === 'string' ? parsed.reason : undefined,
+    }
+  }
+
   private async callLLM(
     messages: Array<{ role: string; content: string }>,
   ): Promise<string> {

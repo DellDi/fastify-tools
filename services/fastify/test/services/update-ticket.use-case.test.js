@@ -21,6 +21,13 @@ test('updateTicket use-case should update issue fields successfully', async () =
                 atlToken: 'mock-token',
             };
         },
+        withSession: async (_credentials, fn) => fn(await sessionService.getSession(_credentials)),
+        isSessionExpiredError: () => false,
+        invalidate: () => { },
+        login: async () => ({
+            cookies: 'mock-cookie',
+            atlToken: 'mock-token',
+        }),
     };
     const requestBodies = [];
     const server = createServer((req, res) => {

@@ -258,6 +258,8 @@ export interface DevReplyResponse {
   steps?: DevReplyStepResult[]
   successfulSteps?: DevReplyStepName[]
   failedSteps?: DevReplyStepName[]
+  /** 决策推理链：每个字段"为什么改/为什么保留"的逐条推理记录，末行为结论 */
+  reasoning?: string[]
   /** 单工单执行耗时（内部审计记录用） */
   durationMs?: number
 }

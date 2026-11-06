@@ -148,6 +148,64 @@ export function findAvailableDate(
 }
 
 /**
+ * 严格版可用日期分配：窗口内没有可工作日返回 null（用于版本容量可行性判断，
+ * 不像 findAvailableDate 降级返回版本前一天造成"假性可行"）
+ */
+export function findAvailableSlot(
+  versionDate: Date,
+  usedDates: Set<string>,
+  holidays: Set<string>
+): string | null {
+  let candidate = dayjs().startOf('day')
+  const maxDate = dayjs(versionDate).subtract(1, 'day').startOf('day')
+
+  while (candidate.isSameOrBefore(maxDate)) {
+    const dateStr = candidate.format('YYYY-MM-DD')
+    if (!isWeekend(candidate) && !holidays.has(dateStr) && !usedDates.has(dateStr)) {
+      return dateStr
+    }
+    candidate = candidate.add(1, 'day')
+  }
+  return null
+}
+
+/**
+ * 版本窗口容量统计：今天到版本前一天之间的可工作日数、
+ * 其中已被占用天数、以及最近一个可分配日。供排期决策与推理记录使用。
+ */
+export function versionWindowCapacity(
+  versionDate: Date,
+  usedDates: Set<string>,
+  holidays: Set<string>
+): { workableDays: number; occupiedDays: number; firstFreeDate?: string } {
+  let candidate = dayjs().startOf('day')
+  const maxDate = dayjs(versionDate).subtract(1, 'day').startOf('day')
+  let workableDays = 0
+  let occupiedDays = 0
+  let firstFreeDate: string | undefined
+
+  while (candidate.isSameOrBefore(maxDate)) {
+    const dateStr = candidate.format('YYYY-MM-DD')
+    if (!isWeekend(candidate) && !holidays.has(dateStr)) {
+      workableDays++
+      if (usedDates.has(dateStr)) {
+        occupiedDays++
+      } else if (!firstFreeDate) {
+        firstFreeDate = dateStr
+      }
+    }
+    candidate = candidate.add(1, 'day')
+  }
+  return { workableDays, occupiedDays, firstFreeDate }
+}
+
+/** 版本名前缀：'ARM_V10.1.20261203' → 'ARM'；无下划线归一为空串 */
+export function versionPrefix(name: string): string {
+  const idx = name.indexOf('_')
+  return idx > 0 ? name.slice(0, idx) : ''
+}
+
+/**
  * 获取已占用日期中的最大日期
  */
 export function getMaxUsedDate(usedDates: Set<string>): string | undefined {

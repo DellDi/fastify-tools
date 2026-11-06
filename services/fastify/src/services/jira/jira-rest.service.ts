@@ -328,6 +328,19 @@ export class JiraRestService {
   }
 
   /**
+   * LLM 版本建议：在容量可行的候选版本里按历史参照/工作负载做语义选择
+   */
+  async suggestFixVersion(input: {
+    issueKey: string
+    today: string
+    currentVersionName?: string
+    workloadVersions: Array<{ name: string; count: number }>
+    candidates: Array<{ name: string; releaseDate: string; freeDays: number }>
+  }): Promise<{ version: string; reason?: string } | undefined> {
+    return this.jiraLLMService.suggestFixVersion(input)
+  }
+
+  /**
    * 获取工单详情
    */
   async getIssueDetail<T = Record<string, any>>(

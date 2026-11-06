@@ -69,6 +69,7 @@ test('createTicketWithLabels use-case should update labels and auto dev reply', 
     assert.equal(result.devReply?.success, true);
     assert.deepEqual(calls, [
         'createTicket',
+        'logger.info:[object Object]', // 结构化日志：labels 更新信息
         'updateTicket',
         'devReply',
         'logger.info:Dev reply completed for NDE-1',
