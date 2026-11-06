@@ -228,6 +228,16 @@ export class JiraService {
     return this.jiraReconcileLogRepository.query(query)
   }
 
+  /** 巡检日志经办人去重列表（前端筛选用） */
+  async getReconcileLogAssignees() {
+    return this.jiraReconcileLogRepository.listAssignees()
+  }
+
+  /** 按 id 批量删除巡检记录 */
+  async deleteReconcileLogs(ids: string[]) {
+    return this.jiraReconcileLogRepository.deleteByIds(ids)
+  }
+
   /**
    * 获取所有可用的工单链接类型
    */

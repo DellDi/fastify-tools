@@ -64,6 +64,30 @@ export const JiraReconcileLogsSchema = {
   },
 }
 
+export const JiraReconcileLogAssigneesSchema = {
+  description: '巡检日志中出现过经办人的去重列表（筛选下拉选项用）',
+  tags: ['jira'],
+  response: {
+    200: Type.Object({ values: Type.Array(Type.String()) }),
+    500: Type.Object({ error: Type.Any() }),
+  },
+}
+
+export const JiraReconcileLogsDeleteSchema = {
+  description: '按 id 批量删除巡检审计日志（单删传单元素数组）',
+  tags: ['jira'],
+  body: Type.Object({
+    ids: Type.Array(Type.String(), {
+      minItems: 1,
+      description: '要删除的巡检日志 id 列表',
+    }),
+  }),
+  response: {
+    200: Type.Object({ deleted: Type.Number() }),
+    500: Type.Object({ error: Type.Any() }),
+  },
+}
+
 export type JiraReconcileLogQueryType = Static<typeof ReconcileLogQuerystring>
 export type JiraReconcileLogsResponseType = Static<
   typeof JiraReconcileLogsResponse

@@ -9,16 +9,30 @@ import {
   Loader2,
   MinusCircle,
   RefreshCcw,
+  Trash2,
   XCircle,
 } from 'lucide-react'
 
 import {
+  deleteReconcileLogs,
+  fetchReconcileLogAssignees,
   fetchReconcileLogs,
   type JiraReconcileLog,
   type ReconcileLogQuery,
 } from '@/utils/fetch/jira/reconcile-logs-api'
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
+import { Checkbox } from '@/components/ui/checkbox'
 import { Input } from '@/components/ui/input'
 import {
   Select,
@@ -37,6 +51,7 @@ import {
 } from '@/components/ui/table'
 
 const PAGE_SIZE = 20
+const JIRA_BROWSE = 'http://bug.new-see.com:8088/browse'
 
 const STATUS_META: Record<
   string,
@@ -70,15 +85,24 @@ export const ReconcileLogsTable = () => {
   const [total, setTotal] = useState(0)
   const [loading, setLoading] = useState(true)
   const [expandedId, setExpandedId] = useState<string | null>(null)
+  const [assigneeOptions, setAssigneeOptions] = useState<string[]>([])
+  const [selected, setSelected] = useState<Set<string>>(new Set())
+  const [deleting, setDeleting] = useState(false)
+  const [pendingDelete, setPendingDelete] = useState<{
+    ids: string[]
+    label: string
+  } | null>(null)
 
   const [filters, setFilters] = useState<ReconcileLogQuery>({
     issueKey: '',
     status: '',
     assignee: '',
+    date: '',
   })
   const [page, setPage] = useState(1)
   const [issueKeyInput, setIssueKeyInput] = useState('')
   const [assigneeInput, setAssigneeInput] = useState('')
+  const [dateInput, setDateInput] = useState('')
 
   const updateFilters = (patch: ReconcileLogQuery) => {
     setPage(1)
@@ -107,9 +131,57 @@ export const ReconcileLogsTable = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [filters, page])
 
+  useEffect(() => {
+    fetchReconcileLogAssignees()
+      .then((res) => setAssigneeOptions(res.values ?? []))
+      .catch(() => {})
+  }, [])
+
   const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE))
   const reload = () =>
     load({ ...filters, take: PAGE_SIZE, skip: (page - 1) * PAGE_SIZE })
+
+  const pageIds = logs.map((log) => log.id)
+  const allChecked =
+    pageIds.length > 0 && pageIds.every((id) => selected.has(id))
+  const toggleAll = () => {
+    setSelected((prev) => {
+      const next = new Set(prev)
+      if (allChecked) pageIds.forEach((id) => next.delete(id))
+      else pageIds.forEach((id) => next.add(id))
+      return next
+    })
+  }
+  const toggleOne = (id: string) => {
+    setSelected((prev) => {
+      const next = new Set(prev)
+      if (next.has(id)) next.delete(id)
+      else next.add(id)
+      return next
+    })
+  }
+
+  const confirmDelete = async () => {
+    if (!pendingDelete) return
+    setDeleting(true)
+    try {
+      const res = await deleteReconcileLogs(pendingDelete.ids)
+      toast.success(`已删除 ${res.deleted ?? pendingDelete.ids.length} 条巡检记录`)
+      setSelected((prev) => {
+        const next = new Set(prev)
+        pendingDelete.ids.forEach((id) => next.delete(id))
+        return next
+      })
+      setPendingDelete(null)
+      reload()
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : '删除失败')
+    } finally {
+      setDeleting(false)
+    }
+  }
+
+  const FILTER_INPUT_CLS = 'border-gray-300 dark:border-gray-600'
 
   return (
     <div className="flex flex-col gap-4">
@@ -117,7 +189,7 @@ export const ReconcileLogsTable = () => {
       <div className="flex flex-wrap items-center gap-2">
         <div className="flex items-center gap-1">
           <Input
-            className="w-[160px]"
+            className={`w-[160px] ${FILTER_INPUT_CLS}`}
             placeholder="工单号，如 NLC-3049"
             value={issueKeyInput}
             onChange={(e) => setIssueKeyInput(e.target.value)}
@@ -126,12 +198,28 @@ export const ReconcileLogsTable = () => {
             }}
           />
           <Input
-            className="w-[120px]"
+            className={`w-[140px] ${FILTER_INPUT_CLS}`}
             placeholder="经办人"
+            list="reconcile-assignee-options"
             value={assigneeInput}
             onChange={(e) => setAssigneeInput(e.target.value)}
             onKeyDown={(e) => {
               if (e.key === 'Enter') updateFilters({ assignee: assigneeInput })
+            }}
+          />
+          <datalist id="reconcile-assignee-options">
+            {assigneeOptions.map((name) => (
+              <option key={name} value={name} />
+            ))}
+          </datalist>
+          <Input
+            type="date"
+            className={`w-[150px] ${FILTER_INPUT_CLS}`}
+            title="按日筛选巡检时间"
+            value={dateInput}
+            onChange={(e) => {
+              setDateInput(e.target.value)
+              updateFilters({ date: e.target.value })
             }}
           />
           <Button
@@ -141,6 +229,7 @@ export const ReconcileLogsTable = () => {
               updateFilters({
                 issueKey: issueKeyInput,
                 assignee: assigneeInput,
+                date: dateInput,
               })
             }
           >
@@ -169,6 +258,22 @@ export const ReconcileLogsTable = () => {
         <Button variant="ghost" size="icon" onClick={reload} title="刷新">
           <RefreshCcw className="h-4 w-4" />
         </Button>
+
+        {selected.size > 0 && (
+          <Button
+            variant="destructive"
+            size="sm"
+            onClick={() =>
+              setPendingDelete({
+                ids: [...selected],
+                label: `${selected.size} 条记录`,
+              })
+            }
+          >
+            <Trash2 className="mr-1 h-3.5 w-3.5" />
+            删除选中（{selected.size}）
+          </Button>
+        )}
         <span className="ml-auto text-sm text-muted-foreground">
           共 {total} 条巡检记录
         </span>
@@ -189,13 +294,21 @@ export const ReconcileLogsTable = () => {
             <Table>
             <TableHeader>
               <TableRow>
-                <TableHead className="w-[40px]" />
+                <TableHead className="w-[36px]">
+                  <Checkbox
+                    checked={allChecked}
+                    onCheckedChange={toggleAll}
+                    aria-label="全选本页"
+                  />
+                </TableHead>
+                <TableHead className="w-[36px]" />
                 <TableHead className="w-[100px]">时间</TableHead>
                 <TableHead className="w-[110px]">工单</TableHead>
                 <TableHead className="w-[120px]">项目 / 经办人</TableHead>
                 <TableHead className="w-[100px]">结果</TableHead>
                 <TableHead className="min-w-[220px]">说明</TableHead>
                 <TableHead className="w-[80px] text-right">耗时</TableHead>
+                <TableHead className="w-[50px]" />
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -214,6 +327,13 @@ export const ReconcileLogsTable = () => {
                         setExpandedId(expanded ? null : log.id)
                       }
                     >
+                      <TableCell onClick={(e) => e.stopPropagation()}>
+                        <Checkbox
+                          checked={selected.has(log.id)}
+                          onCheckedChange={() => toggleOne(log.id)}
+                          aria-label={`选择 ${log.issueKey}`}
+                        />
+                      </TableCell>
                       <TableCell>
                         {expanded ? (
                           <ChevronDown className="h-4 w-4 text-muted-foreground" />
@@ -224,7 +344,16 @@ export const ReconcileLogsTable = () => {
                       <TableCell className="text-xs text-muted-foreground">
                         {compactDate(log.createdAt)}
                       </TableCell>
-                      <TableCell className="font-medium">{log.issueKey}</TableCell>
+                      <TableCell onClick={(e) => e.stopPropagation()}>
+                        <a
+                          href={`${JIRA_BROWSE}/${log.issueKey}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="font-medium text-primary hover:text-primary/80 hover:underline"
+                        >
+                          {log.issueKey}
+                        </a>
+                      </TableCell>
                       <TableCell>
                         <div className="text-xs">
                           {log.projectKey ?? '—'}
@@ -246,11 +375,28 @@ export const ReconcileLogsTable = () => {
                           ? `${(log.durationMs / 1000).toFixed(1)}s`
                           : '—'}
                       </TableCell>
+                      <TableCell onClick={(e) => e.stopPropagation()}>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-7 w-7 text-muted-foreground hover:text-destructive"
+                          title="删除该记录"
+                          onClick={() =>
+                            setPendingDelete({
+                              ids: [log.id],
+                              label: `${log.issueKey} 的记录`,
+                            })
+                          }
+                        >
+                          <Trash2 className="h-3.5 w-3.5" />
+                        </Button>
+                      </TableCell>
                     </TableRow>
                     {expanded && (
                       <TableRow key={`${log.id}-detail`} className="bg-muted/30">
                         <TableCell />
-                        <TableCell colSpan={6}>
+                        <TableCell />
+                        <TableCell colSpan={7}>
                           <div className="flex flex-col gap-1 py-1">
                             <div className="flex flex-wrap items-center gap-3 text-xs text-muted-foreground">
                               <span>批次 {log.batchId.slice(0, 8)}</span>
@@ -324,6 +470,33 @@ export const ReconcileLogsTable = () => {
           </div>
         </>
       )}
+
+      {/* 删除二次确认 */}
+      <AlertDialog
+        open={!!pendingDelete}
+        onOpenChange={(open) => !open && !deleting && setPendingDelete(null)}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>确认删除巡检记录？</AlertDialogTitle>
+            <AlertDialogDescription>
+              将删除 {pendingDelete?.label}，删除后不可恢复。
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={deleting}>取消</AlertDialogCancel>
+            <AlertDialogAction
+              disabled={deleting}
+              onClick={(e) => {
+                e.preventDefault()
+                confirmDelete()
+              }}
+            >
+              {deleting ? '删除中…' : '确认删除'}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   )
 }

@@ -14,3 +14,19 @@ export async function GET(req: NextRequest) {
     )
   }
 }
+
+export async function DELETE(req: NextRequest) {
+  try {
+    const body = await req.json()
+    const data = await fastifyFetch('/jira/reconcile-logs', {
+      method: 'DELETE',
+      body: JSON.stringify(body),
+    })
+    return NextResponse.json(data, { status: 200 })
+  } catch (error) {
+    return NextResponse.json(
+      { message: error instanceof Error ? error.message : '删除巡检日志失败' },
+      { status: 500 },
+    )
+  }
+}

@@ -49,6 +49,7 @@ type LogDelegate = {
   create(args: Record<string, unknown>): Promise<unknown>
   findMany(args: Record<string, unknown>): Promise<ReconcileLogDbRow[]>
   count(args: Record<string, unknown>): Promise<number>
+  deleteMany(args: Record<string, unknown>): Promise<{ count: number }>
 }
 
 export class JiraReconcileLogRepository {
@@ -104,5 +105,27 @@ export class JiraReconcileLogRepository {
         createdAt: row.createdAt.toISOString(),
       })),
     }
+  }
+
+  /** 经办人去重列表（筛选下拉选项用） */
+  async listAssignees(): Promise<string[]> {
+    const rows = await this.delegate.findMany({
+      where: { assignee: { not: null } },
+      distinct: ['assignee'],
+      select: { assignee: true },
+    })
+    return rows
+      .map((row) => row.assignee)
+      .filter((name): name is string => !!name)
+      .sort()
+  }
+
+  /** 按 id 批量删除巡检记录，返回实际删除条数 */
+  async deleteByIds(ids: string[]): Promise<number> {
+    if (!ids.length) return 0
+    const result = await this.delegate.deleteMany({
+      where: { id: { in: ids } },
+    })
+    return result.count
   }
 }

@@ -1,5 +1,7 @@
 import { FastifyPluginAsyncTypebox } from '@fastify/type-provider-typebox'
 import {
+  JiraReconcileLogAssigneesSchema,
+  JiraReconcileLogsDeleteSchema,
   JiraReconcileLogsSchema,
   JiraReconcileLogQueryType,
 } from '@/schema/jira/jira.js'
@@ -21,6 +23,21 @@ const jiraReconcileLogs: FastifyPluginAsyncTypebox = async (
         take: q.take,
         skip: q.skip,
       })
+    },
+  })
+
+  fastify.get('/assignees', {
+    schema: JiraReconcileLogAssigneesSchema,
+    handler: async () => ({
+      values: await fastify.jiraService.getReconcileLogAssignees(),
+    }),
+  })
+
+  fastify.delete('', {
+    schema: JiraReconcileLogsDeleteSchema,
+    handler: async (req) => {
+      const { ids } = req.body as { ids: string[] }
+      return { deleted: await fastify.jiraService.deleteReconcileLogs(ids) }
     },
   })
 }
