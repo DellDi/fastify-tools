@@ -120,11 +120,16 @@ export class JiraReconcileLogRepository {
       .sort()
   }
 
-  /** 按 id 批量删除巡检记录，返回实际删除条数 */
+  /** 按 id 批量删除巡检记录，返回实际删除条数（非法 UUID 直接跳过） */
   async deleteByIds(ids: string[]): Promise<number> {
-    if (!ids.length) return 0
+    const valid = ids.filter((id) =>
+      /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/.test(
+        id,
+      ),
+    )
+    if (!valid.length) return 0
     const result = await this.delegate.deleteMany({
-      where: { id: { in: ids } },
+      where: { id: { in: valid } },
     })
     return result.count
   }
