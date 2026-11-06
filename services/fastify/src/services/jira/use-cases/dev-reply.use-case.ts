@@ -648,7 +648,7 @@ export class DevReplyUseCase {
       // 结论行：推理链最后一行，概括"为什么动/为什么不动"
       reasoning.push(
         nothingChanged
-          ? `结论：${issueKey} 版本与日期均可行，无字段违规 → 不做任何修改`
+          ? `结论：${issueKey} 版本与日期均可行，巡检未产生改动 → 不做任何修改`
           : `结论：${issueKey} ` +
               [
                 changes.versionTo && `版本调整为「${changes.versionTo}」`,
@@ -950,12 +950,16 @@ export class DevReplyUseCase {
     }
 
     // 违规预扫描：只有存在确定性违规的字段才允许被改写——
-    // LLM 的建议必须对应一个真实违规，不许"为改而改"
+    // LLM 的建议必须对应一个真实违规，不许"为改而改"。
+    // 历史事实类字段（接单/创建/提交/实际…）过去时间是正常态，不算过期
+    const HISTORICAL_FIELD = /接单|创建|提交|申请|登记|记录|实际/
     const violations = new Map<string, string[]>()
     for (const field of devCandidates) {
       const datePart = field.value.slice(0, 10)
       const list: string[] = []
-      if (datePart < todayStr) list.push('已过期')
+      if (datePart < todayStr && !HISTORICAL_FIELD.test(field.name)) {
+        list.push('已过期')
+      }
       if (!isWorkDay(datePart)) list.push('落在周末/节假日')
       if (anchorDate && isStartField(field.name) && datePart > anchorDate) {
         list.push('晚于预计开发完成')
@@ -1060,6 +1064,9 @@ export class DevReplyUseCase {
     args.reasoning?.push(...notes)
 
     if (!Object.keys(updates).length) {
+      args.reasoning?.push(
+        `语义巡检：违规字段未产生改动（${llmError ? 'LLM 不可用' : 'LLM 建议保留或建议值被校验拒绝'}）`,
+      )
       pushStep(
         'semanticDateReview',
         true,
