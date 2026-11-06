@@ -77,6 +77,10 @@ export class DevReplyUseCase {
     // 未显式指定项目时按工单号前缀推导（ARM-75059 → ARM），支持跨项目混投
     const projectKey = data.projectKey || issueKey.split('-')[0]
     const reconcile = data.reconcile !== false
+    // 自动说明评论默认关闭（withComment=true 才生成）；显式 comment 文本不受此开关影响
+    const autoComment = (
+      options: Parameters<DevReplyUseCase['buildAutoComment']>[0],
+    ) => (data.withComment ? this.buildAutoComment(options) : undefined)
     // 调用方注入的节假日/封网日期（单日或区间），并入节假日集合统一避开
     const extraHolidayDates = expandHolidayDates(data.extraHolidays ?? [])
     let allHolidays = new Set<string>(extraHolidayDates)
@@ -286,6 +290,23 @@ export class DevReplyUseCase {
       )
 
       if (Object.keys(updateFields).length > 0 && this.updateTicket) {
+        // 字段级 from→to 明细：审计/前端展示"改了什么"用
+        const diffs: Record<string, { from?: unknown; to?: unknown }> = {}
+        if (versionNeedsUpdate) {
+          diffs.fixVersions = {
+            from: currentFixVersions.map((v) => v.name),
+            to: fixVersion?.version.name ?? fixVersionId,
+          }
+        }
+        if (dateNeedsUpdate) {
+          diffs.customfield_10022 = {
+            from: currentDevDate ?? null,
+            to: devCompleteDate,
+          }
+        }
+        for (const key of Object.keys(data.additionalFields ?? {})) {
+          if (key in updateFields) diffs[key] = { to: updateFields[key] }
+        }
         try {
           await this.updateTicket(credentials, {
             issueIdOrKey: issueKey,
@@ -294,6 +315,7 @@ export class DevReplyUseCase {
           fieldUpdateSuccess = true
           pushStep('updateFields', true, '字段更新成功', {
             updatedFields: Object.keys(updateFields),
+            diffs,
           })
         } catch (error) {
           const message = `字段更新失败: ${error instanceof Error ? error.message : String(error)}`
@@ -402,7 +424,7 @@ export class DevReplyUseCase {
           await this.postCommentStep(
             issueKey,
             session,
-            data.comment ?? this.buildAutoComment({ changes }),
+            data.comment ?? autoComment({ changes }),
             pushStep,
           )
           reasoning.push(`结论：字段已更新，但工作流转换失败 → ${message}`)
@@ -433,7 +455,7 @@ export class DevReplyUseCase {
       if (matchedTransition) {
         const resolvedComment =
           data.comment ??
-          this.buildAutoComment({
+          autoComment({
             transitionName,
             fixVersionName: fixVersion?.version.name,
             devCompleteDate,
@@ -466,7 +488,7 @@ export class DevReplyUseCase {
             await this.postCommentStep(
               issueKey,
               session,
-              data.comment ?? this.buildAutoComment({ changes }),
+              data.comment ?? autoComment({ changes }),
               pushStep,
             )
             reasoning.push(`结论：字段已更新，但工作流转换失败 → ${message}`)
@@ -563,7 +585,7 @@ export class DevReplyUseCase {
         await this.postCommentStep(
           issueKey,
           session,
-          data.comment ?? this.buildAutoComment({ changes }),
+          data.comment ?? autoComment({ changes }),
           pushStep,
         )
       }
@@ -864,6 +886,7 @@ export class DevReplyUseCase {
                   additionalFields: data.additionalFields,
                   reconcile: data.reconcile,
                   extraHolidays: data.extraHolidays,
+                  withComment: data.withComment,
                 },
                 batchContext,
               )
@@ -891,6 +914,7 @@ export class DevReplyUseCase {
                 additionalFields: data.additionalFields,
                 reconcile: data.reconcile,
                 extraHolidays: data.extraHolidays,
+                withComment: data.withComment,
               },
             )
             value.durationMs = Date.now() - startedAt

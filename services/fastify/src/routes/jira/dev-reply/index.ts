@@ -21,6 +21,7 @@ const jiraDevReply: FastifyPluginAsyncTypebox = async (fastify): Promise<void> =
         additionalFields,
         reconcile,
         extraHolidays,
+        withComment,
       } = req.body as JiraDevReplyBodyType
 
       const normalizedIssueKeys = Array.isArray(issueKeys)
@@ -47,6 +48,7 @@ const jiraDevReply: FastifyPluginAsyncTypebox = async (fastify): Promise<void> =
           additionalFields,
           reconcile,
           extraHolidays,
+          withComment,
         },
       )
     },

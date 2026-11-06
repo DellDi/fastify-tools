@@ -133,7 +133,8 @@ JQL 分页搜索。响应里的每个 issue 额外带一个 `fields.customFieldC
 | `transitionId` | string | 工作流转换 ID，默认 `'11'`；找不到时按名称含"开发回复/dev reply/development"兜底匹配 |
 | `fixVersionId` | string | 显式指定修复版本，跳过自动选版 |
 | `devCompleteDate` | string | `YYYY-MM-DD`，跳过自动分配 |
-| `comment` | string | 评论内容；不传且有实际改动时自动生成客观说明 |
+| `comment` | string | 评论内容，显式传入时始终发表；不传时是否自动评论由 `withComment` 控制 |
+| `withComment` | boolean | **默认 `false` 不评论**。`true` 且有实际改动时自动生成客观说明评论（随转换提交或独立补评）；显式 `comment` 不受此开关影响 |
 | `additionalFields` | object | 额外更新字段 `{fieldId: value}` |
 | `extraHolidays` | string[] | 额外注入的节假日/封网日期：单日 `YYYY-MM-DD` 或区间 `YYYY-MM-DD~YYYY-MM-DD`。日期分配与语义巡检都避开，且注入 LLM 评审上下文 |
 
@@ -144,7 +145,7 @@ JQL 分页搜索。响应里的每个 issue 额外带一个 `fields.customFieldC
 - **状态**：已是"开发已回复"→ 跳过转换记为成功；有字段改动时走独立评论接口补说明（不依赖转换）
 - **计划开始时间**：`customfield_10100` 若为 `T00:00:00` 假时间 → 改写为同日期随机工作时段（09:00–17:59）
 - **动态时间字段语义巡检**（`semanticDateReview` 步骤，**仅开发视角**）：`/rest/api/2/field` 识别所有 date/datetime 自定义字段；名称含测试/上线/发布/验收/交付的字段归其他角色管，**直接排除**。**违规预扫描先行**：只对存在确定性违规的字段（已过期/周末节假日/开始晚于完成/零点占位时间）才调 LLM——全部合规直接跳过，LLM 对无违规字段的建议一律忽略 → LLM 建议再经确定性校验（格式合法、不早于今天、非周末/节假日、"开始"类字段不晚于预计开发完成、新值≠现值）才写入。**LLM 失败自动兜底**：开始类字段晚于预计开发完成一律回退到锚点日
-- **评论**：只有实际改动才产生，文案为客观事实陈述；无任何改动 → `unchanged`，不发评论
+- **评论**：`withComment: true` 或显式 `comment` 时才发；自动文案只在有实际改动时产生（客观事实陈述），无任何改动 → `unchanged`，不发评论
 - **推理链**：每单返回 `reasoning[]`——每个决策点的逐条推理记录（保留/换版/日期分配/语义评审的理由与容量数字），末行为 `结论：...` 总结。同时写入审计 `details.reasoning`
 
 **Response 200**: `{ total, successCount, failureCount, successfulIssueKeys[], failedIssueKeys[], unchangedIssueKeys[], results: [{ success, status(success|partial_success|failure|unchanged), issueKey, fixVersionName?, devCompleteDate?, transitionName?, message, reasoning?[], steps?[], successfulSteps?[], failedSteps?[] }] }`

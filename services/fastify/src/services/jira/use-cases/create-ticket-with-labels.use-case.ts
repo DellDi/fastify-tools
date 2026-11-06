@@ -27,6 +27,7 @@ type DevReplyHandler = (
     issueKey: string
     projectKey: string
     assignee: string
+    withComment?: boolean
   },
 ) => Promise<DevReplyResponse>
 
@@ -78,6 +79,7 @@ export class CreateTicketWithLabelsUseCase {
             data.projectKey ||
             this.jiraConfig.defaultProject,
           assignee: data.assignee || credentials.jiraUser,
+          withComment: true,
         })
         if (devReplyResult.success) {
           this.logger.info(`Dev reply completed for ${result.issueKey}`)

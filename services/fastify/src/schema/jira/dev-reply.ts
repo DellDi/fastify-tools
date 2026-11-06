@@ -112,7 +112,7 @@ const JiraDevReplyBody = Type.Object({
     Type.Boolean({
       default: true,
       description:
-        '对账模式，默认开启。逐项检查工单现状（修复版本/预计完成时间/回复状态），只改写漂移项：版本已是目标单选版本则不动、日期仍合法则保留、已是回复态则跳过转换；有实际改动时自动补一条说明评论。传 false 回退到全量盲写。',
+        '对账模式，默认开启。逐项检查工单现状（修复版本/预计完成时间/回复状态），只改写漂移项：版本已是目标单选版本则不动、日期仍合法则保留、已是回复态则跳过转换；改动说明评论由 withComment 控制（默认不发）。传 false 回退到全量盲写。',
     }),
   ),
   transitionId: Type.Optional(
@@ -127,6 +127,13 @@ const JiraDevReplyBody = Type.Object({
     Type.String({ description: '预计开发完成时间，可选' })
   ),
   comment: Type.Optional(Type.String({ description: '评论，可选' })),
+  withComment: Type.Optional(
+    Type.Boolean({
+      default: false,
+      description:
+        '是否自动补评论，默认 false 不评论。传 true 时沿用原逻辑：有实际改动时生成一条客观说明评论（随转换提交或独立补评）。显式传入 comment 文本不受此开关影响，始终发表。',
+    }),
+  ),
   additionalFields: Type.Optional(
     Type.Record(Type.String(), Type.Any(), {
       description:

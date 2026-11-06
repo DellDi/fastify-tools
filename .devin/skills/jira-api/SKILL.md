@@ -28,7 +28,7 @@ description: 调用部署在 https://delldiagi.top/fastify 的 Jira 工单 HTTP 
 | 改标签 / 修复版本 / 经办人 / 标题 / 描述 / 预计开发完成时间 | `POST /jira/update-fields` | 业务字段更新的推荐入口，常用字段有快捷写法 |
 | 需要透传任意 Jira 原生 fields | `POST /jira/update` | 底层接口，仅当 update-fields 的快捷字段+`extraFields` 都不够用时才用 |
 | 给工单传附件 | `POST /jira/upload-attachment` | 三种来源：`multipart` 直接传文件 / `local_path` 服务器本地文件 / `remote_url` 远程 URL |
-| 批量"开发回复"/定时巡检（对账式：选修复版本 + 校订完成日期 + 工作流转换 + 变动才评论） | `POST /jira/dev-reply` | 默认 reconcile 模式：逐项检查现状只改漂移项，幂等可重复跑；`assignee` 默认 zhouxia |
+| 批量"开发回复"/定时巡检（对账式：选修复版本 + 校订完成日期 + 工作流转换；评论默认关闭） | `POST /jira/dev-reply` | 默认 reconcile 模式：逐项检查现状只改漂移项，幂等可重复跑；`assignee` 默认 zhouxia |
 | 建立工单关联（相关/重复/Defect 等） | `GET /jira/link/types` → `POST /jira/link` | 先查可用 `linkTypeName` 再建关联 |
 | 查字段经验规则（审计"建单自动填充"学了什么） | `GET /jira/field-rules`、`GET /jira/field-rules/combos` | 只读查询 |
 | 校准/删除某条字段规则 | `PATCH /jira/field-rules/{id}`、`DELETE /jira/field-rules/{id}` | 运维纠偏用，改动会影响后续建单的自动填充，动手前先跟用户确认 |
@@ -83,7 +83,7 @@ curl -s -X POST https://delldiagi.top/fastify/jira/dev-reply \
 - **状态转换**：已是"开发已回复"→ 跳过转换记为成功，不算失败
 - **计划开始时间**：`customfield_10100` 出现 `T00:00:00` 假时间 → 改写为同日期随机工作时段
 - **动态时间字段语义巡检**（`semanticDateReview`，仅开发视角）：自动识别所有 date/datetime 自定义字段（不硬编码）→ 测试/上线/发布/验收类字段归其他角色，直接排除 → LLM 按字段名语义判断过期/冲突并建议 → 确定性校验（不早于今天、非周末/节假日、"开始"类字段不晚于预计开发完成）后才写入。LLM 挂了走硬规则兜底，巡检照常完成
-- **评论**：只有发生实际改动才自动补评论（拟人化客观陈述，如"修复版本更新为X，预计完成时间由X调整为Y"）；已回复单的字段调整走独立评论接口，新回复单的评论随转换提交。`comment` 显式传入时覆盖自动文案
+- **评论**：默认 `withComment=false` 不评论；传 `true` 且有实际改动时自动补评论（拟人化客观陈述，如"修复版本更新为X，预计完成时间由X调整为Y"）；已回复单的字段调整走独立评论接口，新回复单的评论随转换提交。`comment` 显式传入时始终发表（覆盖自动文案，不受 withComment 影响）
 - **结果分类**：`success` / `partial_success`（字段改了但转换失败）/ `failure` / `unchanged`（什么都没动）；批量响应里 `unchangedIssueKeys` 单独列出未改动单
 - **审计**：每次巡检逐单落 `jira_reconcile_logs` 表（批次/状态/改动明细/耗时），`GET /jira/reconcile-logs` 可查
 
@@ -119,7 +119,7 @@ curl -s "https://delldiagi.top/fastify/jira/reconcile-logs?assignee=zhouxia&take
 | `POST /jira/update-fields` | `issueIdOrKey` | `labels`, `fixVersionIds`, `devCompleteDate`, `summary`, `description`, `assignee`, `fields`, `extraFields` |
 | `POST /jira/update` | `issueIdOrKey`, `fields` | —— |
 | `POST /jira/upload-attachment` | `issueIdOrKey`, `sourceType` | `filePath`/`fileUrl`（按 sourceType）或 multipart 文件 |
-| `POST /jira/dev-reply` | `issueKeys`, `projectKey`, `assignee` | `transitionId`, `fixVersionId`, `devCompleteDate`, `comment`, `additionalFields` |
+| `POST /jira/dev-reply` | `issueKeys`, `projectKey`, `assignee` | `transitionId`, `fixVersionId`, `devCompleteDate`, `comment`, `withComment`, `additionalFields`, `extraHolidays` |
 | `GET /jira/link/types` | 无 | `jiraUser`/`jiraPassword`（query） |
 | `POST /jira/link` | `sourceIssueKeys`(逗号分隔), `targetIssueKey` | `linkTypeName`（强烈建议显式传，见坑位） |
 | `GET /jira/field-rules` | 无 | `projectKey`, `issueTypeId`, `strategy`, `stale`, `keyword`, `take`, `skip` |

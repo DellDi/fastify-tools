@@ -189,6 +189,8 @@ export interface DevReplyData {
   fixVersionId?: string
   devCompleteDate?: string
   comment?: string
+  /** 有实际改动时是否自动补说明评论。默认 false 不评论；显式 comment 文本不受此开关影响 */
+  withComment?: boolean
   additionalFields?: Record<string, any>
   /** 对账模式：逐项检查现状，只改写漂移项，已是回复态则跳过转换。默认 true。 */
   reconcile?: boolean
@@ -281,6 +283,8 @@ export interface DevReplyBatchData {
   fixVersionId?: string
   devCompleteDate?: string
   comment?: string
+  /** 有实际改动时是否自动补说明评论。默认 false 不评论；显式 comment 文本不受此开关影响 */
+  withComment?: boolean
   additionalFields?: Record<string, any>
   /** 对账模式：逐项检查现状，只改写漂移项。默认 true。 */
   reconcile?: boolean
