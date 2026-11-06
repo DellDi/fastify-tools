@@ -18,20 +18,18 @@ export const JiraUpdateBody = Type.Object({
       labels: Type.Optional(
         Type.Array(
           Type.String({
-            default: '数据中台',
+            examples: ['数据中台'],
             description: 'labels: 单子标签',
           })
         )
       ),
     },
     {
-      default: {
-        labels: ['AI单'],
-      },
+      examples: [{ labels: ['AI单'] }],
     }
   ),
   issueIdOrKey: Type.String({
-    default: 'V10-28154',
+    examples: ['V10-28154'],
     description: 'Jira单子keyOrId',
   }),
 })
@@ -56,7 +54,7 @@ export const JiraUpdateFieldsBody = Type.Object({
     })
   ),
   issueIdOrKey: Type.String({
-    default: 'NDE-3149',
+    examples: ['NDE-3149'],
     description: '目标 Jira 工单的 issue key 或 issue id，例如 `NDE-3149`。',
   }),
   labels: Type.Optional(
@@ -81,7 +79,7 @@ export const JiraUpdateFieldsBody = Type.Object({
   ),
   devCompleteDate: Type.Optional(
     Type.String({
-      default: '2026-03-18',
+      examples: ['2026-03-18'],
       description:
         '预计开发完成时间，会写入 Jira 自定义字段 `customfield_10022`。格式必须为 `YYYY-MM-DD`。',
     })
@@ -106,18 +104,14 @@ export const JiraUpdateFieldsBody = Type.Object({
     Type.Record(Type.String(), Type.Any(), {
       description:
         '原始 Jira fields 对象。适合直接传任意 Jira 字段，例如 `{ priority: { id: "3" } }`。当与顶层常用字段重复时，以顶层常用字段和 `extraFields` 合并后的结果为准。',
-      default: {
-        priority: { id: '3' },
-      },
+      examples: [{ priority: { id: '3' } }],
     })
   ),
   extraFields: Type.Optional(
     Type.Record(Type.String(), Type.Any(), {
       description:
         '额外自定义字段。适合补充任意 Jira 字段，例如 `customfield_10601`。会在最终合并阶段覆盖同名字段。',
-      default: {
-        customfield_10601: '功能现状补充说明',
-      },
+      examples: [{ customfield_10601: '功能现状补充说明' }],
     })
   ),
 })
