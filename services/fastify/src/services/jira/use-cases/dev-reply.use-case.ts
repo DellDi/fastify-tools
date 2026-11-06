@@ -301,9 +301,52 @@ export class DevReplyUseCase {
           pushStep('updateFields', false, message)
         }
       } else {
-        pushStep('updateFields', true, '字段均符合预期，无需更新', {
-          skipped: true,
-        })
+        // 无内容可写有两种情形：现状合规（无需更新）或缺少可行版本/日期
+        // （想写写不了）——措辞要区分开，否则审计看着像合规
+        const nothingToWrite = !fixVersionId && !devCompleteDate
+        pushStep(
+          'updateFields',
+          true,
+          nothingToWrite
+            ? '缺少确定的修复版本与预计完成时间，无字段可写'
+            : '字段均符合预期，无需更新',
+          { skipped: true },
+        )
+      }
+
+      // 开发回复转换的必需输入缺失（Jira 转换校验器要求预计开发完成非空）——
+      // 工单尚需转换却拿不出日期时，撞转换只会得到一个 400。直接短路。
+      const needsTransition = !(reconcile && currentStatusName.includes('回复'))
+      if (needsTransition && !devCompleteDate) {
+        reasoning.push(
+          '结论：未能确定预计开发完成时间（开发回复转换必需字段），不尝试工作流转换',
+        )
+        if (fieldUpdateSuccess) {
+          return {
+            success: true,
+            status: 'partial_success',
+            issueKey,
+            fixVersionName: fixVersion?.version.name,
+            devCompleteDate,
+            message: `工单 ${issueKey} 字段已更新，但缺少预计开发完成时间，未执行工作流转换`,
+            fieldUpdateSuccess,
+            transitionSuccess,
+            steps,
+            reasoning,
+            ...this.buildStepSummary(steps),
+          }
+        }
+        return this.buildDevReplyFailure(
+          issueKey,
+          '未能确定预计开发完成时间，无法执行开发回复',
+          steps,
+          {
+            fixVersionName: fixVersion?.version.name,
+            fieldUpdateSuccess,
+            transitionSuccess,
+            reasoning,
+          },
+        )
       }
 
       const transitionId = data.transitionId || '11'

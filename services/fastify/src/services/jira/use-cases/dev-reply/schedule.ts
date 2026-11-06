@@ -203,7 +203,11 @@ export async function chooseFixVersion(args: {
     .map((item) => ({ item, capacity: capacityOf(item) }))
     .filter((x) => x.capacity.firstFreeDate)
   if (!feasible.length) {
-    reasons.push('所有未发布版本窗口均无剩余可工作日')
+    reasons.push(
+      validVersions.length
+        ? '所有未发布版本窗口均无剩余可工作日'
+        : '项目下无未发布且带版本日期的修复版本可选',
+    )
     return { pick: null, reasons }
   }
 

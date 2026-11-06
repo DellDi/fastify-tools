@@ -669,3 +669,28 @@ test('审计详情包含完整推理链，末行为结论', async () => {
     assert.equal(reasoning.length > 0, true);
     assert.match(reasoning[reasoning.length - 1], /^结论：/);
 });
+
+test('无可行版本且工单未回复：直接失败，不尝试工作流转换', async () => {
+    const { calls, updates, useCase } = makeHarness({
+        versions: [], // ITOPS 项目下无未发布版本
+        issueDetails: {
+            'ITOPS-1': {
+                fixVersions: [],
+                customfield_10022: null,
+                status: { name: '创建工单' },
+            },
+        },
+        transitions: [{ id: '11', name: '开发回复' }],
+    });
+    const result = await useCase.devReply({ jiraUser: 'z', jiraPassword: '1' }, {
+        issueKey: 'ITOPS-1', assignee: 'xiezhekai',
+    });
+    assert.equal(result.success, false);
+    assert.equal(result.status, 'failure');
+    assert.equal(calls.includes('doTransition'), false);
+    assert.equal(updates.length, 0);
+    assert.equal(result.failedSteps.includes('selectFixVersion'), true);
+    assert.match(result.message, /预计开发完成时间/);
+    const conclusion = result.reasoning[result.reasoning.length - 1];
+    assert.match(conclusion, /^结论：/);
+});
