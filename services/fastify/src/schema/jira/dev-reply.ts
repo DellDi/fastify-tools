@@ -71,6 +71,12 @@ const DevReplyResultSchema = Type.Object({
       description: '执行失败的步骤名称列表，可选',
     })
   ),
+  reasoning: Type.Optional(
+    Type.Array(Type.String(), {
+      description:
+        '决策推理链：版本/日期/语义巡检每个决策"为什么做"的逐条记录，末行为结论',
+    })
+  ),
 })
 
 const JiraDevReplyBody = Type.Object({
