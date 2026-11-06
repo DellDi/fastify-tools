@@ -92,8 +92,8 @@ export class JiraService {
   /**
    * Login to Jira and cache session information
    */
-  async login(credentials: JiraLoginCredentials): Promise<JiraSession> {
-    return this.jiraSessionService.login(credentials)
+  async login(credentials: JiraLoginCredentials, force = false): Promise<JiraSession> {
+    return this.jiraSessionService.login(credentials, force)
   }
 
   /**

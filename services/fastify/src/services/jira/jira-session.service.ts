@@ -70,15 +70,17 @@ export class JiraSessionService {
     }
   }
 
-  async login(credentials: JiraLoginCredentials): Promise<JiraSession> {
+  async login(credentials: JiraLoginCredentials, force = false): Promise<JiraSession> {
     if (!credentials.jiraUser || !credentials.jiraPassword) {
       throw new ValidationError('缺少 Jira 登录凭据: jiraUser 和 jiraPassword')
     }
 
     const sessionKey = this.getSessionKey(credentials.jiraUser, credentials.jiraPassword)
-    const session = fastifyCache.get(sessionKey) || {}
-    if (session.cookies && session.atlToken) {
-      return { cookies: session.cookies, atlToken: session.atlToken }
+    if (!force) {
+      const session = fastifyCache.get(sessionKey) || {}
+      if (session.cookies && session.atlToken) {
+        return { cookies: session.cookies, atlToken: session.atlToken }
+      }
     }
 
     const jiraUrl = this.jiraConfig.endpoints.session
