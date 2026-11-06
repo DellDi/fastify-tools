@@ -10,6 +10,7 @@ import type {
   JiraCreateTicketData,
   JiraCreateTicketResponse,
   JiraLoginCredentials,
+  JiraSession,
   JiraUpdateTicketData,
 } from '../types.js'
 
@@ -198,9 +199,17 @@ export class CreateTicketUseCase {
       throw new ValidationError('缺少必需字段: title 和 description')
     }
 
-    try {
-      const session = await this.sessionService.getSession(credentials)
+    return this.sessionService.withSession(credentials, (session) =>
+      this.doCreateTicket(credentials, data, session),
+    )
+  }
 
+  private async doCreateTicket(
+    credentials: JiraLoginCredentials,
+    data: JiraCreateTicketData,
+    session: JiraSession,
+  ): Promise<JiraCreateTicketResponse> {
+    try {
       let projectKey = data.projectKey || this.jiraConfig.defaultProject
       let issueTypeId = data.issueTypeId || this.jiraConfig.defaultIssueType
       let matchInfo: JiraCreateTicketResponse['matchInfo'] | undefined

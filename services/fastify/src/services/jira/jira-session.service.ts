@@ -19,6 +19,40 @@ export class JiraSessionService {
     return `${this.cacheConfig.sessionPrefix}-${createHash('md5').update(`${jiraUser}:${jiraPassword}`).digest('hex')}`
   }
 
+  private static readonly SESSION_EXPIRED_PATTERN = /HTTP (401|403)\b/
+
+  /** 判断错误是否像"Jira 会话已失效"（下游调用被 401/403 拒绝） */
+  isSessionExpiredError(error: unknown): boolean {
+    const message = error instanceof Error ? error.message : String(error)
+    return JiraSessionService.SESSION_EXPIRED_PATTERN.test(message)
+  }
+
+  /** 剔除指定凭据的缓存会话，下次获取将强制重新登录 */
+  invalidate(credentials: JiraLoginCredentials): void {
+    fastifyCache.delete(
+      this.getSessionKey(credentials.jiraUser, credentials.jiraPassword),
+    )
+  }
+
+  /**
+   * 会话失效自愈执行器：取会话执行业务调用，若调用报 401/403 视为会话过期，
+   * 剔除缓存重新登录并重试一次。登录本身失败不重试（凭据问题原样抛出）。
+   */
+  async withSession<T>(
+    credentials: JiraLoginCredentials,
+    fn: (session: JiraSession) => Promise<T>,
+  ): Promise<T> {
+    const session = await this.getSession(credentials)
+    try {
+      return await fn(session)
+    } catch (error) {
+      if (!this.isSessionExpiredError(error)) throw error
+      this.invalidate(credentials)
+      const fresh = await this.login(credentials)
+      return await fn(fresh)
+    }
+  }
+
   resolveCredentials(
     credentials?: Partial<JiraLoginCredentials>,
   ): JiraLoginCredentials {

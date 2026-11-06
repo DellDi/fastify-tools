@@ -22,7 +22,7 @@ test('devReply should still update fields when transition is unavailable', async
         getProjectVersions: async () => [{ id: '23987', name: 'DC_V10.1.20260326' }],
         selectFixVersionSmart: () => ({
             version: { id: '23987', name: 'DC_V10.1.20260326' },
-            date: new Date('2026-03-26'),
+            date: new Date(Date.now() + 60 * 24 * 3600 * 1000),
         }),
         getHolidays: async () => new Set(),
         getTransitions: async () => [],
@@ -36,6 +36,10 @@ test('devReply should still update fields when transition is unavailable', async
             cookies: 'mock-cookie',
             atlToken: 'mock-token',
         }),
+        withSession: async (credentials, fn) => fn(await sessionService.getSession(credentials)),
+        isSessionExpiredError: () => false,
+        invalidate: () => {},
+        login: async () => ({ cookies: 'mock-cookie', atlToken: 'mock-token' }),
     };
     const updateTicket = async (_credentials, data) => {
         calls.push('updateTicket');
@@ -81,7 +85,7 @@ test('devReplyBatch should reserve allocated dev complete dates within the same 
         getProjectVersions: async () => [{ id: '23987', name: 'DC_V10.1.20260326' }],
         selectFixVersionSmart: () => ({
             version: { id: '23987', name: 'DC_V10.1.20260326' },
-            date: new Date('2026-03-26'),
+            date: new Date(Date.now() + 60 * 24 * 3600 * 1000),
         }),
         getHolidays: async () => new Set(),
         getTransitions: async () => [{ id: '11', name: '开发回复' }],
@@ -93,6 +97,10 @@ test('devReplyBatch should reserve allocated dev complete dates within the same 
             cookies: 'mock-cookie',
             atlToken: 'mock-token',
         }),
+        withSession: async (credentials, fn) => fn(await sessionService.getSession(credentials)),
+        isSessionExpiredError: () => false,
+        invalidate: () => {},
+        login: async () => ({ cookies: 'mock-cookie', atlToken: 'mock-token' }),
     };
     const updateTicket = async (_credentials, data) => {
         updatedDates.push(data.fields.customfield_10022);
@@ -140,7 +148,7 @@ const makeHarness = (overrides) => {
         getProjectVersions: async () => [{ id: '23987', name: 'DC_V10.1.20260326' }],
         selectFixVersionSmart: () => ({
             version: { id: '23987', name: 'DC_V10.1.20260326' },
-            date: new Date('2026-03-26'),
+            date: new Date(Date.now() + 60 * 24 * 3600 * 1000),
         }),
         getHolidays: async () => new Set(),
         getTransitions: async () => overrides.transitions ?? [],
@@ -155,6 +163,10 @@ const makeHarness = (overrides) => {
     const sessionService = {
         resolveCredentials: (credentials) => credentials,
         getSession: async () => ({ cookies: 'c', atlToken: 't' }),
+        withSession: async (credentials, fn) => fn(await sessionService.getSession(credentials)),
+        isSessionExpiredError: () => false,
+        invalidate: () => {},
+        login: async () => ({ cookies: 'c', atlToken: 't' }),
     };
     const updateTicket = async (_credentials, data) => {
         calls.push('updateTicket');
@@ -205,7 +217,7 @@ test('devReply reconcile should fix drifted fields on an already-replied issue a
     assert.deepEqual(updates[0].fixVersions, [{ id: '23987' }]);
     assert.notEqual(updates[0].customfield_10022, '2020-01-01');
     assert.equal(comments.length, 1);
-    assert.match(comments[0], /排期巡检自动同步/);
+    assert.match(comments[0], /DC_V10\.1\.20260326/);
 });
 test('devReply with reconcile=false should not read current state and blind-write', async () => {
     const { calls, updates, useCase } = makeHarness({});

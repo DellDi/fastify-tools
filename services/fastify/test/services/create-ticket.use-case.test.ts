@@ -45,10 +45,10 @@ test('createTicket use-case should orchestrate smart match, meta, custom info, i
         confidence: 'high',
       }
     },
-    createMeta: async () => {
+    createMetaAll: async () => {
       calls.push('createMeta')
       return {
-        values: [{ fieldId: 'customfield_10000' }],
+        values: [{ fieldId: 'customfield_10000', name: '客户名称', required: true, schema: { type: 'string' } }],
       }
     },
     genCustomInfo: async () => {
@@ -57,6 +57,8 @@ test('createTicket use-case should orchestrate smart match, meta, custom info, i
         customfield_10000: 'auto-value',
       }
     },
+    getFieldRules: async () => new Map(),
+    learnFieldValues: async () => {},
     createIssue: async (payload: any, _cookies: string, options: any) => {
       calls.push('createIssue')
       assert.equal(payload.customAutoFields.customfield_10000, 'auto-value')
@@ -84,6 +86,14 @@ test('createTicket use-case should orchestrate smart match, meta, custom info, i
         atlToken: 'mock-token',
       }
     },
+    withSession: async (_credentials: any, fn: any) =>
+      fn(await sessionService.getSession(_credentials)),
+    isSessionExpiredError: () => false,
+    invalidate: () => {},
+    login: async () => ({
+      cookies: 'mock-cookie',
+      atlToken: 'mock-token',
+    }),
   } as any
 
   const updateTicket = async (_credentials: any, data: any) => {
@@ -179,16 +189,18 @@ test('createTicket use-case should keep explicit projectKey when smartMatch fill
         confidence: 'high',
       }
     },
-    createMeta: async () => {
+    createMetaAll: async () => {
       calls.push('createMeta')
       return {
-        values: [],
+        values: [{ fieldId: 'customfield_10000', name: '客户名称', required: true, schema: { type: 'string' } }],
       }
     },
     genCustomInfo: async () => {
       calls.push('genCustomInfo')
       return {}
     },
+    getFieldRules: async () => new Map(),
+    learnFieldValues: async () => {},
     createIssue: async (payload: any, _cookies: string, options: any) => {
       calls.push('createIssue')
       assert.equal(options.projectKey, 'NDE')
@@ -213,6 +225,14 @@ test('createTicket use-case should keep explicit projectKey when smartMatch fill
         atlToken: 'mock-token',
       }
     },
+    withSession: async (_credentials: any, fn: any) =>
+      fn(await sessionService.getSession(_credentials)),
+    isSessionExpiredError: () => false,
+    invalidate: () => {},
+    login: async () => ({
+      cookies: 'mock-cookie',
+      atlToken: 'mock-token',
+    }),
   } as any
 
   const updateTicket = async (_credentials: any, _data: any) => {
@@ -286,16 +306,18 @@ test('createTicket use-case should not pass default component for explicit non-d
         components: [{ id: 'nlc-cmp-1', name: 'NLC 默认组件' }],
       }
     },
-    createMeta: async (projectKey: string, issueTypeId: string) => {
+    createMetaAll: async (projectKey: string, issueTypeId: string) => {
       calls.push('createMeta')
       assert.equal(projectKey, 'NLC')
       assert.equal(issueTypeId, '4')
-      return { values: [] }
+      return { values: [{ fieldId: 'customfield_10000', name: '客户名称', required: true, schema: { type: 'string' } }] }
     },
     genCustomInfo: async () => {
       calls.push('genCustomInfo')
       return {}
     },
+    getFieldRules: async () => new Map(),
+    learnFieldValues: async () => {},
     createIssue: async (payload: any, _cookies: string, options: any) => {
       calls.push('createIssue')
       assert.equal(payload.assignee, 'alice')
@@ -317,6 +339,14 @@ test('createTicket use-case should not pass default component for explicit non-d
         atlToken: 'mock-token',
       }
     },
+    withSession: async (_credentials: any, fn: any) =>
+      fn(await sessionService.getSession(_credentials)),
+    isSessionExpiredError: () => false,
+    invalidate: () => {},
+    login: async () => ({
+      cookies: 'mock-cookie',
+      atlToken: 'mock-token',
+    }),
   } as any
 
   const updateTicket = async () => ({ message: 'ok' })

@@ -136,7 +136,7 @@ curl -s "https://delldiagi.top/fastify/jira/reconcile-logs?assignee=zhouxia&take
 4. **`assignee` 是登录用户名**（如 `zhangsan`），不是显示名（如"张三"）。search 结果里 `fields.assignee.displayName` 是显示名，拿去做更新前要有登录名；不确定时问用户。
 5. **`devCompleteDate` 格式必须 `YYYY-MM-DD`**，落到 Jira 自定义字段 `customfield_10022`。`update-fields` 和 `dev-reply` 都是这个字段。
 6. **`update-fields` 的 `labels` 是整体覆盖**，不是追加；想保留旧标签要先把旧值查出来一起传。`extraFields` 在最终合并阶段覆盖同名字段，优先级最高。
-7. **cookies 会过期**（JSESSIONID）。search 返回 401/未授权时重新 `POST /jira/login` 再试。
+7. **cookies 会过期**（JSESSIONID）。search 返回 401/未授权时重新 `POST /jira/login` 再试（`scripts/search.py` 已自动重登重试一次）。服务端内部调用也有会话自愈：下游 Jira 返回 401/403 时自动剔除缓存、重登、重试一次——只要账密正确，调用方不应看到 401/403；看到即代表账密本身被 Jira 拒绝（密码错误或账号锁定）。
 8. 写操作（create/update/dev-reply/link/upload）会真实改动 Jira 数据，执行前向用户确认目标单号和内容。
 
 字段级的完整请求/响应参考：`references/endpoints.md`。

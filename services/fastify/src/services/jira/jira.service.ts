@@ -109,16 +109,18 @@ export class JiraService {
    * 获取项目列表
    */
   async getProjects(credentials: JiraLoginCredentials) {
-    const session = await this.getSession(credentials)
-    return this.jiraRestService.getProjects(session.cookies)
+    return this.jiraSessionService.withSession(credentials, (session) =>
+      this.jiraRestService.getProjects(session.cookies),
+    )
   }
 
   /**
    * 获取指定项目的问题类型列表
    */
   async getIssueTypes(credentials: JiraLoginCredentials, projectKey: string) {
-    const session = await this.getSession(credentials)
-    return this.jiraRestService.getIssueTypes(projectKey, session.cookies)
+    return this.jiraSessionService.withSession(credentials, (session) =>
+      this.jiraRestService.getIssueTypes(projectKey, session.cookies),
+    )
   }
 
   /**
@@ -146,8 +148,9 @@ export class JiraService {
     credentials: JiraLoginCredentials,
     data: JiraUploadAttachmentData,
   ): Promise<JiraUploadAttachmentResponse> {
-    const session = await this.getSession(credentials)
-    return this.jiraRestService.addAttachment(data, session.cookies)
+    return this.jiraSessionService.withSession(credentials, (session) =>
+      this.jiraRestService.addAttachment(data, session.cookies),
+    )
   }
 
   /**
@@ -161,14 +164,14 @@ export class JiraService {
     startAt: number = 0,
   ) {
     try {
-      const session = await this.getSession(credentials)
-
-      return await this.jiraRestService.createMeta(
-        projectKey,
-        issueTypeId,
-        session.cookies,
-        maxResults,
-        startAt,
+      return await this.jiraSessionService.withSession(credentials, (session) =>
+        this.jiraRestService.createMeta(
+          projectKey,
+          issueTypeId,
+          session.cookies,
+          maxResults,
+          startAt,
+        ),
       )
     } catch (error) {
       this.fastify.log.error(`Get create meta error: ${error instanceof Error ? error.message : String(error)}`)
@@ -217,8 +220,9 @@ export class JiraService {
    * 获取所有可用的工单链接类型
    */
   async getIssueLinkTypes(credentials: JiraLoginCredentials) {
-    const session = await this.getSession(credentials)
-    return this.jiraRestService.getIssueLinkTypes(session.cookies)
+    return this.jiraSessionService.withSession(credentials, (session) =>
+      this.jiraRestService.getIssueLinkTypes(session.cookies),
+    )
   }
 
   /**
@@ -230,24 +234,24 @@ export class JiraService {
     targetIssueKey: string,
     linkTypeName?: string,
   ): Promise<{ results: Array<{ issueKey: string; success: boolean; message: string }> }> {
-    const session = await this.getSession(credentials)
+    return this.jiraSessionService.withSession(credentials, async (session) => {
+      const results = await Promise.allSettled(
+        sourceIssueKeys.map((key) =>
+          this.jiraRestService.linkIssue(key, targetIssueKey, session.cookies, linkTypeName),
+        ),
+      )
 
-    const results = await Promise.allSettled(
-      sourceIssueKeys.map((key) =>
-        this.jiraRestService.linkIssue(key, targetIssueKey, session.cookies, linkTypeName),
-      ),
-    )
-
-    return {
-      results: results.map((result, i) => ({
-        issueKey: sourceIssueKeys[i],
-        success: result.status === 'fulfilled',
-        message:
-          result.status === 'fulfilled'
-            ? `${sourceIssueKeys[i]} 已关联到 ${targetIssueKey}`
-            : (result.reason instanceof Error ? result.reason.message : String(result.reason)),
-      })),
-    }
+      return {
+        results: results.map((result, i) => ({
+          issueKey: sourceIssueKeys[i],
+          success: result.status === 'fulfilled',
+          message:
+            result.status === 'fulfilled'
+              ? `${sourceIssueKeys[i]} 已关联到 ${targetIssueKey}`
+              : (result.reason instanceof Error ? result.reason.message : String(result.reason)),
+        })),
+      }
+    })
   }
 
   /**
@@ -258,11 +262,12 @@ export class JiraService {
     projectKey: string,
     status?: 'released' | 'unreleased' | 'archived',
   ) {
-    const session = await this.getSession(credentials)
-    return this.jiraRestService.getProjectVersions(
-      projectKey,
-      session.cookies,
-      status,
+    return this.jiraSessionService.withSession(credentials, (session) =>
+      this.jiraRestService.getProjectVersions(
+        projectKey,
+        session.cookies,
+        status,
+      ),
     )
   }
 
@@ -270,8 +275,9 @@ export class JiraService {
    * 获取工单可用的工作流转换
    */
   async getTransitions(credentials: JiraLoginCredentials, issueKey: string) {
-    const session = await this.getSession(credentials)
-    return this.jiraRestService.getTransitions(issueKey, session.cookies)
+    return this.jiraSessionService.withSession(credentials, (session) =>
+      this.jiraRestService.getTransitions(issueKey, session.cookies),
+    )
   }
 
   /**
@@ -282,11 +288,12 @@ export class JiraService {
     issueIdOrKey: string,
     fields?: string[],
   ): Promise<T> {
-    const session = await this.getSession(credentials)
-    return this.jiraRestService.getIssueDetail<T>(
-      issueIdOrKey,
-      session.cookies,
-      fields,
+    return this.jiraSessionService.withSession(credentials, (session) =>
+      this.jiraRestService.getIssueDetail<T>(
+        issueIdOrKey,
+        session.cookies,
+        fields,
+      ),
     )
   }
 }

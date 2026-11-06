@@ -877,6 +877,29 @@ export class DevReplyUseCase {
     }
   }
 
+  /**
+   * 工作流级会话自愈：步骤内的 401/403 会被各步骤 catch 吞成失败步骤，
+   * 因此除了 withSession 捕获的抛错重试外，还要扫结果里的失败步骤——
+   * 命中会话失效特征则整单重登重跑一次。
+   */
+  private async runWorkflowWithSessionRetry(
+    credentials: JiraLoginCredentials,
+    data: DevReplyData,
+    batchAllocationState?: DevReplyBatchAllocationState,
+  ): Promise<DevReplyResponse> {
+    const result = await this.sessionService.withSession(credentials, (session) =>
+      this.executeDevReplyWorkflow(credentials, session, data, batchAllocationState),
+    )
+    const sessionExpired = result.steps?.some(
+      (step) =>
+        !step.success && this.sessionService.isSessionExpiredError(step.message),
+    )
+    if (!sessionExpired) return result
+    this.sessionService.invalidate(credentials)
+    const fresh = await this.sessionService.login(credentials)
+    return this.executeDevReplyWorkflow(credentials, fresh, data, batchAllocationState)
+  }
+
   async devReply(
     credentials: Partial<JiraLoginCredentials> | undefined,
     data: DevReplyData,
@@ -884,11 +907,9 @@ export class DevReplyUseCase {
     const resolvedCredentials = this.sessionService.resolveCredentials(credentials)
 
     try {
-      const session = await this.sessionService.getSession(resolvedCredentials)
       const startedAt = Date.now()
-      const result = await this.executeDevReplyWorkflow(
+      const result = await this.runWorkflowWithSessionRetry(
         resolvedCredentials,
-        session,
         data,
       )
       result.durationMs = Date.now() - startedAt
@@ -918,9 +939,8 @@ export class DevReplyUseCase {
     const resolvedCredentials = this.sessionService.resolveCredentials(credentials)
     const batchId = randomUUID()
 
-    let session: JiraSession
     try {
-      session = await this.sessionService.getSession(resolvedCredentials)
+      await this.sessionService.getSession(resolvedCredentials)
     } catch (error) {
       const message = `开发回复前置登录失败: ${error instanceof Error ? error.message : String(error)}`
       const results = data.issueKeys.map((issueKey) =>
@@ -960,9 +980,8 @@ export class DevReplyUseCase {
           for (const issueKey of data.issueKeys) {
             try {
               const startedAt = Date.now()
-              const value = await this.executeDevReplyWorkflow(
+              const value = await this.runWorkflowWithSessionRetry(
                 resolvedCredentials,
-                session,
                 {
                   issueKey,
                   projectKey: data.projectKey,
@@ -988,9 +1007,8 @@ export class DevReplyUseCase {
       : await Promise.allSettled(
           data.issueKeys.map(async (issueKey) => {
             const startedAt = Date.now()
-            const value = await this.executeDevReplyWorkflow(
+            const value = await this.runWorkflowWithSessionRetry(
               resolvedCredentials,
-              session,
               {
                 issueKey,
                 projectKey: data.projectKey,

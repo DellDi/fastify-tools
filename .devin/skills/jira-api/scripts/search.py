@@ -50,20 +50,32 @@ def main() -> None:
         login_body["jiraUser"] = os.environ["JIRA_USER"]
         login_body["jiraPassword"] = os.environ.get("JIRA_PASSWORD", "")
 
-    session = post("/jira/login", login_body)
-    cookies = session.get("cookies")
-    if not cookies:
-        raise SystemExit(f"登录响应缺少 cookies: {session}")
+    def do_login() -> str:
+        session = post("/jira/login", login_body)
+        cookies = session.get("cookies")
+        if not cookies:
+            raise SystemExit(f"登录响应缺少 cookies: {session}")
+        return cookies
 
-    result = post(
-        "/jira/search",
-        {
-            "jql": jql,
-            "jiraCookies": cookies,
-            "startAt": start_at,
-            "maxResults": max_results,
-        },
-    )
+    def do_search(cookies: str) -> dict:
+        return post(
+            "/jira/search",
+            {
+                "jql": jql,
+                "jiraCookies": cookies,
+                "startAt": start_at,
+                "maxResults": max_results,
+            },
+        )
+
+    cookies = do_login()
+    try:
+        result = do_search(cookies)
+    except SystemExit as e:
+        # 会话过期（401/403）→ 静默重登重试一次，不向调用方泄漏
+        if "HTTP 401" not in str(e) and "HTTP 403" not in str(e):
+            raise
+        result = do_search(do_login())
     print(json.dumps(result, ensure_ascii=False, indent=2))
 
 

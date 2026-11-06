@@ -32,60 +32,61 @@ export class UpdateTicketUseCase {
     }
 
     try {
-      const session = await this.sessionService.getSession(credentials)
       const fieldKeys = Object.keys(data.fields || {})
 
-      const updateResponse = await request(
-        `${this.jiraConfig.endpoints.updateIssue}/${data.issueIdOrKey}`,
-        {
-          method: 'PUT',
-          headers: {
-            Cookie: session.cookies,
-            Authorization: this.jiraConfig.auth.proxyAuthToken,
-            'Content-Type': 'application/json',
+      return await this.sessionService.withSession(credentials, async (session) => {
+        const updateResponse = await request(
+          `${this.jiraConfig.endpoints.updateIssue}/${data.issueIdOrKey}`,
+          {
+            method: 'PUT',
+            headers: {
+              Cookie: session.cookies,
+              Authorization: this.jiraConfig.auth.proxyAuthToken,
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              fields: data.fields,
+            }),
           },
-          body: JSON.stringify({
-            fields: data.fields,
-          }),
-        },
-      )
+        )
 
-      if (updateResponse?.statusCode !== 204) {
-        const rawBody = await updateResponse.body.text()
-        let parsedBody: unknown = rawBody
+        if (updateResponse?.statusCode !== 204) {
+          const rawBody = await updateResponse.body.text()
+          let parsedBody: unknown = rawBody
 
-        try {
-          parsedBody = rawBody ? JSON.parse(rawBody) : null
-        } catch {
-          parsedBody = rawBody
+          try {
+            parsedBody = rawBody ? JSON.parse(rawBody) : null
+          } catch {
+            parsedBody = rawBody
+          }
+
+          this.logger.error(
+            {
+              issueIdOrKey: data.issueIdOrKey,
+              statusCode: updateResponse.statusCode,
+              fieldKeys,
+              fields: data.fields,
+              jiraResponse: parsedBody,
+            },
+            'Jira update request failed',
+          )
+
+          const responseMessage =
+            typeof parsedBody === 'string'
+              ? parsedBody
+              : JSON.stringify(parsedBody)
+
+          throw new JiraUpdateError(
+            `更新失败: HTTP ${updateResponse.statusCode}${responseMessage ? ` - ${responseMessage}` : ''}`,
+          )
         }
 
-        this.logger.error(
-          {
-            issueIdOrKey: data.issueIdOrKey,
-            statusCode: updateResponse.statusCode,
-            fieldKeys,
-            fields: data.fields,
-            jiraResponse: parsedBody,
-          },
-          'Jira update request failed',
-        )
-
-        const responseMessage =
-          typeof parsedBody === 'string'
-            ? parsedBody
-            : JSON.stringify(parsedBody)
-
-        throw new JiraUpdateError(
-          `更新失败: ${updateResponse.statusCode}${responseMessage ? ` - ${responseMessage}` : ''}`,
-        )
-      }
-
-      return {
-        message: `Jira 工单：${data.issueIdOrKey} 已经更新成功，涉及字段：${Object.keys(
-          data.fields,
-        ).join(',')}`,
-      }
+        return {
+          message: `Jira 工单：${data.issueIdOrKey} 已经更新成功，涉及字段：${Object.keys(
+            data.fields,
+          ).join(',')}`,
+        }
+      })
     } catch (error) {
       this.logger.error(
         {
