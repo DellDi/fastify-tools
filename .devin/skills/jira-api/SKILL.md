@@ -21,7 +21,7 @@ description: 调用部署在 https://delldiagi.top/fastify 的 Jira 工单 HTTP 
 
 | 任务场景 | 端点 | 备注 |
 |---|---|---|
-| 按条件查工单（项目/经办人/状态/标签/任意 JQL） | `POST /jira/search` | 需要先 `POST /jira/login` 拿 `cookies`；或直接跑 `scripts/search.py` 一步完成 |
+| 按条件查工单（项目/经办人/状态/标签/任意 JQL） | `POST /jira/search` | 直接调即可（服务端会话托管）；或直接跑 `scripts/search.py` |
 | 看单个工单的字段、状态、经办人 | `POST /jira/search` + `issuekey = "XXX-nnn"` | ⚠️ `GET /jira/{key}` 当前部署版返回 500，用 search 绕开 |
 | 创建工单（提单、建单、开单） | `POST /jira/create-ticket` | 智能建单：只传 `title`/`description`/`assignee` 即可，必填自定义字段由服务端的字段经验规则 + LLM 自动补齐 |
 | 查建单表单要填哪些字段 | `POST /jira/create-meta` | ⚠️ 当前部署版 500；替代方案：查 `GET /jira/field-rules` 已学规则，或直接调 `create-ticket` 让它自己处理 |
@@ -35,23 +35,19 @@ description: 调用部署在 https://delldiagi.top/fastify 的 Jira 工单 HTTP 
 
 ## 常用流程
 
-### 1. 搜索工单（两步）
+### 1. 搜索工单（一步）
 
-`/jira/search` 的 `jiraCookies` 是必填项，先登录拿 cookie：
+`/jira/search` 不需要先登录——不传 `jiraCookies` 时服务端会话托管（401/403 自动重登重试，对调用方透明）：
 
 ```bash
-# 第一步：登录（body 传 {} 即用服务端公共账号）
-curl -s -X POST https://delldiagi.top/fastify/jira/login \
-  -H 'Content-Type: application/json' -d '{}'
-# => { "cookies": "JSESSIONID=...; atlassian.xsrf.token=...", "atlToken": "..." }
-
-# 第二步：把 cookies 原样带进 search
 curl -s -X POST https://delldiagi.top/fastify/jira/search \
   -H 'Content-Type: application/json' \
-  -d '{"jql": "project = NLC AND resolution = Unresolved", "jiraCookies": "<上一步的 cookies>", "startAt": 0, "maxResults": 20}'
+  -d '{"jql": "project = NLC AND resolution = Unresolved", "startAt": 0, "maxResults": 20}'
 ```
 
-**更省事**：技能目录下 `scripts/search.py` 把这两步合并了，自动登录、自动带 cookie、直接输出 Jira 返回的 JSON：
+默认用服务端公共账号身份搜索；要以**自己的 Jira 账号**身份搜（结果按你的权限过滤），body 里加 `"jiraUser"`/`"jiraPassword"`。也可以仍传 `jiraCookies`（`/jira/login` 返回的 cookies 原样传入）走调用方会话——注意这条路服务端无法自愈，cookie 失效会收到 401，重新 login 换新的即可。
+
+**更省事**：技能目录下 `scripts/search.py` 一条命令完成（配了 `JIRA_USER`/`JIRA_PASSWORD` 环境变量则以该账号搜）：
 
 ```bash
 python3 <skill-dir>/scripts/search.py "project = NLC AND resolution = Unresolved" 0 20
@@ -118,7 +114,7 @@ curl -s "https://delldiagi.top/fastify/jira/reconcile-logs?assignee=zhouxia&take
 | 端点 | 必填 | 常用可选 |
 |---|---|---|
 | `POST /jira/login` | 无（body `{}`） | `jiraUser`, `jiraPassword` |
-| `POST /jira/search` | `jql`, `jiraCookies` | `startAt`(0), `maxResults`(20) |
+| `POST /jira/search` | `jql` | `startAt`(0), `maxResults`(20), `jiraCookies`/`jiraUser`+`jiraPassword`（身份三选一） |
 | `POST /jira/create-ticket` | `title`, `description` | `assignee`, `customAutoFields` |
 | `POST /jira/update-fields` | `issueIdOrKey` | `labels`, `fixVersionIds`, `devCompleteDate`, `summary`, `description`, `assignee`, `fields`, `extraFields` |
 | `POST /jira/update` | `issueIdOrKey`, `fields` | —— |
@@ -136,7 +132,7 @@ curl -s "https://delldiagi.top/fastify/jira/reconcile-logs?assignee=zhouxia&take
 4. **`assignee` 是登录用户名**（如 `zhangsan`），不是显示名（如"张三"）。search 结果里 `fields.assignee.displayName` 是显示名，拿去做更新前要有登录名；不确定时问用户。
 5. **`devCompleteDate` 格式必须 `YYYY-MM-DD`**，落到 Jira 自定义字段 `customfield_10022`。`update-fields` 和 `dev-reply` 都是这个字段。
 6. **`update-fields` 的 `labels` 是整体覆盖**，不是追加；想保留旧标签要先把旧值查出来一起传。`extraFields` 在最终合并阶段覆盖同名字段，优先级最高。
-7. **cookies 会过期**（JSESSIONID）。search 返回 401/未授权时重新 `POST /jira/login` 再试（`scripts/search.py` 已自动重登重试一次）。服务端内部调用也有会话自愈：下游 Jira 返回 401/403 时自动剔除缓存、重登、重试一次——只要账密正确，调用方不应看到 401/403；看到即代表账密本身被 Jira 拒绝（密码错误或账号锁定）。
+7. **会话由服务端托管**：所有接口（含 search）不传 `jiraCookies` 时用服务端会话，下游 Jira 返回 401/403 会自动剔除缓存、重登、重试一次——只要账密正确，调用方不应看到 401/403；看到即代表账密本身被 Jira 拒绝（密码错误或账号锁定）。仅当你自己保管 cookie 走 `jiraCookies` 参数时，过期才需要自己重新 `POST /jira/login`（login 是强制真登录，必得活会话）。
 8. 写操作（create/update/dev-reply/link/upload）会真实改动 Jira 数据，执行前向用户确认目标单号和内容。
 
 字段级的完整请求/响应参考：`references/endpoints.md`。

@@ -25,15 +25,23 @@ const jira: FastifyPluginAsyncTypebox = async (
     schema: JiraSearchSchema,
     handler: async (req, reply) => {
       try {
-        const { jql, jiraCookies, startAt, maxResults } = req.body
+        const { jql, jiraCookies, jiraUser, jiraPassword, startAt, maxResults } =
+          req.body as {
+            jql: string
+            jiraCookies?: string
+            jiraUser?: string
+            jiraPassword?: string
+            startAt: number
+            maxResults: number
+          }
 
         // 记录请求信息（不包含敏感信息）
         fastify.log.info(
-          `Jira 搜索请求: startAt=${startAt}, maxResults=${maxResults}`
+          `Jira 搜索请求: startAt=${startAt}, maxResults=${maxResults}, cookies=${jiraCookies ? 'caller' : 'server-session'}`
         )
-        fastify.log.info(`JQL: ${jql}， cookies: ${jiraCookies}`)
+        fastify.log.info(`JQL: ${jql}`)
 
-        try {
+        const doSearch = async (cookies: string) => {
           const jiraRes = await request(
             `${jiraConfig.baseUrl}/rest/api/2/search`,
             {
@@ -44,7 +52,7 @@ const jira: FastifyPluginAsyncTypebox = async (
                 jql,
               },
               headers: {
-                Cookie: jiraCookies,
+                Cookie: cookies,
                 Authorization: jiraConfig.auth.proxyAuthToken,
               },
               // 添加超时设置
@@ -56,7 +64,14 @@ const jira: FastifyPluginAsyncTypebox = async (
           fastify.log.info(`Jira API 响应状态码: ${jiraRes.statusCode}`)
 
           if (jiraRes?.statusCode !== 200) {
-            // 尝试获取错误响应内容
+            // 401/403 原样冒泡为带状态码的错误，服务端会话路径据此触发自愈，
+            // 调用方 cookie 路径也让上层能识别"会话失效"而非笼统的 502
+            if (jiraRes.statusCode === 401 || jiraRes.statusCode === 403) {
+              await jiraRes.body.dump()
+              throw Object.assign(new Error(`HTTP ${jiraRes.statusCode}`), {
+                statusCode: jiraRes.statusCode,
+              })
+            }
             const errorBody = await jiraRes.body.text()
             fastify.log.error(
               `Jira API 错误: ${jiraRes.statusCode}, ${errorBody}`
@@ -72,12 +87,29 @@ const jira: FastifyPluginAsyncTypebox = async (
           fastify.log.info(
             `Jira 搜索成功，返回 ${jiraData.issues?.length || 0} 条记录`
           )
+          return jiraData
+        }
+
+        try {
+          const jiraData = jiraCookies
+            ? await doSearch(jiraCookies)
+            : await fastify.jiraService.withSession(
+                { jiraUser, jiraPassword },
+                (session) => doSearch(session.cookies),
+              )
+
+          if (reply.sent) return
           return reply.code(200).send(jiraData)
         } catch (apiError) {
-          // 专门处理 API 调用错误
+          // 会话失效（401/403）原样透传，调用方可据此重登重试；其余仍为 502
+          const status =
+            (apiError as { statusCode?: number })?.statusCode === 401 ||
+            (apiError as { statusCode?: number })?.statusCode === 403
+              ? (apiError as { statusCode: number }).statusCode
+              : 502
           fastify.log.error(`Jira API 调用错误: ${apiError}`)
-          return reply.code(502).send({
-            error: '调用 Jira API 时出错',
+          return reply.code(status).send({
+            error: status === 502 ? '调用 Jira API 时出错' : 'Jira 会话已失效或无权访问',
             message:
               apiError instanceof Error ? apiError.message : String(apiError),
           })

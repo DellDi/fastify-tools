@@ -31,9 +31,13 @@ const JiraSearchBody = Type.Object({
   jql: Type.String({
     description: 'Jira查询语句',
   }),
-  jiraCookies: Type.String({
-    description: 'jira cookies',
-  }),
+  jiraCookies: Type.Optional(
+    Type.String({
+      description: '调用方自带 jira cookies；不传则使用服务端会话（可用 jiraUser/jiraPassword 指定账号）',
+    }),
+  ),
+  jiraUser: Type.Optional(Type.String({ description: 'Jira 登录名（不传 jiraCookies 时生效）' })),
+  jiraPassword: Type.Optional(Type.String({ description: 'Jira 密码（不传 jiraCookies 时生效）' })),
 })
 
 const JiraSearchResponse = Type.Object({
@@ -87,6 +91,8 @@ export const JiraSearchSchema = {
   body: JiraSearchBody,
   response: {
     200: JiraSearchResponse,
+    401: JiraErrorResponse,
+    403: JiraErrorResponse,
     500: JiraErrorResponse,
     502: JiraErrorResponse,
   },

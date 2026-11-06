@@ -106,6 +106,18 @@ export class JiraService {
   }
 
   /**
+   * 会话失效自愈执行器：解析凭据（缺省用服务端账号）取会话执行调用，
+   * 401/403 时剔除缓存重登并重试一次。供路由层直接使用。
+   */
+  public async withSession<T>(
+    credentials: Partial<JiraLoginCredentials> | undefined,
+    fn: (session: JiraSession) => Promise<T>,
+  ): Promise<T> {
+    const resolved = this.jiraSessionService.resolveCredentials(credentials)
+    return this.jiraSessionService.withSession(resolved, fn)
+  }
+
+  /**
    * 获取项目列表
    */
   async getProjects(credentials: JiraLoginCredentials) {

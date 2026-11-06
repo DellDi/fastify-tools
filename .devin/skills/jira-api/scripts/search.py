@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""一键执行 Jira JQL 搜索：自动 login 拿 cookies 后调 /jira/search。
+"""一键执行 Jira JQL 搜索：直接调 /jira/search，服务端会话托管自动自愈。
 
 用法:
     python3 search.py "<JQL>" [startAt] [maxResults]
@@ -45,37 +45,18 @@ def main() -> None:
     start_at = int(sys.argv[2]) if len(sys.argv) > 2 else 0
     max_results = int(sys.argv[3]) if len(sys.argv) > 3 else 20
 
-    login_body = {}
+    search_body: dict = {
+        "jql": jql,
+        "startAt": start_at,
+        "maxResults": max_results,
+    }
+    # 不传 jiraCookies：服务端会话托管（401/403 自动剔除缓存重登重试）。
+    # 配了 JIRA_USER/JIRA_PASSWORD 则以该账号身份搜索，否则用服务端公共账号。
     if os.environ.get("JIRA_USER"):
-        login_body["jiraUser"] = os.environ["JIRA_USER"]
-        login_body["jiraPassword"] = os.environ.get("JIRA_PASSWORD", "")
+        search_body["jiraUser"] = os.environ["JIRA_USER"]
+        search_body["jiraPassword"] = os.environ.get("JIRA_PASSWORD", "")
 
-    def do_login() -> str:
-        session = post("/jira/login", login_body)
-        cookies = session.get("cookies")
-        if not cookies:
-            raise SystemExit(f"登录响应缺少 cookies: {session}")
-        return cookies
-
-    def do_search(cookies: str) -> dict:
-        return post(
-            "/jira/search",
-            {
-                "jql": jql,
-                "jiraCookies": cookies,
-                "startAt": start_at,
-                "maxResults": max_results,
-            },
-        )
-
-    cookies = do_login()
-    try:
-        result = do_search(cookies)
-    except SystemExit as e:
-        # 会话过期（401/403）→ 静默重登重试一次，不向调用方泄漏
-        if "HTTP 401" not in str(e) and "HTTP 403" not in str(e):
-            raise
-        result = do_search(do_login())
+    result = post("/jira/search", search_body)
     print(json.dumps(result, ensure_ascii=False, indent=2))
 
 

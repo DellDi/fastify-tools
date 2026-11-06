@@ -42,9 +42,12 @@ JQL 分页搜索。响应里的每个 issue 额外带一个 `fields.customFieldC
 | 字段 | 类型 | 说明 |
 |---|---|---|
 | `jql` | string | **必填**。Jira 查询语句，如 `project = NLC AND resolution = Unresolved ORDER BY created DESC` |
-| `jiraCookies` | string | **必填**。`/jira/login` 返回的 cookies 原样传入 |
+| `jiraCookies` | string | 可选。`/jira/login` 返回的 cookies 原样传入（调用方会话，失效需自行重登） |
+| `jiraUser` / `jiraPassword` | string | 可选。不传 `jiraCookies` 时生效：以该账号身份搜索；都不传则用服务端公共账号（会话托管，401/403 自动重登重试） |
 | `startAt` | number | 起始偏移，默认 0 |
 | `maxResults` | number | 每页数量，默认 20 |
+
+三种身份方式：`jiraCookies`（调用方 cookie）> `jiraUser`+`jiraPassword`（指定账号）> 都不传（服务端公共账号）。
 
 **Response 200**: `{ total, issues: [{ id, key, fields: { summary, status{name}, assignee{displayName}, creator{displayName}, fixVersions[{name}], labels[], customfield_10000?, customFieldCode?, created } }] }`
 
