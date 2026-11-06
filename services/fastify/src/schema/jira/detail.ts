@@ -238,7 +238,7 @@ export const jiraDetailSchema = {
     issueIdOrKey: Type.String({ default: 'V10-000' }),
   }),
   response: {
-    200: JiraDetailRoot,
+    200: Type.Any(),
     400: Type.Object({
       error: Type.String(),
     }),
