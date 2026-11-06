@@ -1,17 +1,22 @@
 import { randomUUID } from 'node:crypto'
 import type { FastifyBaseLogger } from 'fastify'
 import { JiraError, ValidationError } from '@/utils/errors.js'
-import {
-  dayjs,
-  expandHolidayDates,
-  getValidVersions,
-  isValidDevCompleteDate,
-  versionPrefix,
-  versionWindowCapacity,
-} from '../utils.js'
+import { expandHolidayDates, getValidVersions } from '../utils.js'
 import type { JiraRestService } from '../jira-rest.service.js'
 import type { JiraSessionService } from '../jira-session.service.js'
 import type { ReconcileLogEntry } from '../jira-reconcile-log.repository.js'
+import {
+  buildWorkloadSchedule,
+  chooseFixVersion,
+  decideDevCompleteDate,
+  type FixVersionPick,
+} from './dev-reply/schedule.js'
+import { reviewSemanticDateFields } from './dev-reply/semantic-review.js'
+import type {
+  DevReplyBatchContext,
+  PushStep,
+  UpdateTicketHandler,
+} from './dev-reply/types.js'
 import type {
   DevReplyBatchData,
   DevReplyBatchResponse,
@@ -21,29 +26,9 @@ import type {
   DevReplyStepResult,
   JiraLoginCredentials,
   JiraSession,
-  JiraUpdateTicketData,
-  ScheduleFieldDecision,
 } from '../types.js'
 
-type UpdateTicketHandler = (
-  credentials: JiraLoginCredentials,
-  data: JiraUpdateTicketData,
-) => Promise<{ message: string }>
-
 type ReconcileAuditWriter = (entry: ReconcileLogEntry) => Promise<void>
-
-type DevReplyBatchContext = {
-  reservedDates: Set<string>
-  /**
-   * 工作负载排期上下文（批内共享）：经办人全部未完成单的日期占用 +
-   * 版本分布。首个工单时一次 JQL 建好，批内复用，不再每单重查。
-   */
-  schedule?: {
-    assignee: string
-    usedDates: Set<string>
-    versionCounts: Map<string, { name: string; count: number }>
-  }
-}
 
 export class DevReplyUseCase {
   constructor(
@@ -146,86 +131,25 @@ export class DevReplyUseCase {
 
       // 工作负载排期上下文：经办人全部未完成单的日期占用 + 版本分布。
       // 批内首个工单一次 JQL 建好缓存在 batchContext，后续工单直接复用。
-      let usedDates = new Set<string>()
-      let versionCounts = new Map<string, { name: string; count: number }>()
+      const workload = await buildWorkloadSchedule({
+        jiraRestService: this.jiraRestService,
+        logger: this.logger,
+        assignee,
+        cookies: session.cookies,
+        reconcile,
+        currentDevDate,
+        batchContext,
+      })
+      const { usedDates, versionCounts } = workload
+      if (workload.reason) reasoning.push(workload.reason)
+      pushStep(
+        'queryUsedDates',
+        workload.step.success,
+        workload.step.message,
+        workload.step.data,
+      )
 
-      try {
-        let schedule =
-          batchContext?.schedule?.assignee === assignee
-            ? batchContext.schedule
-            : undefined
-        if (!schedule) {
-          const jql = `assignee = "${assignee}" AND resolution = Unresolved ORDER BY cf[10022] ASC`
-          const searchResult = await this.jiraRestService.searchIssuesByJql(
-            jql,
-            session.cookies,
-            ['customfield_10022', 'fixVersions'],
-          )
-          const builtUsed = new Set<string>()
-          const builtCounts = new Map<string, { name: string; count: number }>()
-          for (const issue of searchResult.issues) {
-            if (issue.fields.customfield_10022) {
-              builtUsed.add(issue.fields.customfield_10022)
-            }
-            for (const v of issue.fields.fixVersions ?? []) {
-              const entry = builtCounts.get(v.id) ?? {
-                name: v.name ?? v.id,
-                count: 0,
-              }
-              entry.count += 1
-              builtCounts.set(v.id, entry)
-            }
-          }
-          schedule = {
-            assignee,
-            usedDates: builtUsed,
-            versionCounts: builtCounts,
-          }
-          if (batchContext) batchContext.schedule = schedule
-        }
-        usedDates = new Set(schedule.usedDates)
-        versionCounts = schedule.versionCounts
-        if (batchContext) {
-          for (const reservedDate of batchContext.reservedDates) {
-            usedDates.add(reservedDate)
-          }
-        }
-        // reconcile 模式下本单旧日期不视为占用：保留校验和重新分配都以"他人占用"为准，
-        // 否则重复执行会把日期一天天往后顺延（漂移）
-        if (reconcile && currentDevDate) {
-          usedDates.delete(currentDevDate)
-        }
-        const dominantVersion = [...versionCounts.entries()].sort(
-          (a, b) => b[1].count - a[1].count,
-        )[0]
-        this.logger.info(
-          `Workload for ${assignee}: ${usedDates.size} used dates, ${versionCounts.size} versions`,
-        )
-        const distLines = [...versionCounts.values()]
-          .sort((a, b) => b.count - a.count)
-          .slice(0, 5)
-          .map((v) => `${v.name}×${v.count}`)
-        reasoning.push(
-          `经办人 ${assignee} 未完成单已占用 ${usedDates.size} 个工作日，版本分布 ${distLines.join('、') || '无'}`,
-        )
-        pushStep('queryUsedDates', true, '已完成工作负载排期查询', {
-          usedDateCount: usedDates.size,
-          dominantVersion: dominantVersion?.[1].name,
-          versionDistribution: distLines,
-        })
-      } catch (error) {
-        const message = `查询工作负载排期失败: ${error instanceof Error ? error.message : String(error)}`
-        this.logger.warn(message)
-        pushStep('queryUsedDates', false, message)
-      }
-
-      let fixVersion:
-        | {
-            version: { id: string; name: string }
-            date: Date
-            capacity?: { workableDays: number; occupiedDays: number; firstFreeDate?: string }
-          }
-        | null = null
+      let fixVersion: FixVersionPick | null = null
       let fixVersionId = data.fixVersionId
 
       if (fixVersionId) {
@@ -251,7 +175,8 @@ export class DevReplyUseCase {
             ...extraHolidayDates,
           ])
 
-          const choice = await this.chooseFixVersion({
+          const choice = await chooseFixVersion({
+            jiraRestService: this.jiraRestService,
             validVersions: getValidVersions(versions),
             currentFixVersions,
             issueKey,
@@ -289,74 +214,28 @@ export class DevReplyUseCase {
         }
       }
 
-      let devCompleteDate = data.devCompleteDate
-
-      if (devCompleteDate) {
-        pushStep('allocateDevCompleteDate', true, '使用请求指定的预计开发完成时间', {
-          devCompleteDate,
-        })
-      } else if (fixVersion) {
-        // 日期决策：现有日期在版本窗口内有效且未被他人占用 → 保留；
-        // 否则记明失效原因，分配窗口内最近可工作日（一日一单）
-        const dateReasons: string[] = []
-        if (reconcile && currentDevDate) {
-          if (!isValidDevCompleteDate(currentDevDate, fixVersion.date, allHolidays)) {
-            const why: string[] = []
-            if (currentDevDate < dayjs().format('YYYY-MM-DD')) why.push('已过期')
-            if (dayjs(currentDevDate).isSameOrAfter(dayjs(fixVersion.date).startOf('day')))
-              why.push('晚于版本发车日')
-            if ([0, 6].includes(dayjs(currentDevDate).day())) why.push('非工作日')
-            if (allHolidays.has(currentDevDate)) why.push('落在节假日/封网期')
-            dateReasons.push(
-              `现有预计开发完成 ${currentDevDate} 失效（${why.join('、') || '校验未过'}）`,
-            )
-          } else if (usedDates.has(currentDevDate)) {
-            dateReasons.push(
-              `现有预计开发完成 ${currentDevDate} 已被经办人其他工单占用`,
-            )
-          } else {
-            devCompleteDate = currentDevDate
-            dateReasons.push(
-              `现有预计开发完成 ${currentDevDate} 在版本窗口内且未被占用 → 保留`,
-            )
-            pushStep(
-              'allocateDevCompleteDate',
-              true,
-              '现有预计开发完成时间仍有效，保留原值',
-              { devCompleteDate, kept: true, reasoning: dateReasons },
-            )
-          }
-        }
-
-        if (!devCompleteDate) {
-          const slot = fixVersion.capacity?.firstFreeDate
-          if (slot) {
-            devCompleteDate = slot
-            if (batchContext) batchContext.reservedDates.add(slot)
-            dateReasons.push(
-              `在「${fixVersion.version.name}」窗口分配最近可工作日 ${slot}` +
-                (fixVersion.capacity
-                  ? `（窗口可工作日 ${fixVersion.capacity.workableDays} 天/已占用 ${fixVersion.capacity.occupiedDays} 天）`
-                  : ''),
-            )
-            this.logger.info(`Allocated dev complete date: ${devCompleteDate}`)
-            pushStep('allocateDevCompleteDate', true, '已自动分配预计开发完成时间', {
-              devCompleteDate,
-              reasoning: dateReasons,
-            })
-          } else {
-            pushStep(
-              'allocateDevCompleteDate',
-              false,
-              '所选版本窗口内无可分配工作日',
-              { reasoning: dateReasons },
-            )
-          }
-        }
-        reasoning.push(...dateReasons)
-      } else {
-        pushStep('allocateDevCompleteDate', false, '缺少可用修复版本，无法自动分配预计开发完成时间')
+      // 日期决策：现有日期在版本窗口内有效且未被他人占用 → 保留；
+      // 否则记明失效原因，分配窗口内最近可工作日（一日一单）
+      const dateDecision = decideDevCompleteDate({
+        explicitDate: data.devCompleteDate,
+        reconcile,
+        currentDevDate,
+        fixVersion,
+        usedDates,
+        holidays: allHolidays,
+      })
+      const devCompleteDate = dateDecision.devCompleteDate
+      if (dateDecision.reservedDate) {
+        batchContext?.reservedDates.add(dateDecision.reservedDate)
+        this.logger.info(`Allocated dev complete date: ${dateDecision.reservedDate}`)
       }
+      reasoning.push(...dateDecision.reasons)
+      pushStep(
+        'allocateDevCompleteDate',
+        dateDecision.step.success,
+        dateDecision.step.message,
+        dateDecision.step.data,
+      )
 
       // fixVersions 是单选语义：仅当现状恰好是 [目标版本] 时才视为符合预期，
       // 多选包含目标或其他版本都要整体替换为单选
@@ -608,15 +487,22 @@ export class DevReplyUseCase {
       // → 确定性校验 → "开始类字段不晚于预计开发完成"硬规则兜底；失败只记 step
       if (reconcile && this.updateTicket) {
         try {
-          const appliedNames = await this.reviewSemanticDateFields({
-            issueKey,
-            credentials,
-            session,
-            anchorDate: devCompleteDate,
-            holidays: allHolidays,
-            reasoning,
-            pushStep,
-          })
+          const appliedNames = await reviewSemanticDateFields(
+            {
+              jiraRestService: this.jiraRestService,
+              updateTicket: this.updateTicket,
+              logger: this.logger,
+            },
+            {
+              issueKey,
+              credentials,
+              session,
+              anchorDate: devCompleteDate,
+              holidays: allHolidays,
+              reasoning,
+              pushStep,
+            },
+          )
           if (appliedNames.length) {
             changes.semanticFieldNames = appliedNames
           }
@@ -691,408 +577,6 @@ export class DevReplyUseCase {
       reasoning.push(`结论：执行异常 → ${message}`)
       return this.buildDevReplyFailure(issueKey, message, steps, { reasoning })
     }
-  }
-
-  /**
-   * 版本选择（排期模型核心），五级优先级：
-   *   keep     现有版本未过期且窗口仍有余量 → 保留（历史参照最强）
-   *   prefix   同前缀车次（现有版本不可行时的就近换班）
-   *   workload 经办人工作负载主流版本 → 汇入
-   *   llm      AI 在可行候选里结合整体上下文给建议
-   *   fallback 算法兜底：发车日最近的有余量车次
-   * 全程记 reasoning 推理链；无可行版本返回 pick=null。
-   */
-  private async chooseFixVersion(args: {
-    validVersions: Array<{ version: { id: string; name: string }; date: Date }>
-    currentFixVersions: Array<{ id: string; name: string }>
-    issueKey: string
-    usedDates: Set<string>
-    holidays: Set<string>
-    versionCounts: Map<string, { name: string; count: number }>
-  }): Promise<{
-    pick: {
-      version: { id: string; name: string }
-      date: Date
-      capacity: { workableDays: number; occupiedDays: number; firstFreeDate?: string }
-    } | null
-    tier?: 'keep' | 'prefix' | 'workload' | 'llm' | 'fallback'
-    reasons: string[]
-  }> {
-    const {
-      validVersions,
-      currentFixVersions,
-      issueKey,
-      usedDates,
-      holidays,
-      versionCounts,
-    } = args
-    const reasons: string[] = []
-    const fmt = (d: Date) => dayjs(d).format('YYYY-MM-DD')
-    const capacityOf = (item: { date: Date }) =>
-      versionWindowCapacity(item.date, usedDates, holidays)
-
-    // 第一级：现有版本仍可行 → 保留。
-    // 多版本工单逐个检查池内成员，任一仍有余量就认它为现状（稍后收敛为单选）
-    const inPool = currentFixVersions
-      .map((v) => ({
-        name: v.name,
-        item: validVersions.find((item) => item.version.id === v.id),
-      }))
-      .filter(
-        (x): x is { name: string; item: (typeof validVersions)[number] } =>
-          !!x.item,
-      )
-    for (const x of inPool) {
-      const c = capacityOf(x.item)
-      if (c.firstFreeDate) {
-        reasons.push(
-          `现有版本「${x.name}」发车日 ${fmt(x.item.date)} 未过期，窗口可工作日 ${c.workableDays} 天/已占用 ${c.occupiedDays} 天 → 保留`,
-        )
-        return { pick: { ...x.item, capacity: c }, tier: 'keep', reasons }
-      }
-    }
-    if (inPool.length) {
-      reasons.push(
-        `现有版本「${inPool.map((x) => x.name).join('、')}」窗口可工作日均已占满 → 需换版`,
-      )
-    } else if (currentFixVersions.length) {
-      reasons.push(
-        `现有版本「${currentFixVersions.map((v) => v.name).join('、')}」不在未发布有效池（已发布/归档/发车日已过期）→ 需换版`,
-      )
-    } else {
-      reasons.push('工单未挂修复版本，需要选择')
-    }
-
-    // 可行候选 = 窗口内至少还有 1 个可分配工作日（一日一单）
-    const feasible = validVersions
-      .map((item) => ({ item, capacity: capacityOf(item) }))
-      .filter((x) => x.capacity.firstFreeDate)
-    if (!feasible.length) {
-      reasons.push('所有未发布版本窗口均无剩余可工作日')
-      return { pick: null, reasons }
-    }
-
-    // 第二级：同前缀车次（现挂版本前缀优先，退化工单号前缀）
-    const prefix =
-      versionPrefix(inPool[0]?.name ?? currentFixVersions[0]?.name ?? '') ||
-      issueKey.split('-')[0]
-    const samePrefix = feasible.find(
-      (x) => versionPrefix(x.item.version.name) === prefix,
-    )
-    if (samePrefix) {
-      reasons.push(
-        `同前缀车次「${samePrefix.item.version.name}」（发车 ${fmt(samePrefix.item.date)}，余量 ${samePrefix.capacity.workableDays - samePrefix.capacity.occupiedDays} 个工作日）→ 选中`,
-      )
-      return {
-        pick: { ...samePrefix.item, capacity: samePrefix.capacity },
-        tier: 'prefix',
-        reasons,
-      }
-    }
-
-    // 第三级：经办人工作负载主流版本 → 汇入
-    for (const [vid, info] of [...versionCounts.entries()].sort(
-      (a, b) => b[1].count - a[1].count,
-    )) {
-      const hit = feasible.find((x) => x.item.version.id === vid)
-      if (hit) {
-        reasons.push(
-          `经办人工作负载主流版本「${info.name}」（${info.count} 单在用，发车 ${fmt(hit.item.date)}）→ 汇入`,
-        )
-        return {
-          pick: { ...hit.item, capacity: hit.capacity },
-          tier: 'workload',
-          reasons,
-        }
-      }
-    }
-
-    // 第四级：AI 建议（候选已被确定性层过滤为可行集，LLM 只做语义选择）
-    try {
-      const suggested = await this.jiraRestService.suggestFixVersion({
-        issueKey,
-        today: dayjs().format('YYYY-MM-DD'),
-        currentVersionName:
-          inPool[0]?.name ?? currentFixVersions[0]?.name,
-        workloadVersions: [...versionCounts.values()]
-          .sort((a, b) => b.count - a.count)
-          .slice(0, 5)
-          .map((v) => ({ name: v.name, count: v.count })),
-        candidates: feasible.map((x) => ({
-          name: x.item.version.name,
-          releaseDate: fmt(x.item.date),
-          freeDays: x.capacity.workableDays - x.capacity.occupiedDays,
-        })),
-      })
-      const hit =
-        suggested &&
-        feasible.find((x) => x.item.version.name === suggested.version)
-      if (hit) {
-        reasons.push(
-          `AI 建议「${hit.item.version.name}」${suggested.reason ? `（${suggested.reason}）` : ''}→ 采纳`,
-        )
-        return {
-          pick: { ...hit.item, capacity: hit.capacity },
-          tier: 'llm',
-          reasons,
-        }
-      }
-      if (suggested) {
-        reasons.push(`AI 建议「${suggested.version}」不在可行候选内，忽略`)
-      }
-    } catch (error) {
-      reasons.push(
-        `AI 建议不可用（${error instanceof Error ? error.message : String(error)}），走算法兜底`,
-      )
-    }
-
-    // 第五级：兜底——发车日最近的有余量车次
-    const fb = feasible[0]
-    reasons.push(
-      `兜底选择发车日最近的有余量车次「${fb.item.version.name}」（发车 ${fmt(fb.item.date)}）`,
-    )
-    return {
-      pick: { ...fb.item, capacity: fb.capacity },
-      tier: 'fallback',
-      reasons,
-    }
-  }
-
-  /**
-   * 动态时间字段语义巡检（reconcile 模式）
-   * 1) /rest/api/2/field 识别 date/datetime 自定义字段（排除确定性负责的 customfield_10022）
-   * 2) LLM 按字段名语义给 keep/update 建议（注入节假日、锚点日期）
-   * 3) 确定性校验：格式、不早于今天、工作日、开始类字段不晚于锚点、新值≠现值
-   * 4) 硬规则兜底：无论 LLM 成败，"开始"类字段晚于锚点的一律回退到锚点日
-   * 返回实际写入的字段名；失败不向上抛，由调用方记 step
-   */
-  private async reviewSemanticDateFields(args: {
-    issueKey: string
-    credentials: JiraLoginCredentials
-    session: JiraSession
-    anchorDate?: string
-    holidays: Set<string>
-    reasoning?: string[]
-    pushStep: (
-      step: DevReplyStepName,
-      success: boolean,
-      message: string,
-      data?: Record<string, any>,
-    ) => void
-  }): Promise<string[]> {
-    const { issueKey, credentials, session, anchorDate, pushStep } = args
-    if (!this.updateTicket) return []
-
-    const today = dayjs()
-    const todayStr = today.format('YYYY-MM-DD')
-    const holidays = args.holidays.size
-      ? args.holidays
-      : await this.jiraRestService.getHolidays(today.year())
-
-    const meta = await this.jiraRestService.getFields(session.cookies)
-    const dateMeta = meta.filter(
-      (field) =>
-        field.id.startsWith('customfield_') &&
-        field.id !== 'customfield_10022' &&
-        (field.schema?.type === 'date' || field.schema?.type === 'datetime'),
-    )
-    if (!dateMeta.length) {
-      pushStep('semanticDateReview', true, '无动态时间字段需要评审')
-      return []
-    }
-
-    const detail = await this.jiraRestService.getIssueDetail<{
-      fields?: Record<string, any>
-    }>(
-      issueKey,
-      session.cookies,
-      dateMeta.map((field) => field.id),
-    )
-    const rawFields = detail.fields ?? {}
-
-    const candidates = dateMeta
-      .map((field) => ({
-        fieldId: field.id,
-        name: field.name,
-        type: field.schema!.type as 'date' | 'datetime',
-        value: typeof rawFields[field.id] === 'string' ? rawFields[field.id] : '',
-      }))
-      .filter((item) => /^\d{4}-\d{2}-\d{2}/.test(item.value))
-
-    // 开发视角：测试/上线/发布/验收类排期归其他角色管，不进 LLM 评审也不兜底
-    const NON_DEV_FIELD = /测试|上线|发布|验收|交付/
-    const devCandidates = candidates.filter((item) => !NON_DEV_FIELD.test(item.name))
-
-    if (!devCandidates.length) {
-      pushStep('semanticDateReview', true, '无开发域动态时间字段需要评审')
-      return []
-    }
-
-    const isWorkDay = (date: string) => {
-      const day = dayjs(date).day()
-      return day !== 0 && day !== 6 && !holidays.has(date)
-    }
-    const isStartField = (name: string) => name.includes('开始')
-    // date 字段写 YYYY-MM-DD；datetime 字段保留 LLM 给的时间，缺省随机工作时段
-    const normalizeValue = (
-      field: (typeof devCandidates)[number],
-      value: string,
-    ): string | undefined => {
-      const datePart = value.slice(0, 10)
-      if (!/^\d{4}-\d{2}-\d{2}$/.test(datePart) || !dayjs(datePart).isValid()) {
-        return undefined
-      }
-      if (field.type === 'date') return datePart
-      const tm = /T(\d{2}):(\d{2})/.exec(value)
-      const hh = tm ? tm[1] : String(9 + Math.floor(Math.random() * 9)).padStart(2, '0')
-      const mm = tm ? tm[2] : String(Math.floor(Math.random() * 60)).padStart(2, '0')
-      return `${datePart}T${hh}:${mm}:00.000+0800`
-    }
-
-    // 违规预扫描：只有存在确定性违规的字段才允许被改写——
-    // LLM 的建议必须对应一个真实违规，不许"为改而改"。
-    // 历史事实类字段（接单/创建/评审通过/实际…）过去时间是正常态，不算过期
-    const HISTORICAL_FIELD = /接单|创建|提交|申请|登记|记录|实际|通过|批准/
-    const violations = new Map<string, string[]>()
-    for (const field of devCandidates) {
-      const datePart = field.value.slice(0, 10)
-      const list: string[] = []
-      if (datePart < todayStr && !HISTORICAL_FIELD.test(field.name)) {
-        list.push('已过期')
-      }
-      if (!isWorkDay(datePart)) list.push('落在周末/节假日')
-      if (anchorDate && isStartField(field.name) && datePart > anchorDate) {
-        list.push('晚于预计开发完成')
-      }
-      if (field.type === 'datetime' && /T00:00:00/.test(field.value)) {
-        list.push('零点占位时间')
-      }
-      if (list.length) violations.set(field.fieldId, list)
-    }
-    if (!violations.size) {
-      pushStep(
-        'semanticDateReview',
-        true,
-        `${devCandidates.length} 个开发域时间字段全部合规，跳过评审`,
-        { reviewed: devCandidates.length },
-      )
-      args.reasoning?.push(
-        `语义巡检预扫描：${devCandidates.length} 个开发域时间字段全部合规 → 跳过`,
-      )
-      return []
-    }
-    const violationLines = [...violations.entries()].map(
-      ([fieldId, list]) =>
-        `${devCandidates.find((f) => f.fieldId === fieldId)?.name ?? fieldId}: ${list.join('、')}`,
-    )
-    args.reasoning?.push(`语义巡检预扫描发现违规：${violationLines.join('；')}`)
-
-    let decisions: ScheduleFieldDecision[] = []
-    let llmError: string | undefined
-    try {
-      decisions = await this.jiraRestService.reviewScheduleFields({
-        issueKey,
-        today: todayStr,
-        weekday: ['周日', '周一', '周二', '周三', '周四', '周五', '周六'][
-          today.day()
-        ],
-        holidays: [...holidays].sort(),
-        anchorDate,
-        fields: devCandidates,
-      })
-    } catch (error) {
-      llmError = error instanceof Error ? error.message : String(error)
-      this.logger.warn(
-        `LLM 语义评审失败(${issueKey})，转入硬规则兜底: ${llmError}`,
-      )
-    }
-
-    const updates: Record<string, string> = {}
-    const notes: string[] = []
-
-    for (const decision of decisions) {
-      const field = devCandidates.find((item) => item.fieldId === decision.fieldId)
-      if (!field || decision.action !== 'update' || !decision.value) continue
-      if (!violations.has(field.fieldId)) {
-        notes.push(
-          `${field.name}: 字段无违规，忽略 LLM 改写建议（${decision.value.slice(0, 10)}）`,
-        )
-        continue
-      }
-      const datePart = decision.value.slice(0, 10)
-      if (datePart === field.value.slice(0, 10)) continue
-      if (datePart < todayStr) {
-        notes.push(`${field.name}: 建议值 ${datePart} 早于今天，拒绝`)
-        continue
-      }
-      if (!isWorkDay(datePart)) {
-        notes.push(`${field.name}: 建议值 ${datePart} 为周末/节假日，拒绝`)
-        continue
-      }
-      if (anchorDate && isStartField(field.name) && datePart > anchorDate) {
-        notes.push(
-          `${field.name}: 建议值 ${datePart} 晚于预计开发完成 ${anchorDate}，拒绝`,
-        )
-        continue
-      }
-      const normalized = normalizeValue(field, decision.value)
-      if (!normalized) {
-        notes.push(`${field.name}: 建议值格式非法，拒绝`)
-        continue
-      }
-      updates[field.fieldId] = normalized
-      notes.push(
-        `${field.name}: ${violations.get(field.fieldId)!.join('、')} → ${decision.reason || '按语义建议调整'} → ${datePart}`,
-      )
-    }
-
-    // 硬规则兜底（与 LLM 无关）：名称含"开始"的字段不得晚于「预计开发完成」
-    if (anchorDate) {
-      for (const field of devCandidates) {
-        if (updates[field.fieldId] || !isStartField(field.name)) continue
-        if (field.value.slice(0, 10) > anchorDate) {
-          const normalized = normalizeValue(field, anchorDate)
-          if (normalized) {
-            updates[field.fieldId] = normalized
-            notes.push(
-              `${field.name}: 现值晚于预计开发完成，回退至 ${anchorDate}`,
-            )
-          }
-        }
-      }
-    }
-    args.reasoning?.push(...notes)
-
-    if (!Object.keys(updates).length) {
-      args.reasoning?.push(
-        `语义巡检：违规字段未产生改动（${llmError ? 'LLM 不可用' : 'LLM 建议保留或建议值被校验拒绝'}）`,
-      )
-      pushStep(
-        'semanticDateReview',
-        true,
-        llmError
-          ? `LLM 不可用，硬规则校验通过无需调整（${llmError}）`
-          : '动态时间字段评审通过，无需调整',
-        { reviewed: devCandidates.length, violations: violationLines, notes, llmError },
-      )
-      return []
-    }
-
-    await this.updateTicket(credentials, {
-      issueIdOrKey: issueKey,
-      fields: updates,
-    })
-    const appliedNames = Object.keys(updates).map(
-      (id) => devCandidates.find((item) => item.fieldId === id)?.name ?? id,
-    )
-    pushStep('semanticDateReview', true, `已调整 ${appliedNames.length} 项时间字段`, {
-      reviewed: devCandidates.length,
-      applied: Object.keys(updates),
-      violations: violationLines,
-      notes,
-      llmError,
-    })
-    return appliedNames
   }
 
   /**
@@ -1206,12 +690,7 @@ export class DevReplyUseCase {
     issueKey: string,
     session: JiraSession,
     comment: string | undefined,
-    pushStep: (
-      step: DevReplyStepName,
-      success: boolean,
-      message: string,
-      data?: Record<string, any>,
-    ) => void,
+    pushStep: PushStep,
   ): Promise<void> {
     if (!comment) {
       return
