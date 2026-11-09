@@ -319,6 +319,58 @@ export const ReconcileLogsTable = () => {
                 }
                 const expanded = expandedId === log.id
                 const steps = log.details?.steps ?? []
+                const reasoning = log.details?.reasoning ?? []
+
+                // 改动明细：优先取 updateFields 的字段级 from→to，
+                // 老记录无 diffs 时退化为结果字段概览
+                const changeLines: string[] = []
+                const updateStep = steps.find(
+                  (s) => s.step === 'updateFields' && s.success,
+                )
+                const diffs = updateStep?.data?.diffs as
+                  | Record<string, { from?: unknown; to?: unknown }>
+                  | undefined
+                const FIELD_LABEL: Record<string, string> = {
+                  fixVersions: '修复版本',
+                  customfield_10022: '预计开发完成',
+                }
+                if (diffs) {
+                  for (const [key, d] of Object.entries(diffs)) {
+                    const label = FIELD_LABEL[key] ?? key
+                    const from = Array.isArray(d.from)
+                      ? d.from.join('、') || '未填'
+                      : (d.from ?? '未填')
+                    changeLines.push(`${label}  ${from} → ${d.to ?? '—'}`)
+                  }
+                } else {
+                  if (log.details?.fixVersionName)
+                    changeLines.push(`修复版本 → ${log.details.fixVersionName}`)
+                  if (log.details?.devCompleteDate)
+                    changeLines.push(`预计开发完成 → ${log.details.devCompleteDate}`)
+                }
+                const normStep = steps.find(
+                  (s) => s.step === 'normalizeStartTime' && s.success,
+                )
+                if (normStep?.data?.planStartTime) {
+                  changeLines.push(
+                    `计划开始时间 → ${String(normStep.data.planStartTime).slice(0, 16).replace('T', ' ')}`,
+                  )
+                }
+                const semanticStep = steps.find(
+                  (s) => s.step === 'semanticDateReview' && s.success,
+                )
+                const appliedCount = Array.isArray(semanticStep?.data?.applied)
+                  ? (semanticStep!.data!.applied as string[]).length
+                  : 0
+                if (appliedCount) {
+                  changeLines.push(`语义巡检调整 ${appliedCount} 项时间字段`)
+                }
+                const transStep = steps.find(
+                  (s) => s.step === 'doTransition' && s.success,
+                )
+                if (transStep?.data?.transitionName) {
+                  changeLines.push(`工作流转换 → ${transStep.data.transitionName}`)
+                }
                 return (
                   <Fragment key={log.id}>
                     <TableRow
@@ -397,7 +449,7 @@ export const ReconcileLogsTable = () => {
                         <TableCell />
                         <TableCell />
                         <TableCell colSpan={7}>
-                          <div className="flex flex-col gap-1 py-1">
+                          <div className="flex flex-col gap-2.5 py-1">
                             <div className="flex flex-wrap items-center gap-3 text-xs text-muted-foreground">
                               <span>批次 {log.batchId.slice(0, 8)}</span>
                               {log.details?.fixVersionName && (
@@ -412,6 +464,55 @@ export const ReconcileLogsTable = () => {
                                 <span>转换 {log.details.transitionName}</span>
                               )}
                             </div>
+
+                            {changeLines.length > 0 && (
+                              <div>
+                                <div className="mb-1 text-xs font-medium text-foreground/80">
+                                  改动内容
+                                </div>
+                                <div className="flex flex-col gap-0.5">
+                                  {changeLines.map((line, i) => (
+                                    <span
+                                      key={i}
+                                      className="font-mono text-xs text-foreground/90"
+                                    >
+                                      {line}
+                                    </span>
+                                  ))}
+                                </div>
+                              </div>
+                            )}
+
+                            {reasoning.length > 0 && (
+                              <div>
+                                <div className="mb-1 text-xs font-medium text-foreground/80">
+                                  决策推理
+                                </div>
+                                <div className="flex flex-col gap-0.5 border-l-2 border-border pl-3">
+                                  {reasoning.map((line, i) => {
+                                    const isConclusion = line.startsWith('结论：')
+                                    return (
+                                      <span
+                                        key={i}
+                                        className={
+                                          isConclusion
+                                            ? 'text-xs font-medium text-foreground'
+                                            : 'text-xs text-muted-foreground'
+                                        }
+                                      >
+                                        {line}
+                                      </span>
+                                    )
+                                  })}
+                                </div>
+                              </div>
+                            )}
+
+                            <div>
+                              <div className="mb-1 text-xs font-medium text-foreground/80">
+                                步骤明细
+                              </div>
+                              <div className="flex flex-col gap-1">
                             {steps.map((step, i) => (
                               <div
                                 key={i}
@@ -437,6 +538,8 @@ export const ReconcileLogsTable = () => {
                                 无步骤明细
                               </span>
                             )}
+                              </div>
+                            </div>
                           </div>
                         </TableCell>
                       </TableRow>

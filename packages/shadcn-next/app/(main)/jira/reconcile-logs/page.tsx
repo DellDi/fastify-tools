@@ -8,8 +8,8 @@ import { ReconcileLogsTable } from '@/components/jira/reconcile-logs/table'
 
 export default function JiraReconcileLogsPage() {
   return (
-    <div className="mx-auto flex h-full grow flex-col">
-      <Card className="mx-auto flex w-full grow flex-col space-x-2 overflow-hidden sm:w-full md:w-5/6 lg:w-11/12 xl:w-6/7">
+    <div className="mx-auto flex w-full flex-col">
+      <Card className="mx-auto w-full space-x-2 sm:w-full md:w-5/6 lg:w-11/12 xl:w-6/7">
         <CardHeader>
           <CardTitle className="text-2xl font-bold text-primary">
             巡检日志
@@ -18,7 +18,7 @@ export default function JiraReconcileLogsPage() {
             </p>
           </CardTitle>
         </CardHeader>
-        <CardContent className="grow overflow-auto">
+        <CardContent>
           <ReconcileLogsTable />
         </CardContent>
       </Card>

@@ -20,6 +20,7 @@ export interface JiraReconcileLog {
     transitionName?: string
     successfulSteps?: string[]
     failedSteps?: string[]
+    reasoning?: string[]
     steps?: Array<{
       step: string
       success: boolean
