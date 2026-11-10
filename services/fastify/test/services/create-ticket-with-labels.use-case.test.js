@@ -6,7 +6,8 @@ const { CreateTicketWithLabelsUseCase } = require('../../api/services/jira/use-c
 test('createTicketWithLabels use-case should update labels and auto dev reply', async () => {
     const calls = [];
     const logger = {
-        info(message) {
+        info(...args) {
+            const message = args.find((a) => typeof a === 'string') ?? '';
             calls.push(`logger.info:${message}`);
         },
         warn(message) {
@@ -45,6 +46,7 @@ test('createTicketWithLabels use-case should update labels and auto dev reply', 
             issueKey: 'NDE-1',
             projectKey: 'NDE',
             assignee: 'alice',
+            withComment: true,
         });
         return {
             success: true,
@@ -69,7 +71,7 @@ test('createTicketWithLabels use-case should update labels and auto dev reply', 
     assert.equal(result.devReply?.success, true);
     assert.deepEqual(calls, [
         'createTicket',
-        'logger.info:[object Object]', // 结构化日志：labels 更新信息
+        'logger.info:Updating Jira labels after issue creation',
         'updateTicket',
         'devReply',
         'logger.info:Dev reply completed for NDE-1',

@@ -12,7 +12,8 @@ import type { PushStep, UpdateTicketHandler } from './types.js'
  * 动态时间字段语义巡检（reconcile 模式）
  * 1) /rest/api/2/field 识别 date/datetime 自定义字段（排除确定性负责的 customfield_10022）
  * 2) LLM 按字段名语义给 keep/update 建议（注入节假日、锚点日期）
- * 3) 确定性校验：格式、不早于今天、工作日、开始类字段不晚于锚点、新值≠现值
+ * 3) 确定性校验：格式、不早于今天、工作日、开始类字段不晚于锚点、新值≠现值；
+ *    "开始"类字段值 ≤ 今天属已发生的历史锚点，不判过期/周末、日期不可被改写
  * 4) 硬规则兜底：无论 LLM 成败，"开始"类字段晚于锚点的一律回退到锚点日
  * 返回实际写入的字段名；失败不向上抛，由调用方记 step
  */
@@ -104,16 +105,20 @@ export async function reviewSemanticDateFields(
 
   // 违规预扫描：只有存在确定性违规的字段才允许被改写——
   // LLM 的建议必须对应一个真实违规，不许"为改而改"。
-  // 历史事实类字段（接单/创建/评审通过/实际…）过去时间是正常态，不算过期
+  // 历史事实类字段（接单/创建/评审通过/实际…）过去时间是正常态，不算过期；
+  // "开始"类字段值 ≤ 今天代表开发已启动，属历史锚点而非排期漂移，同样不判
   const HISTORICAL_FIELD = /接单|创建|提交|申请|登记|记录|实际|通过|批准/
+  const startAlreadyBegan = (name: string, datePart: string) =>
+    isStartField(name) && datePart <= todayStr
   const violations = new Map<string, string[]>()
   for (const field of devCandidates) {
     const datePart = field.value.slice(0, 10)
     const list: string[] = []
-    if (datePart < todayStr && !HISTORICAL_FIELD.test(field.name)) {
+    const began = startAlreadyBegan(field.name, datePart)
+    if (datePart < todayStr && !HISTORICAL_FIELD.test(field.name) && !began) {
       list.push('已过期')
     }
-    if (!isWorkDay(datePart)) list.push('落在周末/节假日')
+    if (!isWorkDay(datePart) && !began) list.push('落在周末/节假日')
     if (anchorDate && isStartField(field.name) && datePart > anchorDate) {
       list.push('晚于预计开发完成')
     }
@@ -172,6 +177,12 @@ export async function reviewSemanticDateFields(
     }
     const datePart = decision.value.slice(0, 10)
     if (datePart === field.value.slice(0, 10)) continue
+    // 已启动的"开始"类字段：日期是已发生事实，LLM 挪日期一律拒绝
+    // （字段因零点占位等其他违规进入评审时，仍只允许动时间部分）
+    if (startAlreadyBegan(field.name, field.value.slice(0, 10))) {
+      notes.push(`${field.name}: 开发已启动属历史锚点，拒绝改写日期（${datePart}）`)
+      continue
+    }
     if (datePart < todayStr) {
       notes.push(`${field.name}: 建议值 ${datePart} 早于今天，拒绝`)
       continue

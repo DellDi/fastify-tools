@@ -12,7 +12,8 @@ test('createTicketWithLabels use-case should update labels and auto dev reply', 
   const calls: string[] = []
 
   const logger = {
-    info(message: string) {
+    info(...args: any[]) {
+      const message = args.find((a) => typeof a === 'string') ?? ''
       calls.push(`logger.info:${message}`)
     },
     warn(message: string) {
@@ -54,6 +55,7 @@ test('createTicketWithLabels use-case should update labels and auto dev reply', 
       issueKey: 'NDE-1',
       projectKey: 'NDE',
       assignee: 'alice',
+      withComment: true,
     })
     return {
       success: true,
@@ -90,6 +92,7 @@ test('createTicketWithLabels use-case should update labels and auto dev reply', 
   assert.equal(result.devReply?.success, true)
   assert.deepEqual(calls, [
     'createTicket',
+    'logger.info:Updating Jira labels after issue creation',
     'updateTicket',
     'devReply',
     'logger.info:Dev reply completed for NDE-1',
