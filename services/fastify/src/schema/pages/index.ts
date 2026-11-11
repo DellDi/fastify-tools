@@ -24,3 +24,46 @@ export const pagesDeploy = {
     }),
   },
 }
+
+export const pagesList = {
+  description: '列出全部已部署站点及最近部署/删除审计日志。',
+  tags: ['pages'],
+  response: {
+    200: Type.Object({
+      sites: Type.Array(
+        Type.Object({
+          slug: Type.String(),
+          url: Type.String(),
+          files: Type.Number(),
+          sizeBytes: Type.Number(),
+          mtime: Type.Number({ description: '站点最后更新时间，毫秒时间戳。' }),
+          hasIndexHtml: Type.Boolean(),
+        })
+      ),
+      logs: Type.Array(
+        Type.Object({
+          ts: Type.String(),
+          action: Type.String({ description: 'deploy | delete' }),
+          slug: Type.String(),
+          files: Type.Optional(Type.Number()),
+          sizeBytes: Type.Optional(Type.Number()),
+          ip: Type.Optional(Type.String()),
+          via: Type.Optional(Type.String({ description: 'http | mcp' })),
+        })
+      ),
+    }),
+  },
+}
+
+export const pagesDelete = {
+  description: '按 slug 删除站点目录。',
+  tags: ['pages'],
+  response: {
+    200: Type.Object({
+      deleted: Type.Boolean(),
+      slug: Type.String(),
+    }),
+    400: Type.Object({ error: Type.String() }),
+    404: Type.Object({ error: Type.String() }),
+  },
+}

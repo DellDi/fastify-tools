@@ -5,7 +5,7 @@ import { FastifyReply, FastifyRequest } from 'fastify'
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js'
 import { StreamableHTTPServerTransport } from '@modelcontextprotocol/sdk/server/streamableHttp.js'
 import { z } from 'zod'
-import { deploySiteZip, SLUG_PATTERN } from '@/utils/pages.js'
+import { deploySiteZip, appendDeployLog, SLUG_PATTERN } from '@/utils/pages.js'
 
 const mcp: FastifyPluginAsyncTypebox = async (fastify): Promise<void> => {
   const sitesDir = fastify.config.PAGES_SITES_DIR || '/srv/pages-sites'
@@ -19,7 +19,7 @@ const mcp: FastifyPluginAsyncTypebox = async (fastify): Promise<void> => {
     })
 
   // Streamable HTTP 无状态模式：每个请求独立建 server + transport
-  const createServer = () => {
+  const createServer = (ip: string) => {
     const server = new McpServer({ name: 'dell-pages', version: '1.0.0' })
     server.registerTool(
       'deploy_site',
@@ -48,6 +48,14 @@ const mcp: FastifyPluginAsyncTypebox = async (fastify): Promise<void> => {
           sitesDir,
           slug
         )
+        await appendDeployLog(sitesDir, {
+          action: 'deploy',
+          slug: result.slug,
+          files: result.files,
+          sizeBytes: zipBase64.length,
+          ip,
+          via: 'mcp',
+        })
         return {
           content: [
             {
@@ -65,7 +73,7 @@ const mcp: FastifyPluginAsyncTypebox = async (fastify): Promise<void> => {
   }
 
   const mcpHandler = async (req: FastifyRequest, reply: FastifyReply) => {
-    const server = createServer()
+    const server = createServer(req.ip)
     const transport = new StreamableHTTPServerTransport({
       sessionIdGenerator: undefined, // 无状态：不签发 mcp-session-id
     })

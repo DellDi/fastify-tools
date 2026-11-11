@@ -85,3 +85,107 @@ export async function deploySiteZip(
     hasIndexHtml: fs.existsSync(path.join(siteDir, 'index.html')),
   }
 }
+
+// ---------- 站点列表 / 删除 / 部署审计日志 ----------
+
+export interface SiteInfo {
+  slug: string
+  files: number
+  sizeBytes: number
+  mtime: number // 目录最后更新时间，毫秒时间戳
+  hasIndexHtml: boolean
+}
+
+export interface DeployLogEntry {
+  ts: string
+  action: 'deploy' | 'delete'
+  slug: string
+  files?: number
+  sizeBytes?: number
+  ip?: string
+  via?: 'http' | 'mcp'
+}
+
+const DEPLOY_LOG_FILE = '.deploy-log.jsonl'
+
+/** 列出 sitesDir 下全部站点目录（隐藏文件/目录跳过），按更新时间倒序。 */
+export async function listSites(sitesDir: string): Promise<SiteInfo[]> {
+  const names = await fs.promises
+    .readdir(sitesDir, { withFileTypes: true })
+    .catch(() => [])
+
+  const sites: SiteInfo[] = []
+  for (const d of names) {
+    if (!d.isDirectory() || d.name.startsWith('.')) continue
+    const dir = path.join(sitesDir, d.name)
+    let files = 0
+    let sizeBytes = 0
+    const walk = async (p: string) => {
+      for (const e of await fs.promises.readdir(p, { withFileTypes: true })) {
+        const fp = path.join(p, e.name)
+        if (e.isDirectory()) await walk(fp)
+        else {
+          files++
+          sizeBytes += (await fs.promises.stat(fp)).size
+        }
+      }
+    }
+    await walk(dir)
+    const st = await fs.promises.stat(dir)
+    sites.push({
+      slug: d.name,
+      files,
+      sizeBytes,
+      mtime: st.mtimeMs,
+      hasIndexHtml: fs.existsSync(path.join(dir, 'index.html')),
+    })
+  }
+  sites.sort((a, b) => b.mtime - a.mtime)
+  return sites
+}
+
+/** 删除站点目录，返回是否实际删除。slug 非法抛 ValidationError。 */
+export async function deleteSite(
+  sitesDir: string,
+  slug: string
+): Promise<boolean> {
+  if (!SLUG_PATTERN.test(slug)) {
+    throw new ValidationError(`slug 非法: ${slug}`)
+  }
+  const dir = path.join(sitesDir, slug)
+  if (!fs.existsSync(dir)) return false
+  await fs.promises.rm(dir, { recursive: true, force: true })
+  return true
+}
+
+/** 追加一条部署审计日志（JSONL，一行一条）。 */
+export async function appendDeployLog(
+  sitesDir: string,
+  entry: Omit<DeployLogEntry, 'ts'>
+): Promise<void> {
+  await fs.promises.mkdir(sitesDir, { recursive: true })
+  const line = JSON.stringify({ ts: new Date().toISOString(), ...entry })
+  await fs.promises.appendFile(path.join(sitesDir, DEPLOY_LOG_FILE), line + '\n')
+}
+
+/** 读取最近 limit 条审计日志，新的在前。 */
+export async function readDeployLog(
+  sitesDir: string,
+  limit = 50
+): Promise<DeployLogEntry[]> {
+  try {
+    const txt = await fs.promises.readFile(
+      path.join(sitesDir, DEPLOY_LOG_FILE),
+      'utf8'
+    )
+    return txt
+      .trim()
+      .split('\n')
+      .filter(Boolean)
+      .map((l) => JSON.parse(l) as DeployLogEntry)
+      .slice(-limit)
+      .reverse()
+  } catch {
+    return []
+  }
+}

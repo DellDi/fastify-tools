@@ -2,6 +2,7 @@ import { PrismaClient } from '../generated/client';
 import { seedHomeSections } from './seed/home_sections';
 import { seedInitRoleMenu } from './seed/init_role_menu';
 import { seedInitAccount } from './seed/init_account';
+import { seedPagesMenu } from './seed/pages_menu';
 import { runVersionedSeed } from './seed/version-manager';
 
 const prisma = new PrismaClient();
@@ -18,6 +19,9 @@ async function main() {
 
     // 3. 初始化首页sections数据
     await runVersionedSeed('home_sections', '1.0.0', seedHomeSections);
+
+    // 4. AIGC 组下补充 Pages站点 菜单
+    await runVersionedSeed('pages_menu', '1.0.0', seedPagesMenu);
 
     console.log('All seed operations completed successfully');
   } catch (error) {
