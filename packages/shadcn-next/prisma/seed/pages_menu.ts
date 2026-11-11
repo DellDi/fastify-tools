@@ -13,11 +13,13 @@ export async function seedPagesMenu() {
     return;
   }
 
+  // 固定 UUID，保证重复执行幂等
+  const PAGES_MENU_ID = '7f2c8a1e-5b3d-4e6f-9a0b-1c2d3e4f5a6b';
   const menu = await prisma.menu.upsert({
-    where: { id: 'pages-site-menu' },
+    where: { id: PAGES_MENU_ID },
     update: {},
     create: {
-      id: 'pages-site-menu',
+      id: PAGES_MENU_ID,
       name: 'Pages站点',
       url: '/pages',
       icon: 'Globe',
