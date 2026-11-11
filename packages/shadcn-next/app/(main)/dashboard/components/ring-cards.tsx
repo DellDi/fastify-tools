@@ -105,8 +105,8 @@ export function RingCards({ hours }: { hours: number }) {
 
         <Card className="xl:col-span-2 p-2">
           <CardHeader className="p-4 pb-2">
-            <CardTitle>磁盘 I/O</CardTitle>
-            <CardDescription>所在块设备读写速率</CardDescription>
+            <CardTitle>I/O 速率</CardTitle>
+            <CardDescription>磁盘读写 · 网络收发</CardDescription>
           </CardHeader>
           <CardContent className="flex flex-col items-baseline gap-4 p-4 pt-2">
             <div className="flex items-baseline gap-2 text-3xl font-bold tabular-nums leading-none">
@@ -114,6 +114,15 @@ export function RingCards({ hours }: { hours: number }) {
               <span className="pl-2 text-sm font-normal text-muted-foreground">读</span>
               {fmtRate(status?.disk?.writeBytesPerSec)}
               <span className="text-sm font-normal text-muted-foreground">写</span>
+            </div>
+            <div className="flex items-baseline gap-2 text-sm tabular-nums text-muted-foreground">
+              <span>网络{status?.network && !status.network.hostView ? '（容器）' : ''}</span>
+              <span className="font-medium text-foreground">
+                ↓{fmtRate(status?.network?.rxBytesPerSec)}
+              </span>
+              <span className="font-medium text-foreground">
+                ↑{fmtRate(status?.network?.txBytesPerSec)}
+              </span>
             </div>
             <ChartContainer
               config={{

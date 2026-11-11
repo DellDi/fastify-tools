@@ -78,6 +78,10 @@ services:
     volumes:
       # Pages 站点产物目录：容器写入 → 宿主机 nginx 泛域名站点读取
       - /srv/pages-sites:/srv/pages-sites
+      # 宿主机网络计数器（/host/proc/net/dev 全机流量）
+      - /proc:/host/proc:ro
+      # 容器列表监控（docker.sock 等价宿主机 root，仅查询用途）
+      - /var/run/docker.sock:/var/run/docker.sock
     depends_on:
       postgres:
         condition: service_healthy

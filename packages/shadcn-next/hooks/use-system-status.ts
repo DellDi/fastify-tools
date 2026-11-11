@@ -37,6 +37,12 @@ export interface SystemStatus {
     rssBytes: number
     eventLoopDelayMs: number | null
   }
+  network: {
+    rxBytesPerSec: number | null
+    txBytesPerSec: number | null
+    hostView: boolean
+  } | null
+  containers: { name: string; image: string; state: string; status: string }[]
   databases: { name: string; sizeBytes: number }[]
   pages: { sites: number; totalBytes: number } | null
   certificates: { domain: string; daysLeft: number | null }[]

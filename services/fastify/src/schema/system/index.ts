@@ -96,6 +96,32 @@ const SystemStatusObject = Type.Object({
       description: '事件循环延迟均值（毫秒，区间采样）。',
     }),
   }),
+  network: Type.Union(
+    [
+      Type.Object({
+        rxBytesPerSec: Type.Union([Type.Number(), Type.Null()], {
+          description: '接收速率（字节/秒）。',
+        }),
+        txBytesPerSec: Type.Union([Type.Number(), Type.Null()], {
+          description: '发送速率（字节/秒）。',
+        }),
+        hostView: Type.Boolean({
+          description: 'true=宿主机全机流量（/host/proc），false=容器自身网卡。',
+        }),
+      }),
+      Type.Null(),
+    ],
+    { description: '网络收发速率；netdev 不可读时为 null。' }
+  ),
+  containers: Type.Array(
+    Type.Object({
+      name: Type.String({ description: '容器名。' }),
+      image: Type.String({ description: '镜像名。' }),
+      state: Type.String({ description: 'running/exited 等状态。' }),
+      status: Type.String({ description: 'docker 状态文本（Up xx 等）。' }),
+    }),
+    { description: 'Docker 容器列表；未挂载 docker.sock 时为空数组。' }
+  ),
   databases: Type.Array(
     Type.Object({
       name: Type.String({ description: '库名。' }),
@@ -126,7 +152,7 @@ const SystemStatusObject = Type.Object({
 
 export const SystemStatusSchema = {
   description:
-    '服务器实时状态（最近一次采样快照）。容器内 /proc 与站点挂载点读取的是宿主机数据：CPU（总量+每核）/内存构成/磁盘容量与 IO/运行时长/进程数，外加业务库体积、Pages 站点统计、TLS 证书有效期。',
+    '服务器实时状态（最近一次采样快照）。容器内 /proc 与站点挂载点读取的是宿主机数据：CPU（总量+每核）/内存构成/磁盘容量与 IO/网络收发/运行时长/进程数，外加业务库体积、Pages 站点统计、Docker 容器列表、TLS 证书有效期。',
   tags: ['system'],
   response: {
     200: SystemStatusObject,

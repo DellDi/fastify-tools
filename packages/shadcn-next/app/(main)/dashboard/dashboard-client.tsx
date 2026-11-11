@@ -8,6 +8,7 @@ import { CpuCard } from './components/cpu-card'
 import { LoadCard } from './components/load-card'
 import { UsageCards } from './components/usage-cards'
 import { RingCards } from './components/ring-cards'
+import { ContainersCard } from './components/containers-card'
 
 const RANGES = [
   { hours: 1, label: '1h' },
@@ -38,7 +39,7 @@ export function DashboardClient() {
         <div className="grid col-span-4 xl:col-span-3 flex-1 gap-4">
           <ResourceTrend hours={hours} />
         </div>
-        <div className="flex-1 gap-4 hidden xl:grid">
+        <div className="col-span-4 grid flex-1 content-start gap-4 xl:col-span-1">
           <ServerInfoCard />
         </div>
       </div>
@@ -52,6 +53,7 @@ export function DashboardClient() {
         </div>
         <div className="grid  flex-1 gap-4">
           <RingCards hours={hours} />
+          <ContainersCard />
         </div>
       </div>
     </main>

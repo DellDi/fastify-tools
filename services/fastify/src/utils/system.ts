@@ -1,6 +1,7 @@
 import os from 'node:os'
 import tls from 'node:tls'
-import { readFile, statfs } from 'node:fs/promises'
+import { request as httpRequest } from 'node:http'
+import { access, readFile, statfs } from 'node:fs/promises'
 import { IntervalHistogram, monitorEventLoopDelay } from 'node:perf_hooks'
 import { listSites } from './pages.js'
 
@@ -15,6 +16,7 @@ export interface StatusOptions {
   diskPath: string
   prisma?: QueryRawLike
   baseDomain?: string
+  dockerSock?: string
 }
 
 export interface SystemStatus {
@@ -52,6 +54,13 @@ export interface SystemStatus {
     rssBytes: number
     eventLoopDelayMs: number | null
   }
+  network: {
+    rxBytesPerSec: number | null
+    txBytesPerSec: number | null
+    // true = 读的是宿主机 /host/proc（全机流量），false = 容器自身网卡
+    hostView: boolean
+  } | null
+  containers: { name: string; image: string; state: string; status: string }[]
   databases: { name: string; sizeBytes: number }[]
   pages: { sites: number; totalBytes: number } | null
   certificates: { domain: string; daysLeft: number | null }[]
@@ -110,6 +119,41 @@ async function readRawCounters(): Promise<RawCounters | null> {
   }
 }
 
+// ---------- 网络计数器 ----------
+
+// 挂了 host /proc 就读宿主机全机流量（含所有网卡，排除 lo）；
+// 没挂则退回容器自身 /proc/net/dev（仅容器 veth 视角）
+let resolvedNetDev: { path: string; hostView: boolean } | null = null
+async function netDevPath(): Promise<{ path: string; hostView: boolean }> {
+  if (resolvedNetDev) return resolvedNetDev
+  try {
+    await access('/host/proc/net/dev')
+    resolvedNetDev = { path: '/host/proc/net/dev', hostView: true }
+  } catch {
+    resolvedNetDev = { path: '/proc/net/dev', hostView: false }
+  }
+  return resolvedNetDev
+}
+
+async function readNetCounters(): Promise<{ rx: number; tx: number; hostView: boolean } | null> {
+  try {
+    const { path, hostView } = await netDevPath()
+    const raw = await readFile(path, 'utf8')
+    let rx = 0
+    let tx = 0
+    for (const line of raw.split('\n')) {
+      const m = line.match(/^\s*([^:]+):\s*(\d[\d\s]*)$/)
+      if (!m || m[1].trim() === 'lo') continue
+      const f = m[2].trim().split(/\s+/)
+      rx += Number(f[0])
+      tx += Number(f[8])
+    }
+    return { rx, tx, hostView }
+  } catch {
+    return null
+  }
+}
+
 // /proc/self/mountinfo 找挂载点所属块设备 major:minor（前缀最长匹配）
 async function findMountDevice(mountPath: string): Promise<string | null> {
   try {
@@ -136,16 +180,27 @@ interface RateSample {
   perCore: number[] | null
   readBps: number | null
   writeBps: number | null
+  net: { rxBps: number | null; txBps: number | null; hostView: boolean } | null
 }
 
 // 一个 windowMs 窗口内双采样 /proc/stat + /proc/diskstats，
 // 得到 CPU 总使用率、每核使用率和磁盘 IO 速率
 async function sampleRates(mountPath: string, windowMs = 200): Promise<RateSample> {
-  const none: RateSample = { cpuPercent: null, perCore: null, readBps: null, writeBps: null }
-  const [dev, t0] = await Promise.all([findMountDevice(mountPath), readRawCounters()])
+  const none: RateSample = {
+    cpuPercent: null,
+    perCore: null,
+    readBps: null,
+    writeBps: null,
+    net: null,
+  }
+  const [dev, t0, n0] = await Promise.all([
+    findMountDevice(mountPath),
+    readRawCounters(),
+    readNetCounters(),
+  ])
   if (!t0) return none
   await sleep(windowMs)
-  const t1 = await readRawCounters()
+  const [t1, n1] = await Promise.all([readRawCounters(), readNetCounters()])
   if (!t1) return none
 
   const pct = (a: CpuTimes, b: CpuTimes) => {
@@ -174,7 +229,17 @@ async function sampleRates(mountPath: string, windowMs = 200): Promise<RateSampl
     writeBps = Number.isFinite(dw) ? round(Math.max(0, dw)) : null
   }
 
-  return { cpuPercent, perCore, readBps, writeBps }
+  const secs = windowMs / 1000
+  const net =
+    n0 && n1 && n0.hostView === n1.hostView
+      ? {
+          rxBps: round(Math.max(0, (n1.rx - n0.rx) / secs)),
+          txBps: round(Math.max(0, (n1.tx - n0.tx) / secs)),
+          hostView: n0.hostView,
+        }
+      : null
+
+  return { cpuPercent, perCore, readBps, writeBps, net }
 }
 
 // ---------- 单次读取指标 ----------
@@ -291,6 +356,42 @@ async function readCertificates(baseDomain?: string) {
   )
 }
 
+// ---------- Docker 容器列表 ----------
+
+// 需挂载 /var/run/docker.sock；未挂载返回空数组
+async function readDockerContainers(sockPath: string) {
+  try {
+    await access(sockPath)
+    const body = await new Promise<string>((resolve, reject) => {
+      const req = httpRequest(
+        { socketPath: sockPath, path: '/containers/json', method: 'GET' },
+        (res) => {
+          let d = ''
+          res.on('data', (c) => (d += c))
+          res.on('end', () => resolve(d))
+        }
+      )
+      req.on('error', reject)
+      req.setTimeout(3000, () => req.destroy(new Error('docker.sock timeout')))
+      req.end()
+    })
+    const list = JSON.parse(body) as {
+      Names: string[]
+      Image: string
+      State: string
+      Status: string
+    }[]
+    return list.map((c) => ({
+      name: c.Names[0]?.replace(/^\//, '') ?? 'unknown',
+      image: c.Image,
+      state: c.State,
+      status: c.Status,
+    }))
+  } catch {
+    return []
+  }
+}
+
 // ---------- fastify 进程自身健康 ----------
 
 let eld: IntervalHistogram | null = null
@@ -311,7 +412,7 @@ function readEventLoopDelayMs(): number | null {
 // ---------- 汇总 ----------
 
 export async function getSystemStatus(opts: StatusOptions): Promise<SystemStatus> {
-  const [rates, memory, procs, diskStat, databases, pages, certificates] =
+  const [rates, memory, procs, diskStat, databases, pages, certificates, containers] =
     await Promise.all([
       sampleRates(opts.diskPath),
       readMemInfo(),
@@ -320,6 +421,7 @@ export async function getSystemStatus(opts: StatusOptions): Promise<SystemStatus
       opts.prisma ? readDatabaseSizes(opts.prisma) : Promise.resolve([]),
       readPagesStats(opts.diskPath),
       readCertificates(opts.baseDomain),
+      readDockerContainers(opts.dockerSock ?? '/var/run/docker.sock'),
     ])
 
   const [load1, load5, load15] = os.loadavg()
@@ -362,6 +464,14 @@ export async function getSystemStatus(opts: StatusOptions): Promise<SystemStatus
       rssBytes: process.memoryUsage().rss,
       eventLoopDelayMs: readEventLoopDelayMs(),
     },
+    network: rates.net
+      ? {
+          rxBytesPerSec: rates.net.rxBps,
+          txBytesPerSec: rates.net.txBps,
+          hostView: rates.net.hostView,
+        }
+      : null,
+    containers,
     databases,
     pages,
     certificates,
