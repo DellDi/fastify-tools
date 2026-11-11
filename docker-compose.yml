@@ -66,12 +66,18 @@ services:
       - LLM_MODEL=${LLM_MODEL:-qwen3.5-flash}
       - LLM_BASE_URL=${LLM_BASE_URL:-https://dashscope.aliyuncs.com/compatible-mode/v1/chat/completions}
       - LLM_API_KEY=${LLM_API_KEY}
+      # Pages 静态站点部署（写入宿主机目录供 nginx 泛域名站点使用）
+      - PAGES_SITES_DIR=/srv/pages-sites
+      - PAGES_BASE_DOMAIN=${PAGES_BASE_DOMAIN:-pages.delldiagi.top}
       # 邮箱服务
       - SMTP_HOST=${SMTP_HOST}
       - SMTP_PORT=${SMTP_PORT}
       - SMTP_USER=${SMTP_USER}
       - SMTP_PASS=${SMTP_PASS}
       - SMTP_SECURE=${SMTP_SECURE}  
+    volumes:
+      # Pages 站点产物目录：容器写入 → 宿主机 nginx 泛域名站点读取
+      - /srv/pages-sites:/srv/pages-sites
     depends_on:
       postgres:
         condition: service_healthy

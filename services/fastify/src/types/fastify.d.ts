@@ -30,6 +30,8 @@ declare module 'fastify' {
       LLM_API_KEY?: string
       LLM_BASE_URL?: string
       LLM_MODEL?: string
+      PAGES_SITES_DIR?: string
+      PAGES_BASE_DOMAIN?: string
     }
     // Services 单例
     jiraService: JiraService

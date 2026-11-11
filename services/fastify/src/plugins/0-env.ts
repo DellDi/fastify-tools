@@ -37,6 +37,10 @@ const schema = Type.Object({
   LLM_API_KEY: Type.Optional(Type.String()),
   LLM_BASE_URL: Type.Optional(Type.String({ default: 'https://dashscope.aliyuncs.com/compatible-mode/v1/chat/completions' })),
   LLM_MODEL: Type.Optional(Type.String({ default: 'qwen3.5-flash' })),
+
+  // Pages 静态站点部署
+  PAGES_SITES_DIR: Type.Optional(Type.String({ default: '/srv/pages-sites' })),
+  PAGES_BASE_DOMAIN: Type.Optional(Type.String({ default: 'pages.delldiagi.top' })),
 })
 
 export default fp<FastifyEnvOptions>(async (fastify, opts) => {
