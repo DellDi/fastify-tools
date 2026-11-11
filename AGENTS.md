@@ -107,6 +107,17 @@ docker compose logs -f fastify
 docker compose logs -f shadcn-next
 ```
 
+### Production Deploy (delldiagi.top)
+
+```bash
+./scripts/deploy.sh            # bundle → scp → 服务器 reset → docker rebuild + 健康检查
+./scripts/deploy.sh shadcn-next
+DEPLOY_FORCE=1 ./scripts/deploy.sh   # 服务器工作区有未提交改动时强制覆盖
+```
+
+Server repo: `/opt/fastify-tools` (SSH alias `delldiagi`). Deploys run via `git bundle`
+over scp — the server does not pull from GitHub directly.
+
 ## Architecture
 
 ### Backend (services/fastify)
