@@ -78,9 +78,8 @@ const mcp: FastifyPluginAsyncTypebox = async (fastify): Promise<void> => {
     await transport.handleRequest(req.raw, reply.raw, req.body)
   }
 
-  // '' 命中 /mcp，'/' 兼容尾部斜杠
+  // url '' 命中 /mcp；find-my-way 默认忽略尾斜杠，/mcp/ 同样可达
   fastify.route({ method: ['POST', 'GET', 'DELETE'], url: '', preHandler: fastify.verifyBearerAuth, handler: mcpHandler })
-  fastify.route({ method: ['POST', 'GET', 'DELETE'], url: '/', preHandler: fastify.verifyBearerAuth, handler: mcpHandler })
 }
 
 export default mcp
