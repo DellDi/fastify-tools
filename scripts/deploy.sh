@@ -58,7 +58,11 @@ echo "▶ [4/4] 等待服务就绪（最长 5 分钟）"
 ssh -o BatchMode=yes "$SSH_HOST" CONTAINER="$CONTAINER" bash -s <<'EOF'
 set -euo pipefail
 for i in $(seq 1 60); do
-  if docker logs "$CONTAINER" --since 10m 2>&1 | grep -q "Server listening"; then
+  # 只看本次启动之后的日志：容器重启时 StartedAt 刷新，历史成功日志不再误报
+  STARTED_AT=$(docker inspect -f '{{.State.StartedAt}}' "$CONTAINER" 2>/dev/null || echo "")
+  RESTARTING=$(docker inspect -f '{{.State.Restarting}}' "$CONTAINER" 2>/dev/null || echo "true")
+  if [[ "$RESTARTING" == "false" && -n "$STARTED_AT" ]] \
+    && docker logs "$CONTAINER" --since "$STARTED_AT" 2>&1 | grep -q "Server listening"; then
     echo "✓ ${CONTAINER} 已就绪"
     docker ps --format '{{.Names}}  {{.Status}}' | grep -E 'fastify|shadcn' || true
     exit 0
