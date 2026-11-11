@@ -22,7 +22,7 @@ import { Skeleton } from '@/components/ui/skeleton'
 import { useMenuStore, useMenuActions } from '@/store/client/menuStore'
 import { useUserActions } from '@/store/client/userStore'
 
-const APP_TITLE = 'Tools Admin by DellDi'
+const APP_TITLE = 'delldiaigc'
 
 export function AppSidebar() {
   const pathname = usePathname()
@@ -40,10 +40,20 @@ export function AppSidebar() {
     }
   }, [pathname, setNavItems])
 
-  // 菜单与浏览器标签页标题联动
+  // 菜单与浏览器标签页标题联动。
+  // App Router 客户端导航时 RSC metadata 会异步覆盖 <title>，
+  // 用 MutationObserver 保证菜单标题始终生效（等值判断防循环）。
   useEffect(() => {
-    const title = resolvePageTitle(navItems, pathname)
-    document.title = title ? `${title} | ${APP_TITLE}` : APP_TITLE
+    const resolved = resolvePageTitle(navItems, pathname)
+    const desired = resolved ? `${resolved} | ${APP_TITLE}` : APP_TITLE
+    document.title = desired
+    const el = document.querySelector('title')
+    if (!el) return
+    const obs = new MutationObserver(() => {
+      if (document.title !== desired) document.title = desired
+    })
+    obs.observe(el, { childList: true, characterData: true, subtree: true })
+    return () => obs.disconnect()
   }, [pathname, navItems])
 
   // 在组件首次渲染时加载用户和菜单数据

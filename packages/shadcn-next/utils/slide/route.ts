@@ -18,7 +18,7 @@ import {
 export const routesConfig = {
   teams: [
     {
-      name: 'Dell DI Home',
+      name: 'delldiaigc',
       logo: SnailIcon,
       plan: 'Enterprise',
     },
