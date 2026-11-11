@@ -57,7 +57,7 @@ export async function seedInitRoleMenu() {
     { parentName: 'AIGC', name: '模型调优', url: '/aigc/model', icon: 'Code2', description: '模型调优' },
     { parentName: 'AIGC', name: '爬虫管理', url: '/aigc/task', icon: 'Code2', description: '爬虫管理' },
     { parentName: '设置', name: '账户', url: '/settings', icon: 'SquareTerminal', description: '账户' },
-    { parentName: '设置', name: '角色', url: '/role', icon: 'SquareTerminal', description: '角色' }
+    { parentName: '设置', name: '角色', url: '/admin/roles', icon: 'SquareTerminal', description: '角色' }
   ]
 
   // 创建根菜单
