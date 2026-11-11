@@ -45,6 +45,7 @@
     "@fastify/swagger": "^9.4.2",
     "@fastify/swagger-ui": "^5.2.2",
     "@fastify/type-provider-typebox": "^5.1.0",
+    "@modelcontextprotocol/sdk": "^1.32.2",
     "@prisma/client": "^6.6.0",
     "@scalar/fastify-api-reference": "^1.28.12",
     "@sinclair/typebox": "^0.34.33",
@@ -60,7 +61,8 @@
     "lru-cache": "^11.1.0",
     "nodemailer": "^6.10.0",
     "pg": "^8.14.1",
-    "undici": "^7.7.0"
+    "undici": "^7.7.0",
+    "zod": "^4.6.7"
   },
   "devDependencies": {
     "@types/crypto-js": "^4.2.2",
