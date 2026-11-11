@@ -63,12 +63,26 @@ const dockerRoutes: FastifyPluginAsyncTypebox = async (fastify): Promise<void> =
     if (!(await dockerAvailable())) throw new DockerError('docker.sock 未挂载', 503)
   }
 
+  // /system/df 老版本 docker 要逐层算体积（实测 ~15s），缓存 60s 避免重复等待
+  type DfData = {
+    images: { count: number; size: number; reclaimable: number }
+    containers: { count: number; running: number; size: number }
+    volumes: { count: number; size: number }
+    buildCache: { count: number; size: number }
+  }
+  let dfCache: { ts: number; data: DfData } | null = null
+  const DF_TTL = 60_000
+  const invalidateDf = () => {
+    dfCache = null
+  }
+
   fastify.get('/df', {
     schema: DockerDfSchema,
     ...guard,
-    handler: async () => {
+    handler: async (): Promise<DfData> => {
       await requireDocker()
-      const df = await dockerApi<DfResponse>('/system/df')
+      if (dfCache && Date.now() - dfCache.ts < DF_TTL) return dfCache.data
+      const df = await dockerApi<DfResponse>('/system/df', 'GET', undefined, 60_000)
       const imgs = isNew(df.Images) ? df.Images : null
       const ctrs = isNew(df.Containers) ? df.Containers : null
       const vols = isNew(df.Volumes) ? df.Volumes : null
@@ -77,7 +91,7 @@ const dockerRoutes: FastifyPluginAsyncTypebox = async (fastify): Promise<void> =
       const ctrArr = (df.Containers as DfContainerOld[] | undefined) ?? []
       const volArr = (df.Volumes as DfVolumeOld[] | undefined) ?? []
       const bcArr = (df.BuildCache as DfBuildCacheOld[] | undefined) ?? []
-      return {
+      const data: DfData = {
         images: imgs
           ? {
               count: imgs.TotalCount ?? 0,
@@ -110,6 +124,8 @@ const dockerRoutes: FastifyPluginAsyncTypebox = async (fastify): Promise<void> =
           ? { count: bcs.TotalCount ?? 0, size: bcs.Size ?? 0 }
           : { count: bcArr.length, size: sum(bcArr.map((b) => b.Size ?? 0)) },
       }
+      dfCache = { ts: Date.now(), data }
+      return data
     },
   })
 
@@ -184,6 +200,7 @@ const dockerRoutes: FastifyPluginAsyncTypebox = async (fastify): Promise<void> =
           `/images/prune?filters=${encodeURIComponent(JSON.stringify(filters))}`,
           'POST'
         )
+        invalidateDf()
         return {
           reclaimed: res.SpaceReclaimed ?? 0,
           detail: (res.ImagesDeleted ?? []).map((d) => d.Deleted ?? '').filter(Boolean),
@@ -194,6 +211,7 @@ const dockerRoutes: FastifyPluginAsyncTypebox = async (fastify): Promise<void> =
           '/containers/prune',
           'POST'
         )
+        invalidateDf()
         return { reclaimed: res.SpaceReclaimed ?? 0, detail: res.ContainersDeleted ?? [] }
       }
       if (type === 'volumes') {
@@ -201,12 +219,14 @@ const dockerRoutes: FastifyPluginAsyncTypebox = async (fastify): Promise<void> =
           '/volumes/prune',
           'POST'
         )
+        invalidateDf()
         return { reclaimed: res.SpaceReclaimed ?? 0, detail: res.VolumesDeleted ?? [] }
       }
       const res = await dockerApi<{ CachesDeleted?: string[]; SpaceReclaimed: number }>(
         '/build/prune',
         'POST'
       )
+      invalidateDf()
       return { reclaimed: res.SpaceReclaimed ?? 0, detail: res.CachesDeleted ?? [] }
     },
   })
@@ -218,6 +238,7 @@ const dockerRoutes: FastifyPluginAsyncTypebox = async (fastify): Promise<void> =
       await requireDocker()
       const { id } = req.params as { id: string }
       await dockerApi(`/images/${encodeURIComponent(id)}?force=true`, 'DELETE')
+      invalidateDf()
       return { ok: true }
     },
   })

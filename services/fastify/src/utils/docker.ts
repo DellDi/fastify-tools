@@ -15,7 +15,8 @@ export async function dockerAvailable(): Promise<boolean> {
 function reqRaw(
   path: string,
   method: string,
-  body?: unknown
+  body?: unknown,
+  timeoutMs = 10_000
 ): Promise<{ status: number; chunks: Buffer[] }> {
   return new Promise((resolve, reject) => {
     const req = httpRequest(
@@ -32,7 +33,7 @@ function reqRaw(
       }
     )
     req.on('error', reject)
-    req.setTimeout(10_000, () => req.destroy(new Error('docker.sock timeout')))
+    req.setTimeout(timeoutMs, () => req.destroy(new Error('docker.sock timeout')))
     if (body) req.write(JSON.stringify(body))
     req.end()
   })
@@ -47,13 +48,15 @@ export class DockerError extends Error {
   }
 }
 
-// JSON API 调用；非 2xx/3xx 抛错
+// JSON API 调用；非 2xx/3xx 抛错。老版本 docker 的 /system/df 逐层算体积
+// 可能耗时十几秒，调用方可放宽 timeoutMs
 export async function dockerApi<T = unknown>(
   path: string,
   method = 'GET',
-  body?: unknown
+  body?: unknown,
+  timeoutMs?: number
 ): Promise<T> {
-  const { status, chunks } = await reqRaw(path, method, body)
+  const { status, chunks } = await reqRaw(path, method, body, timeoutMs)
   const text = Buffer.concat(chunks).toString('utf8')
   if (status >= 400) {
     throw new DockerError(`docker ${status}: ${text.slice(0, 200)}`, status)
