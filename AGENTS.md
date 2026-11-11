@@ -118,6 +118,15 @@ DEPLOY_FORCE=1 ./scripts/deploy.sh   # 服务器工作区有未提交改动时�
 Server repo: `/opt/fastify-tools` (SSH alias `delldiagi`). Deploys run via `git bundle`
 over scp — the server does not pull from GitHub directly.
 
+### Pages 静态站点托管
+
+`POST /fastify/pages/deploy`（Bearer 鉴权）：multipart 上传 zip（字段名 `file`，
+可选 `slug` 字段指定子域名，重复传会覆盖同名站）→ 解压到宿主机 `/srv/pages-sites/<slug>/`
+→ 返回 `https://<slug>.pages.delldiagi.top`。泛域名 `*.pages.delldiagi.top` 由
+nginx `conf.d/pages.delldiagi.top.conf` 映射到站点目录；证书为 acme.sh 签发的
+DNS-01 泛域名证书（dns_ali，凭据存于服务器 `~/.acme.sh/account.conf`）。
+`/etc/cron.d/pages-cleanup` 每日清理 mtime >30 天的站点。
+
 ## Architecture
 
 ### Backend (services/fastify)
