@@ -34,7 +34,7 @@ export function ContainersCard() {
             : '--'}
         </CardDescription>
       </CardHeader>
-      <CardContent className="grid gap-2.5">
+      <CardContent className="grid gap-2.5 sm:grid-cols-2 xl:grid-cols-4">
         {containers.map((c) => (
           <div key={c.name} className="flex items-center gap-2 text-sm">
             <span
