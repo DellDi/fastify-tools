@@ -60,7 +60,7 @@ export const DockerContainersSchema = {
 
 export const DockerPruneSchema = {
   description:
-    '资源清理。type: dangling=悬空镜像 | images=所有未用镜像 | containers=已停容器 | volumes=未引用卷 | buildcache=构建缓存。',
+    '启动清理任务（异步）。type: dangling=悬空镜像 | images=所有未用镜像 | containers=已停容器 | volumes=未引用卷 | buildcache=构建缓存。结果查 GET /prune/status。',
   tags: ['docker'],
   body: Type.Object({
     type: Type.Union([
@@ -73,8 +73,31 @@ export const DockerPruneSchema = {
   }),
   response: {
     200: Type.Object({
-      reclaimed: Type.Number({ description: '释放字节数。' }),
-      detail: Type.Optional(Type.Array(Type.String())),
+      started: Type.Boolean(),
+      type: Type.String(),
+    }),
+  },
+}
+
+export const DockerPruneStatusSchema = {
+  description: '清理任务状态。job=null 表示从未执行；done/error 其一非空表示已结束。',
+  tags: ['docker'],
+  response: {
+    200: Type.Object({
+      job: Type.Union([
+        Type.Object({
+          type: Type.String(),
+          startedAt: Type.Number(),
+          done: Type.Optional(
+            Type.Object({
+              reclaimed: Type.Number(),
+              detail: Type.Optional(Type.Array(Type.String())),
+            })
+          ),
+          error: Type.Optional(Type.String()),
+        }),
+        Type.Null(),
+      ]),
     }),
   },
 }

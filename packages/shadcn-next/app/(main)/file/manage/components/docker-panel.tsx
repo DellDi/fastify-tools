@@ -58,6 +58,7 @@ type PruneType = 'dangling' | 'images' | 'containers' | 'volumes' | 'buildcache'
 export function DockerPanel() {
   const [pruneTarget, setPruneTarget] = useState<PruneType | null>(null)
   const [busy, setBusy] = useState(false)
+  const [pruning, setPruning] = useState<string | null>(null) // 进行中的清理任务类型
   const [logTarget, setLogTarget] = useState<{ id: string; name: string } | null>(null)
   const df = useDockerDf(true)
   const images = useDockerImages(true)
@@ -65,19 +66,42 @@ export function DockerPanel() {
 
   const refreshAll = () => Promise.all([df.mutate(), images.mutate(), containers.mutate()])
 
+  // prune 是后端异步任务（清 GB 级数据要几分钟）：POST 启动后轮询 status
   const doPrune = async () => {
     if (!pruneTarget) return
+    const type = pruneTarget
     setBusy(true)
+    setPruneTarget(null)
+    setPruning(type)
     try {
-      const res = await fsApi<{ reclaimed: number; detail?: string[] }>('/api/docker/prune', {
-        body: { type: pruneTarget },
-      })
-      toast.success(`已清理${PRUNE_LABEL[pruneTarget]}，释放 ${fmtSize(res.reclaimed)}`)
-      setPruneTarget(null)
+      await fsApi('/api/docker/prune', { body: { type } })
+      const job = await new Promise<{ done?: { reclaimed: number }; error?: string }>(
+        (resolve, reject) => {
+          const timer = setInterval(async () => {
+            try {
+              const res = await fsApi<{ job: { done?: { reclaimed: number }; error?: string } | null }>(
+                '/api/docker/prune/status',
+                { method: 'GET' }
+              )
+              const j = res.job
+              if (j?.done || j?.error) {
+                clearInterval(timer)
+                resolve(j)
+              }
+            } catch (e) {
+              clearInterval(timer)
+              reject(e)
+            }
+          }, 2000)
+        }
+      )
+      if (job.error) throw new Error(job.error)
+      toast.success(`已清理${PRUNE_LABEL[type]}，释放 ${fmtSize(job.done?.reclaimed ?? 0)}`)
       await refreshAll()
     } catch (e) {
       toast.error(e instanceof Error ? e.message : '清理失败')
     } finally {
+      setPruning(null)
       setBusy(false)
     }
   }
@@ -137,13 +161,22 @@ export function DockerPanel() {
               key={t}
               size="sm"
               variant={t === 'images' || t === 'volumes' ? 'destructive' : 'outline'}
-              disabled={busy}
+              disabled={busy || !!pruning}
               onClick={() => setPruneTarget(t)}
             >
-              <Trash2 className="mr-1 h-4 w-4" />
-              清理{PRUNE_LABEL[t]}
+              {pruning === t ? (
+                <Loader2 className="mr-1 h-4 w-4 animate-spin" />
+              ) : (
+                <Trash2 className="mr-1 h-4 w-4" />
+              )}
+              {pruning === t ? '清理中…' : `清理${PRUNE_LABEL[t]}`}
             </Button>
           ))}
+          {pruning && (
+            <span className="self-center text-xs text-muted-foreground">
+              「{PRUNE_LABEL[pruning as PruneType]}」清理中，数据量大可能需要几分钟…
+            </span>
+          )}
         </CardContent>
       </Card>
 

@@ -8,6 +8,7 @@ import {
   DockerImagesSchema,
   DockerLogsSchema,
   DockerPruneSchema,
+  DockerPruneStatusSchema,
 } from '@/schema/docker/index.js'
 import { dockerApi, dockerAvailable, dockerLogs, DockerError } from '@/utils/docker.js'
 
@@ -185,50 +186,93 @@ const dockerRoutes: FastifyPluginAsyncTypebox = async (fastify): Promise<void> =
     },
   })
 
+  // prune 异步任务：删 GB 级镜像/构建缓存可能跑几分钟，同步 HTTP 必超时。
+  // POST 立即返回，后台带 600s 超时执行，GET /prune/status 轮询结果。
+  type PruneType = 'dangling' | 'images' | 'containers' | 'volumes' | 'buildcache'
+  interface PruneResult {
+    reclaimed: number
+    detail?: string[]
+  }
+  interface PruneJob {
+    type: PruneType
+    startedAt: number
+    done?: PruneResult
+    error?: string
+  }
+  let pruneJob: PruneJob | null = null
+
+  const runPrune = async (type: PruneType): Promise<PruneResult> => {
+    const T = 600_000
+    if (type === 'dangling' || type === 'images') {
+      const filters =
+        type === 'dangling' ? { dangling: { true: true } } : { dangling: { false: true } }
+      const res = await dockerApi<{
+        ImagesDeleted?: { Deleted?: string }[]
+        SpaceReclaimed: number
+      }>(`/images/prune?filters=${encodeURIComponent(JSON.stringify(filters))}`, 'POST', undefined, T)
+      return {
+        reclaimed: res.SpaceReclaimed ?? 0,
+        detail: (res.ImagesDeleted ?? []).map((d) => d.Deleted ?? '').filter(Boolean),
+      }
+    }
+    if (type === 'containers') {
+      const res = await dockerApi<{ ContainersDeleted?: string[]; SpaceReclaimed: number }>(
+        '/containers/prune',
+        'POST',
+        undefined,
+        T
+      )
+      return { reclaimed: res.SpaceReclaimed ?? 0, detail: res.ContainersDeleted ?? [] }
+    }
+    if (type === 'volumes') {
+      const res = await dockerApi<{ VolumesDeleted?: string[]; SpaceReclaimed: number }>(
+        '/volumes/prune',
+        'POST',
+        undefined,
+        T
+      )
+      return { reclaimed: res.SpaceReclaimed ?? 0, detail: res.VolumesDeleted ?? [] }
+    }
+    const res = await dockerApi<{ CachesDeleted?: string[]; SpaceReclaimed: number }>(
+      '/build/prune',
+      'POST',
+      undefined,
+      T
+    )
+    return { reclaimed: res.SpaceReclaimed ?? 0, detail: res.CachesDeleted ?? [] }
+  }
+
   fastify.post('/prune', {
     schema: DockerPruneSchema,
     ...guard,
     handler: async (req) => {
       await requireDocker()
-      const { type } = req.body as {
-        type: 'dangling' | 'images' | 'containers' | 'volumes' | 'buildcache'
+      if (pruneJob && !pruneJob.done && !pruneJob.error) {
+        throw new DockerError(`清理任务「${pruneJob.type}」进行中`, 409)
       }
-      if (type === 'dangling' || type === 'images') {
-        const filters =
-          type === 'dangling' ? { dangling: { true: true } } : { dangling: { false: true } }
-        const res = await dockerApi<{ ImagesDeleted?: { Deleted?: string }[]; SpaceReclaimed: number }>(
-          `/images/prune?filters=${encodeURIComponent(JSON.stringify(filters))}`,
-          'POST'
-        )
-        invalidateDf()
-        return {
-          reclaimed: res.SpaceReclaimed ?? 0,
-          detail: (res.ImagesDeleted ?? []).map((d) => d.Deleted ?? '').filter(Boolean),
+      const { type } = req.body as { type: PruneType }
+      pruneJob = { type, startedAt: Date.now() }
+      void (async () => {
+        try {
+          const done = await runPrune(type)
+          invalidateDf()
+          pruneJob = { type, startedAt: pruneJob!.startedAt, done }
+        } catch (e) {
+          pruneJob = {
+            type,
+            startedAt: pruneJob!.startedAt,
+            error: e instanceof Error ? e.message : String(e),
+          }
         }
-      }
-      if (type === 'containers') {
-        const res = await dockerApi<{ ContainersDeleted?: string[]; SpaceReclaimed: number }>(
-          '/containers/prune',
-          'POST'
-        )
-        invalidateDf()
-        return { reclaimed: res.SpaceReclaimed ?? 0, detail: res.ContainersDeleted ?? [] }
-      }
-      if (type === 'volumes') {
-        const res = await dockerApi<{ VolumesDeleted?: string[]; SpaceReclaimed: number }>(
-          '/volumes/prune',
-          'POST'
-        )
-        invalidateDf()
-        return { reclaimed: res.SpaceReclaimed ?? 0, detail: res.VolumesDeleted ?? [] }
-      }
-      const res = await dockerApi<{ CachesDeleted?: string[]; SpaceReclaimed: number }>(
-        '/build/prune',
-        'POST'
-      )
-      invalidateDf()
-      return { reclaimed: res.SpaceReclaimed ?? 0, detail: res.CachesDeleted ?? [] }
+      })()
+      return { started: true, type }
     },
+  })
+
+  fastify.get('/prune/status', {
+    schema: DockerPruneStatusSchema,
+    ...guard,
+    handler: async () => ({ job: pruneJob }),
   })
 
   fastify.delete('/images/:id', {
@@ -237,7 +281,8 @@ const dockerRoutes: FastifyPluginAsyncTypebox = async (fastify): Promise<void> =
     handler: async (req) => {
       await requireDocker()
       const { id } = req.params as { id: string }
-      await dockerApi(`/images/${encodeURIComponent(id)}?force=true`, 'DELETE')
+      // 删除大镜像耗时可能超过默认 10s
+      await dockerApi(`/images/${encodeURIComponent(id)}?force=true`, 'DELETE', undefined, 120_000)
       invalidateDf()
       return { ok: true }
     },
