@@ -127,6 +127,18 @@ nginx `conf.d/pages.delldiagi.top.conf` 映射到站点目录；证书为 acme.s
 DNS-01 泛域名证书（dns_ali，凭据存于服务器 `~/.acme.sh/account.conf`）。
 `/etc/cron.d/pages-cleanup` 每日清理 mtime >30 天的站点。
 
+MCP 端点：`POST /fastify/mcp`（Streamable HTTP 无状态模式，Bearer 鉴权），
+暴露 `deploy_site` 工具（入参 `zipBase64`、可选 `slug`），与 HTTP 接口共用
+`src/utils/pages.ts` 的 `deploySiteZip`。客户端配置示例：
+
+```json
+{ "mcpServers": { "dell-pages": {
+    "type": "streamableHttp",
+    "url": "https://delldiagi.top/fastify/mcp",
+    "headers": { "Authorization": "Bearer <BEARER_TOKEN>" }
+} } }
+```
+
 ## Architecture
 
 ### Backend (services/fastify)
