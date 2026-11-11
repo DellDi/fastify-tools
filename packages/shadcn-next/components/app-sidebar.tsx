@@ -5,6 +5,7 @@ import { NavMain } from '@/components/nav-main'
 import { NavProjects } from '@/components/nav-projects'
 import { NavUser } from '@/components/nav-user'
 import { StorageCard } from '@/components/storage-card'
+import { ServerStatusCard } from '@/components/server-status-card'
 import { TeamSwitcher } from '@/components/team-switcher'
 import {
   Sidebar,
@@ -16,10 +17,12 @@ import {
 } from '@/components/ui/sidebar'
 import { usePathname } from 'next/navigation'
 import { routesConfig } from '@/utils/slide/route'
-import { updateActiveMenu } from '@/utils/menu-converter'
+import { updateActiveMenu, resolvePageTitle } from '@/utils/menu-converter'
 import { Skeleton } from '@/components/ui/skeleton'
 import { useMenuStore, useMenuActions } from '@/store/client/menuStore'
 import { useUserActions } from '@/store/client/userStore'
+
+const APP_TITLE = 'Tools Admin by DellDi'
 
 export function AppSidebar() {
   const pathname = usePathname()
@@ -36,6 +39,12 @@ export function AppSidebar() {
       setNavItems(updateActiveMenu(navItems, pathname))
     }
   }, [pathname, setNavItems])
+
+  // 菜单与浏览器标签页标题联动
+  useEffect(() => {
+    const title = resolvePageTitle(navItems, pathname)
+    document.title = title ? `${title} | ${APP_TITLE}` : APP_TITLE
+  }, [pathname, navItems])
 
   // 在组件首次渲染时加载用户和菜单数据
   useEffect(() => {
@@ -96,7 +105,10 @@ export function AppSidebar() {
           <NavProjects projects={routesConfig.projects} />
         </SidebarItem>
         <SidebarItem>
-          <StorageCard />
+          <div className="space-y-2">
+            <StorageCard />
+            <ServerStatusCard />
+          </div>
         </SidebarItem>
       </SidebarContent>
       <SidebarFooter>

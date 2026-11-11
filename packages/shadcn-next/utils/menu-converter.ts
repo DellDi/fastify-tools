@@ -130,3 +130,29 @@ export function updateActiveMenu(navItems: NavItem[], pathname: string): NavItem
     isActive: navItem.items?.some(item => pathname.startsWith(item.url)) || false
   }))
 }
+
+// DB 菜单未覆盖的页面路由 → 标题兜底（前缀匹配，按 key 长度优先）
+const ROUTE_TITLE_FALLBACK: Record<string, string> = {
+  '/dashboard': 'Dashboard',
+  '/changelog': '更新日志',
+  '/profile': '个人资料',
+}
+
+/**
+ * 解析当前页面对应的标题：优先取菜单项名（最长 URL 前缀匹配），
+ * 其次查非菜单页兜底表，均无匹配返回 null。
+ */
+export function resolvePageTitle(navItems: NavItem[], pathname: string): string | null {
+  let bestUrl = ''
+  let bestTitle: string | null = null
+  const candidates = navItems.flatMap((item) => [item, ...(item.items ?? [])])
+  for (const c of candidates) {
+    if (c.url && c.url !== '#' && pathname.startsWith(c.url) && c.url.length > bestUrl.length) {
+      bestUrl = c.url
+      bestTitle = c.title
+    }
+  }
+  if (bestTitle) return bestTitle
+  const fallbackKey = Object.keys(ROUTE_TITLE_FALLBACK).find((p) => pathname.startsWith(p))
+  return fallbackKey ? ROUTE_TITLE_FALLBACK[fallbackKey] : null
+}

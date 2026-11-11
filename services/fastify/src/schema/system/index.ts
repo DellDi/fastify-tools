@@ -42,3 +42,108 @@ export const ClearCacheByKeySchema = {
     }),
   },
 }
+
+const SystemStatusObject = Type.Object({
+  ts: Type.Number({ description: '采样时间戳（毫秒）。' }),
+  uptimeSec: Type.Number({ description: '宿主机运行时长（秒）。' }),
+  cpu: Type.Object({
+    cores: Type.Number({ description: 'CPU 核数。' }),
+    usagePercent: Type.Number({ description: 'CPU 使用率 %（/proc/stat 双采样）。' }),
+    load1: Type.Number({ description: '1 分钟负载均值。' }),
+    load5: Type.Number({ description: '5 分钟负载均值。' }),
+    load15: Type.Number({ description: '15 分钟负载均值。' }),
+    runningProcs: Type.Union([Type.Number(), Type.Null()], {
+      description: '运行中进程数（/proc/loadavg）。',
+    }),
+    totalProcs: Type.Union([Type.Number(), Type.Null()], {
+      description: '进程总数（/proc/loadavg）。',
+    }),
+    perCore: Type.Union([Type.Array(Type.Number()), Type.Null()], {
+      description: '每核 CPU 使用率 % 数组。',
+    }),
+  }),
+  memory: Type.Object({
+    totalBytes: Type.Number({ description: '内存总量（字节）。' }),
+    usedBytes: Type.Number({ description: '已用内存（字节，扣除 MemAvailable）。' }),
+    usagePercent: Type.Number({ description: '内存使用率 %。' }),
+    cachedBytes: Type.Union([Type.Number(), Type.Null()], { description: '页缓存（字节）。' }),
+    buffersBytes: Type.Union([Type.Number(), Type.Null()], { description: '缓冲区（字节）。' }),
+    swapTotalBytes: Type.Union([Type.Number(), Type.Null()], { description: 'Swap 总量（字节）。' }),
+    swapUsedBytes: Type.Union([Type.Number(), Type.Null()], { description: 'Swap 已用（字节）。' }),
+  }),
+  disk: Type.Union(
+    [
+      Type.Object({
+        path: Type.String({ description: '采样的挂载路径。' }),
+        totalBytes: Type.Number({ description: '磁盘总量（字节）。' }),
+        usedBytes: Type.Number({ description: '已用空间（字节）。' }),
+        usagePercent: Type.Number({ description: '磁盘使用率 %。' }),
+        readBytesPerSec: Type.Union([Type.Number(), Type.Null()], {
+          description: '所在块设备读速率（字节/秒）。',
+        }),
+        writeBytesPerSec: Type.Union([Type.Number(), Type.Null()], {
+          description: '所在块设备写速率（字节/秒）。',
+        }),
+      }),
+      Type.Null(),
+    ],
+    { description: '宿主机磁盘占用；采样失败时为 null。' }
+  ),
+  process: Type.Object({
+    uptimeSec: Type.Number({ description: 'fastify 进程运行时长（秒）。' }),
+    rssBytes: Type.Number({ description: 'fastify 进程常驻内存（字节）。' }),
+    eventLoopDelayMs: Type.Union([Type.Number(), Type.Null()], {
+      description: '事件循环延迟均值（毫秒，区间采样）。',
+    }),
+  }),
+  databases: Type.Array(
+    Type.Object({
+      name: Type.String({ description: '库名。' }),
+      sizeBytes: Type.Number({ description: '实际体积（字节）。' }),
+    }),
+    { description: 'fastify_db / shadcn_next 实际体积；查询失败时为空数组。' }
+  ),
+  pages: Type.Union(
+    [
+      Type.Object({
+        sites: Type.Number({ description: '已部署站点数。' }),
+        totalBytes: Type.Number({ description: '站点总占用（字节）。' }),
+      }),
+      Type.Null(),
+    ],
+    { description: 'Pages 站点统计；目录不可读时为 null。' }
+  ),
+  certificates: Type.Array(
+    Type.Object({
+      domain: Type.String({ description: '证书域名（含 *.pages 泛域名）。' }),
+      daysLeft: Type.Union([Type.Number(), Type.Null()], {
+        description: '证书剩余天数；探测失败为 null。',
+      }),
+    }),
+    { description: 'TLS 证书有效期探测结果。' }
+  ),
+})
+
+export const SystemStatusSchema = {
+  description:
+    '服务器实时状态（最近一次采样快照）。容器内 /proc 与站点挂载点读取的是宿主机数据：CPU（总量+每核）/内存构成/磁盘容量与 IO/运行时长/进程数，外加业务库体积、Pages 站点统计、TLS 证书有效期。',
+  tags: ['system'],
+  response: {
+    200: SystemStatusObject,
+  },
+}
+
+export const SystemHistorySchema = {
+  description: '服务器状态历史采样序列（内存环形缓冲，30s 一个点，最长约 24h，进程重启清空）。',
+  tags: ['system'],
+  querystring: Type.Object({
+    hours: Type.Optional(
+      Type.Number({ description: '回溯小时数，默认 24。', default: 24, minimum: 1, maximum: 72 })
+    ),
+  }),
+  response: {
+    200: Type.Object({
+      samples: Type.Array(SystemStatusObject),
+    }),
+  },
+}
