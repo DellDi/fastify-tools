@@ -119,7 +119,8 @@ const mcp: FastifyPluginAsyncTypebox = async (fastify): Promise<void> => {
   }
 
   // url '' 命中 /mcp；find-my-way 默认忽略尾斜杠，/mcp/ 同样可达
-  fastify.route({ method: ['POST', 'GET', 'DELETE'], url: '', preHandler: fastify.verifyBearerAuth, handler: mcpHandler })
+  // bodyLimit：zipBase64 把 50MB 上限的 zip 放大 ~4/3，留足余量
+  fastify.route({ method: ['POST', 'GET', 'DELETE'], url: '', preHandler: fastify.verifyBearerAuth, handler: mcpHandler, bodyLimit: 80 * 1024 * 1024 })
 }
 
 export default mcp
