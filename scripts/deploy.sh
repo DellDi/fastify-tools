@@ -34,7 +34,7 @@ fi
 # 注意：经 ssh 传递的值不能含空格，用 grep 正则 Ready.in 规避
 case "$SERVICE" in
   shadcn-next) READY_PATTERN="Ready.in" ;;
-  *) READY_PATTERN="Server listening" ;;
+  *) READY_PATTERN="Server.listening" ;;
 esac
 
 BRANCH=$(git rev-parse --abbrev-ref HEAD)
