@@ -1,5 +1,4 @@
 import { PrismaClient } from '@/types/prisma.js';
-import crypto from 'crypto';
 
 const prisma = new PrismaClient();
 
@@ -13,20 +12,21 @@ export async function seedPagesMenu() {
     return;
   }
 
-  // 固定 UUID，保证重复执行幂等
-  const PAGES_MENU_ID = '7f2c8a1e-5b3d-4e6f-9a0b-1c2d3e4f5a6b';
-  const menu = await prisma.menu.upsert({
-    where: { id: PAGES_MENU_ID },
-    update: {},
-    create: {
-      id: PAGES_MENU_ID,
-      name: 'Pages站点',
-      url: '/pages',
-      icon: 'Globe',
-      description: 'Pages 静态站点部署审计与管理',
-      parentId: aigcParent.id,
-    },
+  // 按 url + parentId 判重，id 由数据库默认 uuid() 生成
+  let menu = await prisma.menu.findFirst({
+    where: { url: '/pages', parentId: aigcParent.id },
   });
+  if (!menu) {
+    menu = await prisma.menu.create({
+      data: {
+        name: 'Pages站点',
+        url: '/pages',
+        icon: 'Globe',
+        description: 'Pages 静态站点部署审计与管理',
+        parentId: aigcParent.id,
+      },
+    });
+  }
 
   for (const roleName of ['admin', 'test']) {
     const role = await prisma.role.findUnique({ where: { name: roleName } });

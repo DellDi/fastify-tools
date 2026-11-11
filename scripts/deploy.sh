@@ -31,8 +31,9 @@ else
 fi
 
 # 各服务「就绪」日志标记：fastify 输出 Server listening，next start 输出 Ready in
+# 注意：经 ssh 传递的值不能含空格，用 grep 正则 Ready.in 规避
 case "$SERVICE" in
-  shadcn-next) READY_PATTERN="Ready in" ;;
+  shadcn-next) READY_PATTERN="Ready.in" ;;
   *) READY_PATTERN="Server listening" ;;
 esac
 
