@@ -128,8 +128,10 @@ DNS-01 泛域名证书（dns_ali，凭据存于服务器 `~/.acme.sh/account.con
 `/etc/cron.d/pages-cleanup` 每日清理 mtime >30 天的站点。
 
 MCP 端点：`POST /fastify/mcp`（Streamable HTTP 无状态模式，Bearer 鉴权），
-暴露 `deploy_site` 工具（入参 `zipBase64`、可选 `slug`），与 HTTP 接口共用
-`src/utils/pages.ts` 的 `deploySiteZip`。客户端配置示例：
+暴露 `deploy_site` 工具（可选 `slug`）。站点内容两种传法二选一：
+`files`（`{"路径": "文本"}` 映射，仅 utf8 文本，适合无执行环境的客户端）或
+`zipBase64`（整站 zip，适合含二进制资源）。与 HTTP 接口共用
+`src/utils/pages.ts` 的 `deploySiteZip` / `deploySiteFiles`。客户端配置示例：
 
 ```json
 { "mcpServers": { "dell-pages": {

@@ -15,6 +15,59 @@ export interface DeploySiteResult {
   hasIndexHtml: boolean
 }
 
+/** 校验相对路径并归一化；返回 null 表示目录条目应跳过，非法路径抛错。 */
+function sanitizeRelPath(rawName: string): string | null {
+  const rel = rawName.replace(/\\/g, '/')
+  if (rel.endsWith('/')) return null
+  const norm = path.posix.normalize(rel)
+  if (
+    norm.startsWith('/') ||
+    norm === '.' ||
+    norm === '..' ||
+    norm.startsWith('../') ||
+    norm.includes('/../') ||
+    norm.includes('\0')
+  ) {
+    throw new ValidationError(`包含非法路径: ${rawName}`)
+  }
+  return norm
+}
+
+/** 校验 slug 或生成随机 slug。 */
+function resolveSlug(sitesDir: string, slug?: string): string {
+  let finalSlug = slug?.trim() ?? ''
+  if (finalSlug && !SLUG_PATTERN.test(finalSlug)) {
+    throw new ValidationError(`slug 非法: ${finalSlug}`)
+  }
+  if (!finalSlug) {
+    do {
+      finalSlug = crypto.randomBytes(4).toString('hex')
+    } while (fs.existsSync(path.join(sitesDir, finalSlug)))
+  }
+  return finalSlug
+}
+
+/** 把已校验的条目写入 sitesDir/<slug>（目录已存在时整体覆盖）。 */
+async function writeSiteEntries(
+  safe: Array<[string, Uint8Array]>,
+  sitesDir: string,
+  finalSlug: string
+): Promise<DeploySiteResult> {
+  const siteDir = path.join(sitesDir, finalSlug)
+  await fs.promises.rm(siteDir, { recursive: true, force: true })
+  await fs.promises.mkdir(sitesDir, { recursive: true })
+  for (const [rel, content] of safe) {
+    const target = path.join(siteDir, rel)
+    await fs.promises.mkdir(path.dirname(target), { recursive: true })
+    await fs.promises.writeFile(target, content)
+  }
+  return {
+    slug: finalSlug,
+    files: safe.length,
+    hasIndexHtml: fs.existsSync(path.join(siteDir, 'index.html')),
+  }
+}
+
 /**
  * 校验 zip 内容并解压到 sitesDir/<slug>。slug 为空时随机生成；
  * 指定 slug 且目录已存在时整体覆盖。
@@ -36,17 +89,8 @@ export async function deploySiteZip(
   const safe: Array<[string, Uint8Array]> = []
   let totalSize = 0
   for (const [rawName, content] of Object.entries(entries)) {
-    const rel = rawName.replace(/\\/g, '/')
-    if (rel.endsWith('/')) continue // 目录条目
-    const norm = path.posix.normalize(rel)
-    if (
-      norm.startsWith('/') ||
-      norm === '..' ||
-      norm.startsWith('../') ||
-      norm.includes('/../')
-    ) {
-      throw new ValidationError(`zip 包含非法路径: ${rawName}`)
-    }
+    const norm = sanitizeRelPath(rawName)
+    if (norm === null) continue
     totalSize += content.byteLength
     if (totalSize > MAX_UNCOMPRESSED) {
       throw new AppError('解压后总体积超出 300MB 上限', 413)
@@ -60,30 +104,38 @@ export async function deploySiteZip(
     throw new ValidationError('zip 内没有可部署的文件')
   }
 
-  let finalSlug = slug?.trim() ?? ''
-  if (finalSlug && !SLUG_PATTERN.test(finalSlug)) {
-    throw new ValidationError(`slug 非法: ${finalSlug}`)
+  return writeSiteEntries(safe, sitesDir, resolveSlug(sitesDir, slug))
+}
+
+/**
+ * 以「路径 → 文本内容」形式直接部署（面向无 zip 能力的聊天类客户端）。
+ * 文本按 utf8 写入；二进制资源请走 zip。校验规则与 zip 部署一致。
+ */
+export async function deploySiteFiles(
+  files: Record<string, string>,
+  sitesDir: string,
+  slug?: string
+): Promise<DeploySiteResult> {
+  const safe: Array<[string, Uint8Array]> = []
+  let totalSize = 0
+  for (const [rawName, text] of Object.entries(files)) {
+    const norm = sanitizeRelPath(rawName)
+    if (norm === null) continue
+    const content = new TextEncoder().encode(text)
+    totalSize += content.byteLength
+    if (totalSize > MAX_UNCOMPRESSED) {
+      throw new AppError('文件总体积超出 300MB 上限', 413)
+    }
+    if (safe.length >= MAX_FILES) {
+      throw new ValidationError(`文件数超出 ${MAX_FILES} 上限`)
+    }
+    safe.push([norm, content])
   }
-  if (!finalSlug) {
-    do {
-      finalSlug = crypto.randomBytes(4).toString('hex')
-    } while (fs.existsSync(path.join(sitesDir, finalSlug)))
+  if (safe.length === 0) {
+    throw new ValidationError('没有可部署的文件')
   }
 
-  const siteDir = path.join(sitesDir, finalSlug)
-  await fs.promises.rm(siteDir, { recursive: true, force: true })
-  await fs.promises.mkdir(sitesDir, { recursive: true })
-  for (const [rel, content] of safe) {
-    const target = path.join(siteDir, rel)
-    await fs.promises.mkdir(path.dirname(target), { recursive: true })
-    await fs.promises.writeFile(target, content)
-  }
-
-  return {
-    slug: finalSlug,
-    files: safe.length,
-    hasIndexHtml: fs.existsSync(path.join(siteDir, 'index.html')),
-  }
+  return writeSiteEntries(safe, sitesDir, resolveSlug(sitesDir, slug))
 }
 
 // ---------- 站点列表 / 删除 / 部署审计日志 ----------
