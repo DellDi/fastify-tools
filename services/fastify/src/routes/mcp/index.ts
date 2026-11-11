@@ -1,6 +1,7 @@
 import auth from '@fastify/auth'
 import bearerAuth from '@fastify/bearer-auth'
 import { FastifyPluginAsyncTypebox } from '@fastify/type-provider-typebox'
+import { FastifyReply, FastifyRequest } from 'fastify'
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js'
 import { StreamableHTTPServerTransport } from '@modelcontextprotocol/sdk/server/streamableHttp.js'
 import { z } from 'zod'
@@ -63,24 +64,23 @@ const mcp: FastifyPluginAsyncTypebox = async (fastify): Promise<void> => {
     return server
   }
 
-  fastify.route({
-    method: ['POST', 'GET', 'DELETE'],
-    url: '/mcp',
-    preHandler: fastify.verifyBearerAuth,
-    handler: async (req, reply) => {
-      const server = createServer()
-      const transport = new StreamableHTTPServerTransport({
-        sessionIdGenerator: undefined, // 无状态：不签发 mcp-session-id
-      })
-      reply.raw.on('close', () => {
-        void transport.close()
-        void server.close()
-      })
-      await server.connect(transport)
-      reply.hijack()
-      await transport.handleRequest(req.raw, reply.raw, req.body)
-    },
-  })
+  const mcpHandler = async (req: FastifyRequest, reply: FastifyReply) => {
+    const server = createServer()
+    const transport = new StreamableHTTPServerTransport({
+      sessionIdGenerator: undefined, // 无状态：不签发 mcp-session-id
+    })
+    reply.raw.on('close', () => {
+      void transport.close()
+      void server.close()
+    })
+    await server.connect(transport)
+    reply.hijack()
+    await transport.handleRequest(req.raw, reply.raw, req.body)
+  }
+
+  // '' 命中 /mcp，'/' 兼容尾部斜杠
+  fastify.route({ method: ['POST', 'GET', 'DELETE'], url: '', preHandler: fastify.verifyBearerAuth, handler: mcpHandler })
+  fastify.route({ method: ['POST', 'GET', 'DELETE'], url: '/', preHandler: fastify.verifyBearerAuth, handler: mcpHandler })
 }
 
 export default mcp
