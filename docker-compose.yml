@@ -82,6 +82,10 @@ services:
       - /proc:/host/proc:ro
       # 容器列表监控（docker.sock 等价宿主机 root，仅查询用途）
       - /var/run/docker.sock:/var/run/docker.sock
+      # 文件管理：宿主机全盘只读浏览；/opt /srv 嵌套可写（白名单写区）
+      - /:/host:ro
+      - /opt:/host/opt
+      - /srv:/host/srv
     depends_on:
       postgres:
         condition: service_healthy

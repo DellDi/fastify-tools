@@ -1,8 +1,8 @@
 import os from 'node:os'
 import tls from 'node:tls'
-import { request as httpRequest } from 'node:http'
 import { access, readFile, statfs } from 'node:fs/promises'
 import { IntervalHistogram, monitorEventLoopDelay } from 'node:perf_hooks'
+import { dockerApi } from './docker.js'
 import { listSites } from './pages.js'
 
 // 容器内 /proc 未做命名空间隔离，读到的是宿主机真实指标；
@@ -362,25 +362,9 @@ async function readCertificates(baseDomain?: string) {
 async function readDockerContainers(sockPath: string) {
   try {
     await access(sockPath)
-    const body = await new Promise<string>((resolve, reject) => {
-      const req = httpRequest(
-        { socketPath: sockPath, path: '/containers/json', method: 'GET' },
-        (res) => {
-          let d = ''
-          res.on('data', (c) => (d += c))
-          res.on('end', () => resolve(d))
-        }
-      )
-      req.on('error', reject)
-      req.setTimeout(3000, () => req.destroy(new Error('docker.sock timeout')))
-      req.end()
-    })
-    const list = JSON.parse(body) as {
-      Names: string[]
-      Image: string
-      State: string
-      Status: string
-    }[]
+    const list = await dockerApi<
+      { Names: string[]; Image: string; State: string; Status: string }[]
+    >('/containers/json')
     return list.map((c) => ({
       name: c.Names[0]?.replace(/^\//, '') ?? 'unknown',
       image: c.Image,
