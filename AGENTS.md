@@ -1,6 +1,6 @@
 # AGENTS.md
 
-This file provides guidance to Codex when working with the **fastify-tools** monorepo.
+This file provides guidance to AI coding agents when working with the **fastify-tools** monorepo.
 
 ## Project Overview
 
