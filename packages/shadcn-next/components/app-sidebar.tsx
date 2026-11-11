@@ -41,18 +41,17 @@ export function AppSidebar() {
   }, [pathname, setNavItems])
 
   // 菜单与浏览器标签页标题联动。
-  // App Router 客户端导航时 RSC metadata 会异步覆盖 <title>，
-  // 用 MutationObserver 保证菜单标题始终生效（等值判断防循环）。
+  // App Router 客户端导航时 RSC metadata 会异步覆盖 <title>
+  // （可能是改文本、也可能整体替换节点）——观察 document.head 子树，
+  // 任何写法都拦下并写回菜单标题（等值判断防循环）。
   useEffect(() => {
     const resolved = resolvePageTitle(navItems, pathname)
     const desired = resolved ? `${resolved} | ${APP_TITLE}` : APP_TITLE
     document.title = desired
-    const el = document.querySelector('title')
-    if (!el) return
     const obs = new MutationObserver(() => {
       if (document.title !== desired) document.title = desired
     })
-    obs.observe(el, { childList: true, characterData: true, subtree: true })
+    obs.observe(document.head, { childList: true, characterData: true, subtree: true })
     return () => obs.disconnect()
   }, [pathname, navItems])
 
