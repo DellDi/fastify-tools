@@ -4,7 +4,7 @@ import ClientHeader from '@/components/custom/ClientHeader'
 import { ToolTicker } from '@/components/custom/base/banner-list'
 import { BrandHero } from '@/components/custom/BrandHero'
 
-import { getAllSections, type Section } from '@/lib/db'
+import { getAllSections, getChangelogs, type Section } from '@/lib/db'
 import { SectionCard } from '@/components/custom/SectionCard'
 
 // 静态渲染
@@ -22,11 +22,21 @@ async function getData(): Promise<{ data: Section[]; error: string | null }> {
 }
 
 export default async function Home() {
-  const { data: sections, error } = await getData()
+  const [{ data: sections, error }, changelogs] = await Promise.all([
+    getData(),
+    getChangelogs(),
+  ])
 
   return (
     <main className="flex min-h-screen flex-col">
-      <ClientHeader />
+      <ClientHeader
+        changelog={changelogs.map((c) => ({
+          id: c.id,
+          version: c.version,
+          date: c.date.toISOString(),
+          changes: c.changes,
+        }))}
+      />
       <BrandHero />
       <ToolTicker />
       <section className="container mx-auto w-full max-w-7xl px-4 pb-20 pt-14">

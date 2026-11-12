@@ -3,6 +3,7 @@ import { seedHomeSections } from './seed/home_sections';
 import { seedInitRoleMenu } from './seed/init_role_menu';
 import { seedInitAccount } from './seed/init_account';
 import { seedPagesMenu } from './seed/pages_menu';
+import { seedChangelog } from './seed/changelog';
 import { runVersionedSeed } from './seed/version-manager';
 
 const prisma = new PrismaClient();
@@ -22,6 +23,9 @@ async function main() {
 
     // 4. AIGC 组下补充 Pages站点 菜单
     await runVersionedSeed('pages_menu', '1.0.0', seedPagesMenu);
+
+    // 5. 初始化更新日志数据
+    await runVersionedSeed('changelog', '1.0.0', seedChangelog);
 
     console.log('All seed operations completed successfully');
   } catch (error) {

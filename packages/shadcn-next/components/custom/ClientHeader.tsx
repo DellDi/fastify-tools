@@ -8,12 +8,13 @@ import { Menu, X } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { ToggleTheme } from '@/components/custom/ToggleTheme'
 import { GithubIcon } from '@/components/custom/base/custom-icon'
+import { ChangelogDialog } from '@/components/custom/changelog-dialog'
+import type { ChangelogEntry } from '@/components/custom/changelog-timeline'
 
 const navLinks = [
   { href: '/dashboard', label: '首页' },
   { href: '/login', label: '登录' },
   { href: '/aigc/model', label: '模型调优' },
-  { href: '/changelog/list', label: '更新日志' },
   { href: '/password/newsee', label: '解密' },
   {
     href: 'https://github.com/DellDi',
@@ -25,10 +26,15 @@ const navLinks = [
 const linkClass =
   'relative text-sm font-medium text-muted-foreground transition-colors hover:text-foreground after:absolute after:-bottom-1 after:left-0 after:h-px after:w-0 after:bg-primary after:transition-all after:duration-300 hover:after:w-full'
 
-export default function ClientHeader() {
+export default function ClientHeader({
+  changelog = [],
+}: {
+  changelog?: ChangelogEntry[]
+}) {
   const basePath = process.env.NEXT_PUBLIC_BASE_PATH || ''
 
   const [menuOpen, setMenuOpen] = useState(false)
+  const [changelogOpen, setChangelogOpen] = useState(false)
   const [mounted, setMounted] = useState(false)
 
   useEffect(() => {
@@ -70,6 +76,12 @@ export default function ClientHeader() {
                 )}
               </Link>
             ))}
+            <ChangelogDialog
+              items={changelog}
+              triggerClassName={linkClass}
+              open={changelogOpen}
+              onOpenChange={setChangelogOpen}
+            />
           </nav>
 
           <div className="flex items-center gap-2">
@@ -117,6 +129,15 @@ export default function ClientHeader() {
                   )}
                 </Link>
               ))}
+              <button
+                className="rounded-lg px-3 py-2.5 text-left text-sm font-medium text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
+                onClick={() => {
+                  setMenuOpen(false)
+                  setChangelogOpen(true)
+                }}
+              >
+                更新日志
+              </button>
             </nav>
           </motion.div>
         )}

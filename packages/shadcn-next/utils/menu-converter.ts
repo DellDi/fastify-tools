@@ -134,7 +134,6 @@ export function updateActiveMenu(navItems: NavItem[], pathname: string): NavItem
 // DB 菜单未覆盖的页面路由 → 标题兜底（前缀匹配，按 key 长度优先）
 const ROUTE_TITLE_FALLBACK: Record<string, string> = {
   '/dashboard': 'Dashboard',
-  '/changelog': '更新日志',
   '/profile': '个人资料',
 }
 

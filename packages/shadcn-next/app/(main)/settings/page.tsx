@@ -2,10 +2,13 @@ import Link from 'next/link'
 import { cookies } from 'next/headers'
 import AccountForm from './account-form'
 import SecurityForm from './security-form'
+import { ChangelogTab } from './changelog-tab'
 import { jwt } from '@/utils/auth/jwt'
 import { getUserInfo } from '@/app/actions/user-actions'
+import { isCurrentUserAdmin } from '@/app/actions/rbac-actions'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Icons } from '@/components/ui/icons'
+import { History } from 'lucide-react'
 
 export const metadata = {
   title: '账户设置',
@@ -29,7 +32,10 @@ export default async function AccountPage() {
     )
   }
 
-  const user = await getUserInfo(userBaseInfo.id)
+  const [user, isAdmin] = await Promise.all([
+    getUserInfo(userBaseInfo.id),
+    isCurrentUserAdmin(),
+  ])
   if (!user || user instanceof Error) {
     return (
       <div className="container mx-auto py-10">
@@ -52,7 +58,11 @@ export default async function AccountPage() {
         </div>
 
         <Tabs defaultValue="account" className="w-full">
-          <TabsList className="grid w-full grid-cols-2 h-12 rounded-lg bg-muted/20 p-1 gap-1">
+          <TabsList
+            className={`grid w-full ${
+              isAdmin ? 'grid-cols-3' : 'grid-cols-2'
+            } h-12 rounded-lg bg-muted/20 p-1 gap-1`}
+          >
             <TabsTrigger
               value="account"
               className="rounded-lg data-[state=active]:bg-background data-[state=active]:shadow-xs flex items-center gap-2"
@@ -67,6 +77,15 @@ export default async function AccountPage() {
               <Icons.lock className="h-4 w-4" />
               安全设置
             </TabsTrigger>
+            {isAdmin && (
+              <TabsTrigger
+                value="changelog"
+                className="rounded-lg data-[state=active]:bg-background data-[state=active]:shadow-xs flex items-center gap-2"
+              >
+                <History className="h-4 w-4" />
+                更新日志
+              </TabsTrigger>
+            )}
           </TabsList>
 
           <TabsContent
@@ -82,6 +101,15 @@ export default async function AccountPage() {
           >
             <SecurityForm user={user} />
           </TabsContent>
+
+          {isAdmin && (
+            <TabsContent
+              value="changelog"
+              className="mt-6 rounded-xl border bg-background p-6 shadow-sm transition-all"
+            >
+              <ChangelogTab />
+            </TabsContent>
+          )}
         </Tabs>
       </div>
     </div>
