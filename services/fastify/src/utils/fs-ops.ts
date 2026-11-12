@@ -1,4 +1,5 @@
 import { createReadStream } from 'node:fs'
+import { spawn } from 'node:child_process'
 import { open, readdir, stat, lstat } from 'node:fs/promises'
 import path from 'node:path'
 import { isDenied } from './fs-safe.js'
@@ -192,8 +193,57 @@ export interface DuNode {
 
 const SKIP_DU = new Set(['/host/proc', '/host/sys', '/host/dev', '/host/run'])
 
-// 递归累计体积；不跟随软链；节点数/深度/时间三重上限
+// 优先走系统 du(-x 不跨文件系统、-d 深度、-k KB 输出、块计数与系统一致)。
+// 容器内是 busybox du;83 万级文件比 JS 异步递归快一个数量级。
+// spawn 失败(如本地开发无该命令)回退 JS 实现。
 export async function duTree(
+  root: string,
+  depth = 2,
+  opts: { maxNodes?: number; timeoutMs?: number } = {}
+): Promise<{ root: DuNode; truncated: boolean }> {
+  const viaCmd = await duTreeViaCmd(root, depth, opts.timeoutMs ?? 45000).catch(() => null)
+  if (viaCmd) return viaCmd
+  return duTreeJs(root, depth, opts)
+}
+
+// du 输出行 "KB\t路径"（目录在后序输出,根在最后一行）建树
+function duTreeViaCmd(root: string, depth: number, timeoutMs: number) {
+  return new Promise<{ root: DuNode; truncated: boolean }>((resolve, reject) => {
+    const child = spawn('du', ['-x', '-k', '-d', String(depth), root])
+    let out = ''
+    let truncated = false
+    const timer = setTimeout(() => {
+      truncated = true
+      child.kill('SIGKILL')
+    }, timeoutMs)
+    child.stdout.on('data', (c: Buffer) => (out += c.toString()))
+    child.on('error', reject)
+    child.on('close', () => {
+      clearTimeout(timer)
+      const nodes = new Map<string, DuNode>()
+      for (const line of out.split('\n')) {
+        const tab = line.indexOf('\t')
+        if (tab <= 0) continue
+        const size = Number(line.slice(0, tab)) * 1024
+        const p = line.slice(tab + 1).trim()
+        if (!p) continue
+        nodes.set(p, { name: p === root ? path.posix.basename(p) || '/' : path.posix.basename(p), path: p, size })
+      }
+      const rootNode = nodes.get(root)
+      if (!rootNode) return reject(new Error('du 无输出'))
+      for (const [p, n] of nodes) {
+        if (p === root) continue
+        const parent = nodes.get(path.posix.dirname(p))
+        if (parent) (parent.children ??= []).push(n)
+      }
+      for (const n of nodes.values()) n.children?.sort((a, b) => b.size - a.size)
+      resolve({ root: rootNode, truncated })
+    })
+  })
+}
+
+// JS 回退实现（同 du -x 语义:不跨挂载点、按分配块计）
+async function duTreeJs(
   root: string,
   depth = 2,
   opts: { maxNodes?: number; timeoutMs?: number } = {}
@@ -203,9 +253,6 @@ export async function duTree(
   let nodes = 0
   let truncated = false
 
-  // du -x：不跨文件系统。容器 overlay 挂载（overlay2/*/merged、
-  // containerd snapshotter 目录）设备号不同，跳过可避免经容器内
-  // /host 回环挂载造成无限循环计数
   const rootDev = (await stat(root)).dev
 
   const walk = async (dir: string, d: number): Promise<DuNode> => {
