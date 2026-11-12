@@ -203,6 +203,11 @@ export async function duTree(
   let nodes = 0
   let truncated = false
 
+  // du -x：不跨文件系统。容器 overlay 挂载（overlay2/*/merged、
+  // containerd snapshotter 目录）设备号不同，跳过可避免经容器内
+  // /host 回环挂载造成无限循环计数
+  const rootDev = (await stat(root)).dev
+
   const walk = async (dir: string, d: number): Promise<DuNode> => {
     nodes++
     const self: DuNode = { name: path.posix.basename(dir) || '/', path: dir, size: 0 }
@@ -221,13 +226,19 @@ export async function duTree(
       const p = path.posix.join(dir, e.name)
       if (SKIP_DU.has(p) || e.isSymbolicLink()) continue
       if (e.isDirectory()) {
+        try {
+          if ((await lstat(p)).dev !== rootDev) continue // 挂载点，不进入
+        } catch {
+          continue
+        }
         const sub = await walk(p, d + 1)
         self.size += sub.size
         // 超过 depth 的层级并入但不展开
         if (d < depth) children.push(sub)
       } else if (e.isFile()) {
         try {
-          self.size += (await lstat(p)).size
+          // st_blocks*512 = 实际分配块（du 语义），稀疏文件不虚高
+          self.size += (await lstat(p)).blocks * 512
         } catch {
           /* 消失的临时文件 */
         }
