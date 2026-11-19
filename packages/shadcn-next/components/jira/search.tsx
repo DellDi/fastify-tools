@@ -6,14 +6,22 @@ import { Button } from '@/components/ui/button'
 import { usePathname, useRouter, useSearchParams } from 'next/navigation'
 import { useState } from 'react'
 
-export function SearchJiraComponent() {
+export function SearchJiraComponent({ onRefresh }: { onRefresh: () => void }) {
   const pathname = usePathname()
   const searchParams = useSearchParams()
   const { replace } = useRouter()
   const [query, setSearchTerm] = useState(searchParams.get('query') || SAAS_JQL_3M)
 
   function handleSearch(term: string) {
+    const currentQuery = searchParams.get('query') || SAAS_JQL_3M
+    const currentPage = Number(searchParams.get('page') || 1)
+    if (currentPage === 1 && (term || SAAS_JQL_3M) === currentQuery) {
+      onRefresh()
+      return
+    }
+
     const params = new URLSearchParams(searchParams)
+    params.delete('page')
     if (term) {
       params.set('query', term)
     } else {

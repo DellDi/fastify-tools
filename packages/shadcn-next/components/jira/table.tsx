@@ -2,46 +2,16 @@
 
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { Button } from '@/components/ui/button'
-import { JiraResponse } from '@/app/api/jira/jira-filtered/route'
-import { AlertCircle, CheckCircle2, Clock, Loader2 } from 'lucide-react'
-import { jiraLogin, jiraSaaSFetch } from '@/utils/fetch/jira/jira-api'
-import { useEffect, useState, useMemo } from 'react'
+import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card'
+import type { JiraIssue } from '@/app/api/jira/jira-filtered/route'
+import { AlertCircle, CheckCircle2, Clock } from 'lucide-react'
+import { jiraSaaSFetch } from '@/utils/fetch/jira/jira-api'
+import useSWR from 'swr'
 import { useSearchParams } from 'next/navigation'
 import { SAAS_JQL_3M } from '@/utils/jira/jql'
 import { InvoicesTableSkeleton } from './tableSkeleton'
-
-type JiraIssue = JiraResponse['issues'][0]
-
-// 封装获取 Jira 数据的函数
-const fetchJiraData = async (page: number, pageSize: number, query: string): Promise<JiraResponse> => {
-  if (!query) {
-    return { issues: [], total: 0 } as JiraResponse
-  }
-
-  try {
-    // 获取 Jira 登录凭证
-    const loginResponse = await jiraLogin()
-    const { cookies } = loginResponse
-    console.log("🚀 ~ fetchJiraData ~ cookies:", cookies)
-
-    if (!cookies) {
-      throw new Error(loginResponse.message || 'Jira 登录失败，请检查环境变量配置')
-    }
-
-    // 获取 Jira 数据
-    const response = await jiraSaaSFetch({
-      jql: query,
-      jiraCookies: cookies,
-      secondaryPage: page,
-      secondaryPageSize: pageSize,
-    })
-
-    return response
-  } catch (error) {
-    console.error('获取 Jira 数据失败:', error)
-    throw error
-  }
-}
+import { JiraPaginator } from './paginator'
+import { SearchJiraComponent } from './search'
 
 const getStatusIcon = (status: string) => {
   switch (status.toLowerCase()) {
@@ -54,112 +24,64 @@ const getStatusIcon = (status: string) => {
   }
 }
 
-interface JiraSaaSTableProps {
-  page: number
-  pageSize: number
-  query: string
-  onDataLoaded?: (data: JiraResponse) => void
-}
-
-export const JiraSaaSTable: React.FC<JiraSaaSTableProps> = ({
-  page: initialPage = 1,
-  pageSize: initialPageSize = 50,
-  query: initialQuery = SAAS_JQL_3M,
-  onDataLoaded,
-}) => {
-  // 使用 URL 参数作为状态源
+export function JiraSaaSBoard({ pageSize = 50 }: { pageSize?: number }) {
   const searchParams = useSearchParams()
+  const currentPage = +(searchParams.get('page') || 1)
+  const currentPageSize = +(searchParams.get('pageSize') || pageSize)
+  const currentQuery = searchParams.get('query') || SAAS_JQL_3M
 
-  // 从 URL 参数中获取当前值
-  const currentPage = +(searchParams.get('page') || initialPage)
-  const currentPageSize = +(searchParams.get('pageSize') || initialPageSize)
-  const currentQuery = searchParams.get('query') || initialQuery
+  const { data, error, isLoading, mutate } = useSWR(
+    ['jira-saas', currentQuery, currentPage, currentPageSize] as const,
+    ([, jql, secondaryPage, secondaryPageSize]) => jiraSaaSFetch({ jql, secondaryPage, secondaryPageSize }),
+    { dedupingInterval: 0, revalidateOnReconnect: false, shouldRetryOnError: false },
+  )
 
-  // 状态管理
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
-  const [data, setData] = useState<JiraResponse | null>(null)
-
-  // 使用 useMemo 创建一个稳定的请求标识符，避免重复请求
-  const requestId = useMemo(() => {
-    return `${currentPage}-${currentPageSize}-${currentQuery}`
-  }, [currentPage, currentPageSize, currentQuery])
-
-  // 使用 useEffect 获取数据
-  useEffect(() => {
-    // 创建一个 AbortController 用于取消请求
-    const controller = new AbortController()
-    let isMounted = true
-
-    const loadData = async () => {
-      if (!currentQuery) {
-        setLoading(false)
-        return
-      }
-
-      try {
-        setLoading(true)
-        setError(null)
-
-        const result = await fetchJiraData(currentPage, currentPageSize, currentQuery)
-
-        // 确保组件仍然挂载后才更新状态
-        if (isMounted) {
-          setData(result)
-          if (onDataLoaded) {
-            onDataLoaded(result)
-          }
-          setLoading(false)
-        }
-      } catch (err) {
-        // 忽略取消请求的错误
-        if (isMounted && err instanceof Error && err.name !== 'AbortError') {
-          console.error('获取 Jira 数据失败:', err)
-          setError(err instanceof Error ? err.message : '未知错误')
-          setLoading(false)
-        }
-      }
-    }
-
-    loadData()
-
-    // 清理函数
-    return () => {
-      isMounted = false
-      controller.abort()
-    }
-  }, [requestId, onDataLoaded]) // 使用 requestId 而不是单独的参数，避免不必要的重新请求
-
-  // 加载状态
-  if (loading) {
-    return (
-     <InvoicesTableSkeleton pageSize={currentPageSize} />
-    )
-  }
-
-  // 错误状态
-  if (error) {
-    return (
+  let content
+  if (isLoading) {
+    content = <InvoicesTableSkeleton pageSize={currentPageSize} />
+  } else if (error) {
+    content = (
       <div className="flex flex-col items-center justify-center w-full h-64 space-y-4">
         <AlertCircle className="w-10 h-10 text-red-500" />
-        <p className="text-red-500 text-center">获取数据失败: {error}</p>
-        <Button onClick={() => window.location.reload()} variant="outline">
+        <p className="text-red-500 text-center">{error.message}</p>
+        <Button onClick={() => void mutate()} variant="outline">
           重试
         </Button>
       </div>
     )
-  }
-
-  // 没有数据
-  if (!data || !data.issues || data.issues.length === 0) {
-    return (
+  } else if (data?.issues.length) {
+    content = <JiraIssuesTable issues={data.issues} />
+  } else {
+    content = (
       <div className="flex flex-col items-center justify-center w-full h-64 space-y-4">
         <p className="text-muted-foreground">没有找到符合条件的数据</p>
       </div>
     )
   }
 
-  // 渲染数据表格
+  return (
+    <div className="h-full flex flex-col grow mx-auto">
+      <Card className="w-full sm:w-full xl:6/7 md:5/6 lg:w-4/5 flex flex-col space-x-2 mx-auto grow overflow-hidden">
+        <CardHeader>
+          <CardTitle className="text-2xl font-bold text-primary">
+            SAAS专用工单系统
+            <div className="flex h-20 py-2 items-center justify-start">
+              <SearchJiraComponent onRefresh={() => void mutate()} />
+            </div>
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="grow overflow-auto">{content}</CardContent>
+        {data && !error && (
+          <CardFooter className="flex justify-between items-center">
+            <JiraPaginator page={currentPage} pageSize={currentPageSize} totalIssues={data.total} />
+          </CardFooter>
+        )}
+      </Card>
+    </div>
+  )
+}
+
+function JiraIssuesTable({ issues }: { issues: JiraIssue[] }) {
   return (
     <Table className="w-full">
       <TableHeader>
@@ -175,7 +97,7 @@ export const JiraSaaSTable: React.FC<JiraSaaSTableProps> = ({
         </TableRow>
       </TableHeader>
       <TableBody>
-        {data.issues.map((issue: JiraIssue) => (
+        {issues.map((issue) => (
           <TableRow
             key={issue.key}
             className="hover:bg-muted/50 transition-colors"

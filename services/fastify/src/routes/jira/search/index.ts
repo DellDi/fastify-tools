@@ -7,6 +7,7 @@ import {
 import cors from '@fastify/cors'
 import customFieldProcessor from './filter-plugin.js'
 import { getJiraConfig } from '@/utils/config-helpers.js'
+import { fetchSaasCustomerClause, splitJiraQuery } from '@/utils/jira-saas-jql.js'
 
 const jira: FastifyPluginAsyncTypebox = async (
   fastify,
@@ -25,15 +26,11 @@ const jira: FastifyPluginAsyncTypebox = async (
     schema: JiraSearchSchema,
     handler: async (req, reply) => {
       try {
-        const { jql, jiraCookies, jiraUser, jiraPassword, startAt, maxResults } =
-          req.body as {
-            jql: string
-            jiraCookies?: string
-            jiraUser?: string
-            jiraPassword?: string
-            startAt: number
-            maxResults: number
-          }
+        const { jql, saasOnly, jiraCookies, jiraUser, jiraPassword, startAt, maxResults } = req.body
+        const jqlParts = saasOnly ? splitJiraQuery(jql) : null
+        if (saasOnly && !jqlParts) {
+          return reply.code(400).send({ error: 'JQL 的引号、括号或排序子句无效' })
+        }
 
         // 记录请求信息（不包含敏感信息）
         fastify.log.info(
@@ -42,18 +39,28 @@ const jira: FastifyPluginAsyncTypebox = async (
         fastify.log.info(`JQL: ${jql}`)
 
         const doSearch = async (cookies: string) => {
+          let searchJql = jql
+          if (jqlParts) {
+            const customers = await fetchSaasCustomerClause(jiraConfig, cookies)
+            if (!customers) return { issues: [], total: 0 }
+            const { conditions, sort } = jqlParts
+            searchJql = [customers, conditions && `AND (${conditions})`, sort].filter(Boolean).join(' ')
+          }
+
           const jiraRes = await request(
             `${jiraConfig.baseUrl}/rest/api/2/search`,
             {
-              method: 'GET',
-              query: {
+              method: 'POST',
+              body: JSON.stringify({
                 startAt,
                 maxResults,
-                jql,
-              },
+                jql: searchJql,
+                fields: ['summary', 'status', 'labels', 'customfield_10000', 'creator', 'assignee', 'created', 'fixVersions'],
+              }),
               headers: {
                 Cookie: cookies,
                 Authorization: jiraConfig.auth.proxyAuthToken,
+                'Content-Type': 'application/json',
               },
               // 添加超时设置
               headersTimeout: 60000,

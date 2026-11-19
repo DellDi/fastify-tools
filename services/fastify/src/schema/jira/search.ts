@@ -31,6 +31,9 @@ const JiraSearchBody = Type.Object({
   jql: Type.String({
     description: 'Jira查询语句',
   }),
+  saasOnly: Type.Optional(Type.Boolean({
+    description: '按当前 Jira 客户选项限制为 SaaS 工单',
+  })),
   jiraCookies: Type.Optional(
     Type.String({
       description: '调用方自带 jira cookies；不传则使用服务端会话（可用 jiraUser/jiraPassword 指定账号）',
@@ -91,6 +94,7 @@ export const JiraSearchSchema = {
   body: JiraSearchBody,
   response: {
     200: JiraSearchResponse,
+    400: JiraErrorResponse,
     401: JiraErrorResponse,
     403: JiraErrorResponse,
     500: JiraErrorResponse,
